@@ -3,7 +3,7 @@
 // #define DEBUG 1
 const bool ENABLE_STOCHASTIC_MOTION_BLUR = true;
 // #define ENABLE_STEP_COUNT
-// #define ENABLE_DAY_MODE
+#define ENABLE_DAY_MODE
 // #define DISABLE_MOTO
 // #define DISABLE_MOTO_DRIVER
 // #define DISABLE_TERRAIN
@@ -40,8 +40,6 @@ in vec3 camTa;
 in vec3 roadWidthInMeters;
 in float motoDistanceOnCurve;
 
-in vec2 spline[SPLINE_SIZE];
-
 #else
 
 float camFoV;
@@ -54,8 +52,6 @@ vec3 camTa;
 // y: width + transition
 // z: max width
 vec3 roadWidthInMeters;
-
-vec2 spline[SPLINE_SIZE];
 
 #endif
 
@@ -124,7 +120,6 @@ void main()
 #ifndef USE_VERTEX_SHADER
     selectShot();
 #endif
-    ComputeBezierSegmentsLengthAndAABB();
     computeMotoPosition();
 
     // Compute moto position

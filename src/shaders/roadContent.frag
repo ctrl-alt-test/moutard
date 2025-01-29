@@ -1,86 +1,32 @@
-vec4 splineAABB;
-vec4 splineSegmentAABBs[SPLINE_SIZE / 2];
-vec2 splineSegmentDistances[SPLINE_SIZE / 2]; // x: start; y: end
-
-
-// Piece of code copy-pasted from:
-// https://www.shadertoy.com/view/NltBRB
-// Credit: MMatteini
-
-void ComputeBezierSegmentsLengthAndAABB()
-{
-    float splineLength = 0.0;
-    splineAABB = vec4(INF, INF, -INF, -INF);
-
-    for (int i = 0; i < SPLINE_SIZE / 2; ++i)
-    {
-        int index = 2 * i;
-        vec2 A = spline[index + 0];
-        vec2 B = spline[index + 1];
-        vec2 C = spline[index + 2];
-        float segmentLength = BezierCurveLengthAt(A, B, C, 1.0);
-        splineSegmentDistances[i].x = splineLength;
-        splineLength += segmentLength;
-        splineSegmentDistances[i].y = splineLength;
-
-        vec4 AABB = BezierAABB(A, B, C);
-        splineSegmentAABBs[i] = AABB;
-        splineAABB.xy = min(splineAABB.xy, AABB.xy);
-        splineAABB.zw = max(splineAABB.zw, AABB.zw);
-    }
+float smoothMin(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
 }
 
-// Decompose a give location into its distance from the closest point on the spline. 
-// and the length of the spline up to that point.
-// Returns a vector where:
-// X = signed distance from the spline
-// Y = spline parameter t in the Bezier segment [0; 1]
-// Z = spline length at the closest point
-// W = spline segment index
-//
-// To get t of the entire spline:
-// (Y + 0.5 * W) / float(SPLINE_SIZE)
-//
-vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
-{
-    vec4 splineUV = vec4(INF, 0, 0, 0);
 
-    if (DistanceFromAABB(p, splineAABB) > splineWidth)
-    {
-        return splineUV;
-    }
+// Function to compute the closest distance to a line segment
+float distanceToSegment(vec2 A, vec2 B, vec2 p) {
+    vec2 AB = B - A;
+    float t = clamp(dot(p - A, AB) / dot(AB, AB), 0.0, 1.0);
+    vec2 closest = mix(A, B, t);
+    return length(p - closest);
+}
 
-    // For each bezier segment
-    for (int i = 0; i < SPLINE_SIZE / 2; ++i)
-    {
-        int index = 2 * i;
-        vec2 A = spline[index + 0];
-        vec2 B = spline[index + 1];
-        vec2 C = spline[index + 2];
+// Interpolation for t on a line segment (returns a parameter t along the segment)
+float tOnSegment(vec2 A, vec2 B, vec2 p) {
+    vec2 AB = B - A;
+    return clamp(dot(p - A, AB) / dot(AB, AB), 0.0, 1.0);
+}
 
-        if (DistanceFromAABB(p, BezierAABB(A, B, C)) > splineWidth)
-        {
-            continue;
-        }
+const float roadScale = 200.;
+const vec2 roadP1 = vec2(-1., -1.) * roadScale;
+const vec2 roadP2 = vec2(1., 1.) * roadScale;
 
-        // This is to prevent 3 colinear points, but there should be better solution to it.
-        B = mix(B + vec2(1e-4), B, abs(sign(B * 2.0 - A - C))); 
-        // Current bezier curve SDF
-        vec2 bezierSDF = BezierSDF(A, B, C, p);
-
-        if (abs(bezierSDF.x) < abs(splineUV.x))
-        {
-            float lengthInSegment = BezierCurveLengthAt(A, B, C, clamp(bezierSDF.y, 0., 1.));
-            float lengthInSpline = splineSegmentDistances[i].x + lengthInSegment;
-            splineUV = vec4(
-                bezierSDF.x,
-                clamp(bezierSDF.y, 0., 1.),
-                lengthInSpline,
-                float(index));
-        }
-    }
-
-    return splineUV;
+// Compute a simple signed distance approximation for a road
+vec4 ToSplineLocalSpace(vec2 p, float splineWidth) {
+    float d = distanceToSegment(roadP1, roadP2, p);
+    float t = tOnSegment(roadP1, roadP2, p);
+    return vec4(d, 0., t, 1.);
 }
 
 //
@@ -95,53 +41,8 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 //
 vec2 GetPositionOnSpline(vec2 spline_t_and_index, out vec3 directionAndCurvature)
 {
-    float t = spline_t_and_index.x;
-    int index = int(spline_t_and_index.y);
-    vec2 A = spline[index + 0];
-    vec2 B = spline[index + 1];
-    vec2 C = spline[index + 2];
-
-    vec2 AB = mix(A, B, t);
-    vec2 BC = mix(B, C, t);
-
-    directionAndCurvature.xy = 2.0 * (BC - AB);
-
-    // Second derivative
-    vec2 d2 = 2.0 * (C - 2.0 * B + A);     
-    // Determinant (cross product)
-    // -----------
-    //   |d1|^3
-    float norm = length(directionAndCurvature.xy);
-    directionAndCurvature.z = directionAndCurvature.x * d2.y - directionAndCurvature.y * d2.x;
-    directionAndCurvature.z /= norm*norm*norm;
-
-    // Position:
-    return mix(AB, BC, t);
-}
-
-//
-// 2D position on the curve.
-// - t in [0, 1]
-//
-vec2 GetTAndIndex(float t)
-{
-    // Desired length along the spline for the given t
-    float targetLength = t * splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
-    
-    // Find the segment corresponding to this target length
-    int index = 0;
-    while (index < SPLINE_SIZE / 2 && targetLength > splineSegmentDistances[index].y)
-    {
-        ++index;
-    }
-
-    float segmentStartDistance = splineSegmentDistances[index].x;
-    float segmentEndDistance = splineSegmentDistances[index].y;
-    
-    // Calculate how far along the segment we are
-    float segmentT = (targetLength - segmentStartDistance) / (segmentEndDistance - segmentStartDistance);
-
-    return vec2(segmentT, index * 2.0);
+    directionAndCurvature = normalize(vec3(-1., -1., 0.));
+    return mix(roadP2, roadP1, spline_t_and_index.x);
 }
 
 const float laneWidth = 3.5;
@@ -237,8 +138,9 @@ float roadBumpHeight(float d)
 //
 vec4 getRoadPositionDirectionAndCurvature(float t, out vec3 position)
 {
+    // return vec4(0, 0, 0, 0.3);
     vec4 directionAndCurvature;
-    position.xz = GetPositionOnSpline(GetTAndIndex(t), directionAndCurvature.xzw);
+    position.xz = GetPositionOnSpline(vec2(t), directionAndCurvature.xzw);
     position.y = 0.;
     directionAndCurvature.y = 0.;
 
@@ -273,21 +175,18 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
 
     // street lamp
-    if (lampHeight > 0.)
-    {
-        float distanceBetween = DISTANCE_BETWEEN_LAMPS;
-        vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / distanceBetween) * distanceBetween - pRoad.z);
-        float len = Box3(pObj, vec3(0.1, lampHeight, 0.1), 0.1);
+    float distanceBetween = DISTANCE_BETWEEN_LAMPS;
+    vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / distanceBetween) * distanceBetween - pRoad.z);
+    float len = Box3(pObj, vec3(0.1, lampHeight, 0.1), 0.1);
 
-        pObj = vec3(pRoad.x + 0.7, pRoad.y - lampHeight, pObj.z);
-        pObj.xy *= Rotation(-0.2);
-        len = min(len, Box3(pObj, vec3(1.8, 0.05, 0.05), 0.1));
+    pObj = vec3(pRoad.x + 0.7, pRoad.y - lampHeight, pObj.z);
+    pObj.xy *= Rotation(-0.2);
+    len = min(len, Box3(pObj, vec3(1.8, 0.05, 0.05), 0.1));
 
-        pObj.x += 1.2;
-        res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
-        len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
-        res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
-    }
+    pObj.x += 1.2;
+    res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
+    len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
+    res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
 
     return res;
 }

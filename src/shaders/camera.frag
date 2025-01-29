@@ -1,21 +1,3 @@
-void GenerateSpline(float maxCurvature, float segmentLength, float seed)
-{
-    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
-    direction = normalize(direction);
-    vec2 point = vec2(0.);
-    for(int i = 0; i < SPLINE_SIZE; i++) {
-        if (i % 2 == 0) {
-            spline[i] = point + 0.5*segmentLength*direction;
-            continue;
-        }
-        float ha = hash11(seed + float(i) * 3.0);
-        point += direction * segmentLength;
-        float angle = mix(-maxCurvature, maxCurvature, ha);
-        direction *= Rotation(angle);
-        spline[i] = point;
-    }
-}
-
 float verticalBump()
 {
     return valueNoise2(6.*time).x;
@@ -241,8 +223,6 @@ void selectShot() {
     } else {
         roadWidthInMeters = vec3(12., 16.0, 18.0);
     }
-
-    GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(shotStartTime / 20) + seedOffset);
 
     // Use mix to skip the beginning/end of the road.
     float t = mod(shotStartTime, 14.)

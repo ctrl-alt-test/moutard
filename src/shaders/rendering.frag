@@ -273,7 +273,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         {
             float t = float(i/2 - MAX_ROAD_LIGHTS/4 + 1);
 
-            float roadLength = splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
+            float roadLength = 100.; // splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
             float motoDistanceOnRoad = motoDistanceOnCurve * roadLength;
 
             float distanceBetween = DISTANCE_BETWEEN_LAMPS;
