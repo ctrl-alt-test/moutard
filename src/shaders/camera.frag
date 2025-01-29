@@ -228,28 +228,18 @@ void selectShot() {
 #endif
 
     float shotStartTime = iTime - time;
-    wallHeight = -1.;
-    guardrailHeight = 0.;
     roadWidthInMeters = vec3(4.0, 8.0, 8.0);
     if (shotStartTime < 60.) {
-        wallHeight = -1.;
     } else if (shotStartTime < 76.) {
-        wallHeight = -1.;
-        guardrailHeight = 1.;
     } else if (shotStartTime < 88.) {
         roadWidthInMeters = vec3(8, 12.0, 14.0);
-        wallHeight = 3.;
     } else if (shotStartTime < 96.) {
         roadWidthInMeters = vec3(8, 12.0, 14.0);
-        wallHeight = 5.;
     } else if (shotStartTime < 110.) {
-        wallHeight = 5.;
     } else if (shotStartTime < 120.) {
         roadWidthInMeters = vec3(8., 12.0, 18.0);
-         wallHeight = 3.9;
     } else {
         roadWidthInMeters = vec3(12., 16.0, 18.0);
-        wallHeight = 3.9;
     }
 
     GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(shotStartTime / 20) + seedOffset);

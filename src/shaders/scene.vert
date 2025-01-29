@@ -11,8 +11,6 @@ out float camProjectionRatio;
 out float camShowDriver; // bool - 0. or 1.
 out vec3 camPos;
 out vec3 camTa;
-out float wallHeight;
-out float guardrailHeight;
 // x: actual width
 // y: width + transition
 // z: max width

@@ -37,8 +37,6 @@ in float camProjectionRatio;
 in float camShowDriver;
 in vec3 camPos;
 in vec3 camTa;
-in float wallHeight;
-in float guardrailHeight;
 in vec3 roadWidthInMeters;
 in float motoDistanceOnCurve;
 
@@ -52,8 +50,6 @@ float camProjectionRatio;
 float camShowDriver;
 vec3 camPos;
 vec3 camTa;
-float wallHeight;
-float guardrailHeight;
 // x: actual width
 // y: width + transition
 // z: max width

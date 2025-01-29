@@ -225,23 +225,6 @@ M roadMaterial(vec2 uv, float width, vec2 params)
 const float terrain_fBm_weight_param = 0.6;
 const float terrain_fBm_frequency_param = 0.5;
 
-float smoothTerrainHeight(vec2 p)
-{
-    float hillHeightInMeters = 100.;
-    float hillLengthInMeters = 2000.;
-
-    return 0.5 * hillHeightInMeters * fBm(p * 2. / hillLengthInMeters, 3, terrain_fBm_weight_param, terrain_fBm_frequency_param);
-}
-
-#pragma function inline
-float terrainDetailHeight(vec2 p)
-{
-    float detailHeightInMeters = 1.;
-    float detailLengthInMeters = 100.;
-
-    return valueNoise(p*10.)*0.1 + 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
-}
-
 float roadBumpHeight(float d)
 {
     float x = clamp(abs(d / roadWidthInMeters.x), 0., 1.);
@@ -256,8 +239,8 @@ vec4 getRoadPositionDirectionAndCurvature(float t, out vec3 position)
 {
     vec4 directionAndCurvature;
     position.xz = GetPositionOnSpline(GetTAndIndex(t), directionAndCurvature.xzw);
-    position.y = smoothTerrainHeight(position.xz);
-    directionAndCurvature.y = smoothTerrainHeight(position.xz + directionAndCurvature.xz) - position.y;
+    position.y = 0.;
+    directionAndCurvature.y = 0.;
 
     directionAndCurvature.xyz = normalize(directionAndCurvature.xyz);
     return directionAndCurvature;
@@ -268,20 +251,13 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
 
     pRoad.x -= roadWidthInMeters.x * 1.2;
-#ifdef USE_VERTEX_SHADER
-    float guardrailHeight = guardrailHeight;
-#endif
-
-    if (wallHeight >= 0.) {
-        guardrailHeight = -1.;
-    }
 
     vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
 
 	// Traffic barrier
-    if (guardrailHeight > -0.5)
+    if (true) // guardrailHeight > -0.5)
     {
-        float height = 0.8 * guardrailHeight;
+        float height = 0.8;
         vec3 pObj = vec3(pRoad.x, pRoad.y - height, 0.);
         float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
 
@@ -294,16 +270,12 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     }
 
     float reflector = Box3(pReflector, vec3(0.05), 0.01);
-    if (guardrailHeight >= 1. || wallHeight > 0.7)
-    {
-        res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
-    }
+    res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
 
     // street lamp
-    float lampHeight = wallHeight >= 4. ? wallHeight - .2 : lampHeight;
     if (lampHeight > 0.)
     {
-        float distanceBetween = wallHeight >= 4. ? 30. : DISTANCE_BETWEEN_LAMPS;
+        float distanceBetween = DISTANCE_BETWEEN_LAMPS;
         vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / distanceBetween) * distanceBetween - pRoad.z);
         float len = Box3(pObj, vec3(0.1, lampHeight, 0.1), 0.1);
 
@@ -312,30 +284,9 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
         len = min(len, Box3(pObj, vec3(1.8, 0.05, 0.05), 0.1));
 
         pObj.x += 1.2;
-        if (wallHeight < 4.)
-        {
-            res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
-            len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
-        }
-        else
-        {
-            len = Box3(pObj, vec3(0.2, 0.1, 0.7), 0.1);
-        }
+        res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
+        len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
         res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
-    }
-
-    if (wallHeight > 0.)
-    {
-        bool isTunnel = wallHeight >= 4.;
-        float len = max(-pRoad.x+max((isTunnel?0.:1.)*pRoad.y-1.,0)*.5,pRoad.y-wallHeight);
-        float d = min(
-                len,
-                max(len-.2,abs(mod(pRoad.z,10)-5)-.2)
-            );
-        if (isTunnel) {
-            d = smin(d, wallHeight - pRoad.y, 0.4);
-        }
-        res = MinDist(res, vec2(d, ROAD_WALL_ID));
     }
 
     return res;
@@ -345,8 +296,8 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     float heightToDistanceFactor = 0.75;
     // First, compute the smooth terrain
-    float terrainHeight = smoothTerrainHeight(p.xz);
-    float relativeHeight = p.y - terrainHeight;
+    float terrainHeight = 0.;
+    float relativeHeight = p.y;
 
     // If the distance is sufficiently large, stop there
     if (relativeHeight > 10.)
@@ -359,12 +310,6 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     // Compute the road presence
     float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
 
-    // If (even partly) on the terrain, add detail to the terrain
-    if (isRoad < 1.0)
-    {
-        terrainHeight += terrainDetailHeight(p.xz);
-    }
-
     // If (even partly) on the road, flatten road
     float roadHeight = terrainHeight;
     if (isRoad > 0.0)
@@ -374,7 +319,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
         vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw, directionAndCurvature);
 
         // Get the terrain height at the center line
-        roadHeight = smoothTerrainHeight(positionOnSpline);
+        roadHeight = 0.;
         d = MinDist(d, roadSideItems(splineUV, p.y - roadHeight));
 
         roadHeight += roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
@@ -396,7 +341,7 @@ const float maxTreeHeight = 20.;
 float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     float h1 = hash21(id);
     float h2 = hash11(h1);
-    float terrainHeight = smoothTerrainHeight(id);
+    float terrainHeight = 0.;
 
     float verticalClearance = globalP.y - terrainHeight - maxTreeHeight;
     if (verticalClearance > 0.)

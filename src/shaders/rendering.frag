@@ -276,7 +276,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             float roadLength = splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
             float motoDistanceOnRoad = motoDistanceOnCurve * roadLength;
 
-            float distanceBetween = wallHeight >= 4. ? 30. : DISTANCE_BETWEEN_LAMPS;
+            float distanceBetween = DISTANCE_BETWEEN_LAMPS;
 
             float distanceOfFirstLamp = floor(motoDistanceOnRoad / distanceBetween) * distanceBetween;
             float distanceOfCurrentLamp = distanceOfFirstLamp + t * distanceBetween;
@@ -294,7 +294,6 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec4 roadDirAndCurve = getRoadPositionDirectionAndCurvature(distanceOnCurve, pos);
             roadDirAndCurve.y = 0.;
 
-            float lampHeight = wallHeight >= 4. ? wallHeight - .2 : lampHeight;
             pos.xz += vec2(-roadDirAndCurve.z, roadDirAndCurve.x) * (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
             pos.y += lampHeight - .1;
             // 90° rotation:

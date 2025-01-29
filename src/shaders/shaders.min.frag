@@ -4,9 +4,7 @@ vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
 float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
-vec3 camPos,camTa;
-float wallHeight,guardrailHeight;
-vec3 roadWidthInMeters;
+vec3 camPos,camTa,roadWidthInMeters;
 vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
@@ -232,8 +230,6 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
 vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
 vec3 sky(vec3 V)
 {
-  if(wallHeight>4.)
-    return vec3(0);
   float direction=clamp(dot(V,normalize(vec3(0,1,.25))),0.,1.);
   vec3 color=mix(vec3(1,4,7),mix(vec3(3,12,18),mix(vec3(3,7,19),vec3(0,0,2),sqrt(direction)),smoothstep(0.,.3,mix(V.y,direction,.5))),smoothstep(.05,.15,V.y));
   direction=smoothstep(0.,1.,fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7)+1.);
@@ -333,10 +329,6 @@ M roadMaterial(vec2 uv)
     3:
     0,color,roughness);
 }
-float smoothTerrainHeight(vec2 p)
-{
-  return 50.*fBm(p*2./2e3,3,.6,.5);
-}
 float roadBumpHeight(float d)
 {
   d=clamp(abs(d/roadWidthInMeters.x),0.,1.);
@@ -346,8 +338,8 @@ vec4 getRoadPositionDirectionAndCurvature(float t,out vec3 position)
 {
   vec4 directionAndCurvature;
   position.xz=GetPositionOnSpline(GetTAndIndex(t),directionAndCurvature.xzw);
-  position.y=smoothTerrainHeight(position.xz);
-  directionAndCurvature.y=smoothTerrainHeight(position.xz+directionAndCurvature.xz)-position.y;
+  position.y=0.;
+  directionAndCurvature.y=0.;
   directionAndCurvature.xyz=normalize(directionAndCurvature.xyz);
   return directionAndCurvature;
 }
@@ -356,80 +348,53 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   vec2 res=vec2(1e6,-1);
   vec3 pRoad=vec3(abs(splineUV.x),relativeHeight,splineUV.z);
   pRoad.x-=roadWidthInMeters.x*1.2;
-  if(wallHeight>=0.)
-    guardrailHeight=-1.;
   vec3 pReflector=vec3(pRoad.x,pRoad.y-.8,round(pRoad.z/4.)*4.-pRoad.z);
-  if(guardrailHeight>-.5)
-    {
-      float height=.8*guardrailHeight;
-      vec3 pObj=vec3(pRoad.x,pRoad.y-height,0);
-      float len=Box3(pObj,vec3(.1,.2,.1),.05);
-      pObj=vec3(pRoad.x+.1,pRoad.y-height,0);
-      len=max(len,-Box3(pObj,vec3(.1),.1));
-      pObj=vec3(pRoad.x-.1,pRoad.y-height+.5,pReflector.z);
-      len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
-      res=MinDist(res,vec2(len,11));
-    }
-  if(guardrailHeight>=1.||wallHeight>.7)
-    res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),13));
-  relativeHeight=wallHeight>=4.?
-    wallHeight-.2:
-    7.;
-  if(relativeHeight>0.)
-    {
-      float distanceBetween=wallHeight>=4.?
-        30.:
-        50.;
-      vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/distanceBetween)*distanceBetween-pRoad.z);
-      distanceBetween=Box3(pObj,vec3(.1,relativeHeight,.1),.1);
-      pObj=vec3(pRoad.x+.7,pRoad.y-relativeHeight,pObj.z);
-      pObj.xy*=Rotation(-.2);
-      distanceBetween=min(distanceBetween,Box3(pObj,vec3(1.8,.05,.05),.1));
-      pObj.x+=1.2;
-      distanceBetween=wallHeight<4.?
-        res=MinDist(res,vec2(distanceBetween,11)),Box3(pObj,vec3(.7,.1,.1),.1):
-        Box3(pObj,vec3(.2,.1,.7),.1);
-      res=MinDist(res,vec2(distanceBetween,14));
-    }
-  if(wallHeight>0.)
-    {
-      bool isTunnel=wallHeight>=4.;
-      float len=max(-pRoad.x+max((isTunnel?
-        0.:
-        1.)*pRoad.y-1.,0)*.5,pRoad.y-wallHeight);
-      len=min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2));
-      if(isTunnel)
-        len=smin(len,wallHeight-pRoad.y,.4);
-      res=MinDist(res,vec2(len,12));
-    }
+  {
+    vec3 pObj=vec3(pRoad.x,pRoad.y-.8,0);
+    float len=Box3(pObj,vec3(.1,.2,.1),.05);
+    pObj=vec3(pRoad.x+.1,pRoad.y-.8,0);
+    len=max(len,-Box3(pObj,vec3(.1),.1));
+    pObj=vec3(pRoad.x-.1,pRoad.y-.8+.5,pReflector.z);
+    len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
+    res=MinDist(res,vec2(len,11));
+  }
+  res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),13));
+  {
+    vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
+    float len=Box3(pObj,vec3(.1,7,.1),.1);
+    pObj=vec3(pRoad.x+.7,pRoad.y-7.,pObj.z);
+    pObj.xy*=Rotation(-.2);
+    len=min(len,Box3(pObj,vec3(1.8,.05,.05),.1));
+    pObj.x+=1.2;
+    res=MinDist(res,vec2(len,11));
+    len=Box3(pObj,vec3(.7,.1,.1),.1);
+    res=MinDist(res,vec2(len,14));
+  }
   return res;
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
-  float terrainHeight=smoothTerrainHeight(p.xz),relativeHeight=p.y-terrainHeight;
+  float relativeHeight=p.y;
   if(relativeHeight>10.)
     return vec2(.75*relativeHeight,10);
   vec2 d=vec2(1e6,10);
-  float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
-  if(isRoad<1.)
-    terrainHeight+=valueNoise(p.xz*10.)*.1+.5*fBm(p.xz*2./1e2,1,.6,.5);
-  float roadHeight=terrainHeight;
+  float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x)),roadHeight=0.;
   if(isRoad>0.)
     {
       vec3 directionAndCurvature;
       vec2 positionOnSpline=GetPositionOnSpline(splineUV.yw,directionAndCurvature);
-      roadHeight=smoothTerrainHeight(positionOnSpline);
+      roadHeight=0.;
       d=MinDist(d,roadSideItems(splineUV,p.y-roadHeight));
       roadHeight+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
     }
-  roadHeight=mix(terrainHeight,roadHeight,isRoad);
-  relativeHeight=p.y-roadHeight;
+  isRoad=mix(0.,roadHeight,isRoad);
+  relativeHeight=p.y-isRoad;
   return MinDist(d,vec2(.75*relativeHeight,10));
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
-  float h1=hash21(id),h2=hash11(h1),terrainHeight=smoothTerrainHeight(id);
-  if(globalP.y-terrainHeight-20.>0.)
+  float h1=hash21(id),h2=hash11(h1);
+  if(globalP.y-20.>0.)
     return 1e6;
   float d=3.5;
   if(h1>=1.)
@@ -441,7 +406,7 @@ float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
     return d;
   treeClearance=mix(5.,20.,1.-h1*h1);
   float treeWidth=treeClearance*mix(.3,.5,h2*h2);
-  localP.y-=terrainHeight+.5*treeClearance;
+  localP.y-=.5*treeClearance;
   localP.xz+=(vec2(h1,h2)-.5)*1.5;
   d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeClearance,treeWidth)));
   if(1.-smoothstep(50.,2e2,current_t)>0.)
@@ -868,20 +833,15 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
         }
       if(i<16)
         {
-          float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength,distanceBetween=wallHeight>=4.?
-            30.:
-            50.;
-          t=(floor(motoDistanceOnRoad/distanceBetween)*distanceBetween+t*distanceBetween)/roadLength;
+          float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength;
+          t=(floor(motoDistanceOnRoad/50.)*50.+t*50.)/roadLength;
           if(t>=1.)
             continue;
           vec3 pos;
           vec4 roadDirAndCurve=getRoadPositionDirectionAndCurvature(t,pos);
           roadDirAndCurve.y=0.;
-          t=wallHeight>=4.?
-            wallHeight-.2:
-            7.;
           pos.xz+=vec2(-roadDirAndCurve.z,roadDirAndCurve)*(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
-          pos.y+=t-.1;
+          pos.y+=6.9;
           light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.32,0)*4.,-1.,0.,0.);
         }
       emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
@@ -1044,23 +1004,21 @@ void selectShot()
     moonShot(time+20.);
   PIXEL_ANGLE=camFoV/iResolution.x;
   time=iTime-time;
-  wallHeight=-1.;
-  guardrailHeight=0.;
   roadWidthInMeters=vec3(4,8,8);
   if(time<60.)
-    wallHeight=-1.;
+    ;
   else if(time<76.)
-    wallHeight=-1.,guardrailHeight=1.;
+    ;
+  else if(time<88.)
+    roadWidthInMeters=vec3(8,12,14);
+  else if(time<96.)
+    roadWidthInMeters=vec3(8,12,14);
+  else if(time<110.)
+    ;
   else
-     wallHeight=time<88.?
-      roadWidthInMeters=vec3(8,12,14),3.:
-      time<96.?
-        roadWidthInMeters=vec3(8,12,14),5.:
-        time<110.?
-          5.:
-          time<120.?
-            roadWidthInMeters=vec3(8,12,18),3.9:
-            (roadWidthInMeters=vec3(12,16,18),3.9);
+     roadWidthInMeters=time<120.?
+      vec3(8,12,18):
+      vec3(12,16,18);
   GenerateSpline(2.+floor(time/20)+seedOffset);
   motoDistanceOnCurve=mix(.1,.9,(mod(time,14.)+iTime-time)/20.);
   if(time<18.||time>125.)
@@ -1083,10 +1041,10 @@ float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff
 }
 void main()
 {
-  ComputeBezierSegmentsLengthAndAABB();
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   selectShot();
+  ComputeBezierSegmentsLengthAndAABB();
   computeMotoPosition();
   vec3 ro,rd,cameraTarget=camTa,cameraPosition=camPos;
   if(camMotoSpace>.5)
