@@ -65,6 +65,12 @@
     <None Include="src\shaders\camera.frag">
       <Filter>shaders</Filter>
     </None>
+    <None Include="src\shaders\sheep.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\rendering2.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

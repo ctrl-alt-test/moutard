@@ -71,7 +71,9 @@ float time;
 #include "backgroundContent.frag"
 #include "roadContent.frag"
 #include "motoContent.frag"
+#include "sheep.frag"
 #include "rendering.frag"
+#include "rendering2.frag"
 #ifndef USE_VERTEX_SHADER
 #include "camera.frag"
 #endif
@@ -158,10 +160,11 @@ void main()
     fragColor = vec4(stepsToColor(steps), 1.);
     return;
 #else
-    vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
+    // vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
 #endif
-    vec3 i_N = evalNormal(p, t.x);
-    vec3 radiance = max(vec3(0), evalRadiance(t, p, -rd, i_N));
+    // vec3 i_N = evalNormal(p, t.x);
+    // vec3 radiance = max(vec3(0), evalRadiance(t, p, -rd, i_N));
+    vec3 radiance = rayMarchSceneAnat(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
 
     // Bloom around headlight
     radiance += bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.) * 5.*vec3(1., 0.9, .8);

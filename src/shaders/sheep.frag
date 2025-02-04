@@ -1,0 +1,196 @@
+const float GROUND = 0.;
+const float COTON = 1.;
+const float SKIN = 2.;
+const float EYE = 3.;
+const float CLOGS = 4.;
+const float METAL = 5.;
+const float PANEL = 6.;
+const float PANEL_FOOD = 7.;
+const float PISTIL = 8.;
+const float PETAL = 9.;
+const float TIGE = 10.;
+const float BLACK_METAL = 11.;
+const float BLOOD = 12.;
+
+const vec3 eyeDir = vec3(.3,.0,1.);
+const float eyesSurprise = 0.;
+const vec3 skyColor = vec3(0.3, 0.6, 1.);
+const vec3 animationSpeed = vec3(1);
+const vec3 animationAmp = vec3(1.,.2, .25);
+const vec2 headRot = vec2(0.);
+const float blink = 0.;
+const float noseSize = 1.;
+const vec3 sheepPos = vec3(0.);
+
+float noise(vec3 x) {
+
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f*f*f*(f*(f*6.0-15.0)+10.0);
+    return mix(mix(mix( hash31(i+vec3(0,0,0)), 
+                        hash31(i+vec3(1,0,0)),f.x),
+                   mix( hash31(i+vec3(0,1,0)), 
+                        hash31(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix( hash31(i+vec3(0,0,1)), 
+                        hash31(i+vec3(1,0,1)),f.x),
+                   mix( hash31(i+vec3(0,1,1)), 
+                        hash31(i+vec3(1,1,1)),f.x),f.y),f.z)*2.-1.;
+}
+
+float capsule( vec3 p, vec3 a, vec3 b, float r )
+{
+  vec3 pa = p - a, ba = b - a;
+  return length( pa - ba*clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 ) ) - r;
+}
+float torus( vec3 p, vec2 t )
+{
+  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
+}
+
+float cappedCone( vec3 p, float h, float r1, float r2 )
+{
+  vec2 q = vec2( length(p.xz), p.y );
+  vec2 k1 = vec2(r2,h);
+  vec2 k2 = vec2(r2-r1,2.0*h);
+  vec2 ca = vec2(q.x-min(q.x,(q.y<0.0)?r1:r2), abs(q.y)-h);
+  vec2 cb = q - k1 + k2*clamp( dot(k1-q,k2)/dot(k2,k2), 0.0, 1.0 );
+  float s = (cb.x<0.0 && ca.y<0.0) ? -1.0 : 1.0;
+  return s*sqrt( min(dot(ca,ca),dot(cb,cb)) );
+}
+
+float smax( float a, float b, float k )
+{
+    k *= 1.4;
+    float h = max(k-abs(a-b),0.0);
+    return max(a, b) + h*h*h/(6.0*k*k);
+}
+
+float headDist = 0.; // distance to head (for eyes AO)
+vec2 sheep(vec3 p) {
+    p -= sheepPos;
+    p *= 2.;
+    float time = mod(iTime, 1.);
+    time = smoothstep(0., 1., abs(time * 2. - 1.));
+
+    p.y -= 1.;
+    p.z -= -2.;
+
+    
+    // Body
+    float tb = iTime*animationSpeed.x;
+    vec3 bodyMove = vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0.)*.025*animationAmp.x;
+    float body = length(p*vec3(1.,1.,.825)-vec3(0.,1.5,2.55)-bodyMove)-2.;
+    
+    if (body < 3.) {
+        float n = (pow(noise((p-bodyMove+vec3(.05,0.0,0.5))*2.)*.5+.5, .75)*2.-1.);
+        body = body + .05 - n*.2;
+
+
+        // Legs
+        float t = mod(iTime*animationSpeed.x,2.);
+        float l = smoothstep(0.,.5,t) * smoothstep(1.,.5,t);
+        float a = smoothstep(0.,.5,t);
+        float b = smoothstep(.5,1.,t);
+        float c = smoothstep(1.,1.5,t);
+        float d = smoothstep(1.5,2.,t);
+        vec4 legsRot = vec4(b * (1.-b), d * (1.-d), a * (1.-a), c * (1.-c));
+          
+        vec4 legsPos = t*.5 - vec4(b, d, a, c);
+        legsPos *= animationAmp.x;
+        
+        vec3 pl = p;
+        pl.x -= .8;
+        pl.z -= 2. + legsPos.x;
+        pl.yz = Rotation(legsRot.x) * pl.yz;
+        float legs = cappedCone(pl-vec3(0.,0.,0.), .7, .3, .2);
+        float clogs = cappedCone(pl-vec3(0.,-0.8,0.), .2, .35, .3);
+
+        pl = p;
+        pl.x += 1.;
+        pl.z -= 2. + legsPos.y;
+        pl.yz = Rotation(legsRot.y) * pl.yz;
+        legs = min(legs, cappedCone(pl-vec3(0.,0.,0.), .7, .3, .2));
+        clogs = min(clogs, cappedCone(pl-vec3(0.,-0.8,0.), .2, .35, .3));
+
+        pl = p;
+        pl.x -= 1.;
+        pl.z -= 4. + legsPos.z;
+        pl.yz = Rotation(legsRot.z) * pl.yz;
+        legs = min(legs, cappedCone(pl-vec3(0.,0.,0.), .7, .3, .2));
+        clogs = min(clogs, cappedCone(pl-vec3(0.,-0.8,0.), .2, .35, .3));
+
+        pl = p;
+        pl.x += 1.;
+        pl.z -= 4. + legsPos.w;
+        pl.yz = Rotation(legsRot.w) * pl.yz;
+        legs = min(legs, cappedCone(pl-vec3(0.,0.,0.), .7, .3, .2));
+        clogs = min(clogs, cappedCone(pl-vec3(0.,-0.8,0.), .2, .35, .3));
+
+        // Head
+        vec3 ph = p + vec3(0., -2., -1.2);
+        ph.xz = Rotation((time*animationSpeed.y - 0.5)*0.25*animationAmp.y+headRot.x) * ph.xz;
+        ph.zy = Rotation(sin(iTime*animationSpeed.y)*0.25*animationAmp.y-headRot.y) * ph.zy;
+
+        float head = length(ph-vec3(0.,-1.3,-1.2)) - 1.;
+        head = smin(head, length(ph-vec3(0.,0.,0.)) - .5, 1.8);
+
+
+        // hair 
+        vec3 pp = ph;
+        pp *= vec3(.7,1.,.7);
+        float hair = length(ph-vec3(0.,0.35,-0.1))-.55;
+        hair -= (cos(ph.z*8.+ph.y*4.5+ph.x*4.)+cos(ph.z*4.+ph.y*6.5+ph.x*8.))*.05;
+        //hair -= (pow(noise(ph*3.+1.)*.5+.5, .75)*2.-1.)*.1;
+        hair = smin(hair, body, 0.1);
+        
+        // ears
+        pp = ph;
+        pp.yz = Rotation(-.6) * pp.yz;
+        pp.x = abs(p.x)-.8;
+        pp *= vec3(.3,1.,.4);
+        pp -= vec3(0.,-0.05 - pow(pp.x,2.)*5.,-.1);
+        float ears = length(pp)-.15;
+        ears = smax(ears, -(length(pp-vec3(0.,-.1,0.))-.12), .01);
+        pp.y *= .3;
+        pp.y -= -.11;
+        float earsClip =  length(pp)-.16;
+        
+        //eyes
+        pp = ph;
+        pp.x = abs(ph.x)-.4;
+        float eyes = length(pp*vec3(1.,1.,1.-eyesSurprise)-vec3(0.,0.,-1.)) - .3;
+        
+        float eyeCap = abs(eyes)-.01;
+        //eyeCap = smax(eyeCap, -ph.z-1.1-smoothstep(0.95,0.96,blink)*.4, .01);
+        eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-smoothstep(0.95,0.96,blink)*.3+cos(iTime*1.)*.02, -ph.z-1.-eyesSurprise*1.8, .2), .01);
+        eyeCap = smin(eyeCap, head, .02);
+        head = min(head, eyeCap);
+
+        // nostrils
+        pp.x = abs(ph.x)-.2;
+        pp.xz = Rotation(-.45) * pp.xz;
+        head = smax(head, -length(pp-vec3(-0.7,-1.2,-2.05)) + .14*noseSize, .1);
+        head = smin(head, torus(pp-vec3(-0.7,-1.2,-1.94), vec2(.14*noseSize,.05)), .05);
+
+        // tail
+        float tail =  capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5.), vec3(0.,2.,4.9), .2);
+        tail -= (cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02;
+        tail = smin(body, tail, .1);
+        
+        // Union
+        vec2 dmat = vec2( body, COTON);
+        dmat = MinDist(dmat, vec2(tail, COTON));
+        dmat = MinDist(dmat, vec2(hair, COTON));
+        dmat.x = smax(dmat.x, -earsClip, .15);
+        dmat = MinDist(dmat, vec2(legs, SKIN));
+        dmat = MinDist(dmat, vec2(head, SKIN));
+        dmat = MinDist(dmat, vec2(eyes, EYE));
+        dmat = MinDist(dmat, vec2(clogs, CLOGS));
+        dmat = MinDist(dmat, vec2(ears, SKIN));
+        
+        headDist = head;
+        return dmat;
+    } else {
+        return vec2(body, COTON);
+    }
+}

@@ -1,62 +1,17 @@
 #version 150
 
+#define ENABLE_DAY_MODE
+
 vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
 float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa,roadWidthInMeters;
-vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
 const float PI=acos(-1.);
 struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;};
 struct M{int T;vec3 C;float R;};
-float invV1(float NdotV,float sqrAlpha)
-{
-  return NdotV+sqrt(sqrAlpha+(1.-sqrAlpha)*NdotV*NdotV);
-}
-vec3 cookTorrance(vec3 f0,float roughness,vec3 NcrossH,float VdotH,float NdotL,float NdotV)
-{
-  roughness*=roughness;
-  roughness*=roughness;
-  float distribution=dot(NcrossH,NcrossH)*(1.-roughness)+roughness;
-  VdotH=1.-VdotH;
-  return(VdotH+f0*(1.-VdotH*VdotH*VdotH*VdotH*VdotH))*(roughness/(PI*distribution*distribution))*(1./(invV1(NdotV,roughness)*invV1(NdotL,roughness)));
-}
-vec3 lightContribution(L l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughness)
-{
-  vec3 L,irradiance,L0=l.P-p;
-  float d0=length(L0),NdotL;
-  if(l.A!=-1.)
-    {
-      L=L0/d0;
-      NdotL=dot(N,L);
-      float LdotD=dot(L,-l.Q),angleFallOff=smoothstep(l.A,l.B,LdotD);
-      angleFallOff*=angleFallOff;
-      angleFallOff*=angleFallOff;
-      angleFallOff*=angleFallOff;
-      vec3 radiant_intensity=l.C*((sin((180.+vec3(0,.4,.8))/LdotD)*.5+.5)*.2+.8)*angleFallOff*((1.+l.F)/(l.F+d0*d0));
-      irradiance=radiant_intensity*NdotL;
-    }
-  else
-    {
-      vec3 L1=l.Q-p;
-      float d1=length(L1);
-      d1=max(0.,dot(N,L0)/d0+dot(N,L1)/d1)/(d0*d1+dot(L0,L1));
-      if(d1<=0.)
-        return vec3(0);
-      irradiance=l.C*d1;
-      vec3 Ld=l.Q-l.P,R=reflect(-V,N);
-      d1=dot(R,Ld);
-      L=normalize(mix(L0,L1,clamp((dot(R,L0)*d1-dot(L0,Ld))/(dot(Ld,Ld)-d1*d1),0.,1.)));
-      NdotL=dot(N,L);
-    }
-  if(NdotL<=0.)
-    return vec3(0);
-  L=normalize(L+V);
-  L=cookTorrance(f0,roughness,cross(N,L),max(0.,dot(V,L)),NdotL,max(0.,dot(N,V)));
-  return irradiance*(albedo+L);
-}
 float hash11(float x)
 {
   return fract(sin(x)*43758.5453);
@@ -88,7 +43,7 @@ vec2 valueNoise2(float p)
   p=p*p*(3.-2.*p);
   return mix(hash12(p0),hash12(p0+1.),p);
 }
-float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
+float fBm(vec2 p,int iterations,float weight_param)
 {
   float v=0.,weight=1.,frequency=1.,offset=0.;
   for(int i=0;i<iterations;++i)
@@ -96,7 +51,7 @@ float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
       float noise=valueNoise(p*frequency+offset)*2.-1.;
       v+=weight*noise;
       weight*=clamp(weight_param,0.,1.);
-      frequency*=1.+2.*clamp(frequency_param,0.,1.);
+      frequency*=1.+2.*clamp(.5,0.,1.);
       offset+=1.;
     }
   return v;
@@ -105,11 +60,6 @@ float smin(float a,float b,float k)
 {
   k/=1.-sqrt(.5);
   return max(k,min(a,b))-length(max(k-vec2(a,b),0.));
-}
-float Box2(vec2 p,vec2 size,float corner)
-{
-  p=abs(p)-size+corner;
-  return length(max(p,0.))+min(max(p.x,p.y),0.)-corner;
 }
 float Box3(vec3 p,vec3 size,float corner)
 {
@@ -143,72 +93,6 @@ mat2 Rotation(float angle)
   angle=sin(angle);
   return mat2(c,angle,-angle,c);
 }
-float DistanceFromAABB(vec2 p,vec4 aabb)
-{
-  return Box2(p-(aabb.xy+aabb.zw)/2.,(aabb.zw-aabb.xy)/2.,0.);
-}
-vec4 FindCubicRoots(float a,float b,float c)
-{
-  float p=b-a*a/3.,p3=p*p*p;
-  c+=a*(2.*a*a-9.*b)/27.;
-  b=c*c+4.*p3/27.;
-  a=-a/3.;
-  if(b>=0.)
-    {
-      float z=sqrt(b);
-      vec2 x=(vec2(z,-z)-c)/2.;
-      x=sign(x)*pow(abs(x),vec2(1)/3.);
-      return vec4(a+x.x+x.y,0,0,1);
-    }
-  p3=acos(-sqrt(-27./p3)*c/2.)/3.;
-  b=cos(p3);
-  p3=sin(p3)*sqrt(3.);
-  return vec4(vec3(b+b,-p3-b,p3-b)*sqrt(-p/3.)+a,3);
-}
-float GetWinding(vec2 a,vec2 b)
-{
-  return 2.*step(a.x*b.y,a.y*b.x)-1.;
-}
-vec2 BezierSDF(vec2 A,vec2 B,vec2 C,vec2 p)
-{
-  vec2 a=B-A;
-  C+=A-B*2.;
-  B=a*2.;
-  A-=p;
-  vec3 k=vec3(3.*dot(a,C),2.*dot(a,a)+dot(A,C),dot(A,a))/dot(C,C);
-  vec4 t=FindCubicRoots(k.x,k.y,k.z);
-  a=clamp(t.xy,0.,1.);
-  p=A+(B+C*a.x)*a.x;
-  float d1=dot(p,p);
-  a=A+(B+C*a.y)*a.y;
-  float d2=dot(a,a);
-  t=d1<d2?
-    vec4(d1,t.x,p):
-    vec4(d2,t.y,a);
-  return vec2(GetWinding(t.zw,2.*C*t.y+B)*sqrt(t.x),t.y);
-}
-float BezierCurveLengthAt(vec2 A,vec2 B,vec2 C,float t)
-{
-  C=2.*(A-2.*B+C);
-  A=2.*(B-A);
-  float k1=dot(C,C),k4=2.*dot(C,A)*.5/k1,k5=dot(A,A)/k1-k4*k4;
-  A=vec2(0,t);
-  B=sqrt((A+k4)*(A+k4)+k5);
-  A=sqrt(k1)*.5*((k4+A)*B+k5*log(abs(k4+A+B)));
-  return A.y-A.x;
-}
-vec4 BezierAABB(vec2 A,vec2 B,vec2 C)
-{
-  vec4 res=vec4(min(A,C),max(A,C));
-  if(B.x<res.x||B.x>res.z||B.y<res.y||B.y>res.w)
-    {
-      vec2 t=clamp((A-B)/(A-2.*B+C),0.,1.),s=1.-t;
-      t=s*s*A+2.*s*t*B+t*t*C;
-      res.xy=min(res.xy,t);
-      res.zw=max(res.zw,t);
-    }
-  return res;
-}
 vec2 MinDist(vec2 d1,vec2 d2)
 {
   return d1.x<d2.x?
@@ -227,107 +111,26 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
   ro=cameraPosition;
   rd=normalize(cameraTarget*camProjectionRatio+uv.x*cameraRight+uv.y*cameraUp);
 }
-vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
-vec3 sky(vec3 V)
+vec3 daySkyDomeLight=.8*vec3(.25,.5,1),sunLightColor=vec3(1,.85,.7),moonDirection=normalize(vec3(-1,.3,.4));
+float distanceToSegment(vec2 p)
 {
-  float direction=clamp(dot(V,normalize(vec3(0,1,.25))),0.,1.);
-  vec3 color=mix(vec3(1,4,7),mix(vec3(3,12,18),mix(vec3(3,7,19),vec3(0,0,2),sqrt(direction)),smoothstep(0.,.3,mix(V.y,direction,.5))),smoothstep(.05,.15,V.y));
-  direction=smoothstep(0.,1.,fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7)+1.);
-  direction*=direction;
-  float moon=smoothstep(0.,.4,(dot(V,moonDirection)-1.)*1e4+1.);
-  if(moon>0.)
-    color=mix(color,vec3(10,15,13)*1e2*(.5+smoothstep(-1.,1.,-fBm(V.yz*1e2,2,.9,.5)))*direction*direction,moon);
-  return color*mix(.1,1.,direction)*smoothstep(-.1,0.,V.y)/1e3;
+  vec2 B=roadP2,A=roadP1,AB=B-A;
+  return length(p-mix(A,B,clamp(dot(p-A,AB)/dot(AB,AB),0.,1.)));
 }
-vec4 splineAABB,splineSegmentAABBs[6];
-vec2 splineSegmentDistances[6];
-void ComputeBezierSegmentsLengthAndAABB()
+float tOnSegment(vec2 p)
 {
-  float splineLength=0.;
-  splineAABB=vec4(1e6,1e6,-1e6,-1e6);
-  for(int i=0;i<6;++i)
-    {
-      int index=2*i;
-      vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
-      splineSegmentDistances[i].x=splineLength;
-      splineLength+=BezierCurveLengthAt(A,B,C,1.);
-      splineSegmentDistances[i].y=splineLength;
-      vec4 AABB=BezierAABB(A,B,C);
-      splineSegmentAABBs[i]=AABB;
-      splineAABB.xy=min(splineAABB.xy,AABB.xy);
-      splineAABB.zw=max(splineAABB.zw,AABB.zw);
-    }
+  vec2 A=roadP1,AB=roadP2-A;
+  return clamp(dot(p-A,AB)/dot(AB,AB),0.,1.);
 }
+const vec2 roadP1=vec2(-1)*2e2,roadP2=vec2(1)*2e2;
 vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
 {
-  vec4 splineUV=vec4(1e6,0,0,0);
-  if(DistanceFromAABB(p,splineAABB)>splineWidth)
-    return splineUV;
-  for(int i=0;i<6;++i)
-    {
-      int index=2*i;
-      vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
-      if(DistanceFromAABB(p,BezierAABB(A,B,C))>splineWidth)
-        continue;
-      B=mix(B+vec2(1e-4),B,abs(sign(B*2.-A-C)));
-      vec2 bezierSDF=BezierSDF(A,B,C,p);
-      if(abs(bezierSDF.x)<abs(splineUV.x))
-        {
-          float lengthInSegment=BezierCurveLengthAt(A,B,C,clamp(bezierSDF.y,0.,1.))+splineSegmentDistances[i].x;
-          splineUV=vec4(bezierSDF.x,clamp(bezierSDF.y,0.,1.),lengthInSegment,float(index));
-        }
-    }
-  return splineUV;
+  return vec4(distanceToSegment(p),0,tOnSegment(p),1);
 }
 vec2 GetPositionOnSpline(vec2 spline_t_and_index,out vec3 directionAndCurvature)
 {
-  float t=spline_t_and_index.x;
-  int index=int(spline_t_and_index.y);
-  spline_t_and_index=spline[index];
-  vec2 B=spline[index+1],C=spline[index+2],AB=mix(spline_t_and_index,B,t),BC=mix(B,C,t);
-  directionAndCurvature.xy=2.*(BC-AB);
-  B=2.*(C-2.*B+spline_t_and_index);
-  float norm=length(directionAndCurvature.xy);
-  directionAndCurvature.z=directionAndCurvature.x*B.y-directionAndCurvature.y*B.x;
-  directionAndCurvature.z/=norm*norm*norm;
-  return mix(AB,BC,t);
-}
-vec2 GetTAndIndex(float t)
-{
-  t*=splineSegmentDistances[5].y;
-  int index=0;
-  for(;index<6&&t>splineSegmentDistances[index].y;++index)
-    ;
-  float segmentStartDistance=splineSegmentDistances[index].x,segmentEndDistance=splineSegmentDistances[index].y;
-  return vec2((t-segmentStartDistance)/(segmentEndDistance-segmentStartDistance),index*2.);
-}
-float roadMarkings(vec2 uv)
-{
-  vec2 params=vec2(.7,0),separationLineParams=vec2(13,3);
-  if(params.x>.25)
-    separationLineParams=vec2(6.5,1.5);
-  if(params.x>.5)
-    separationLineParams=vec2(26./6.,3);
-  if(params.x>.75)
-    separationLineParams=vec2(100);
-  params=vec2(6.5,3);
-  vec2 separationTileUV=vec2(fract(uv.x/separationLineParams.x)*separationLineParams.x,uv.y-floor(clamp(uv.y,0.,3.5)/3.5)*3.5),sideTileUV=vec2(fract((uv.x+.4)/params.x)*params.x,uv.y);
-  float separationLine1=Box2(separationTileUV-vec2(.5*separationLineParams.y,0),vec2(.5*separationLineParams.y,.1),.01);
-  return 1.-smoothstep(-.01,.01,min(min(Box2(sideTileUV-vec2(.5*params.y,3.5),vec2(.5*params.y,.1),.03),Box2(sideTileUV-vec2(.5*params.y,-3.5),vec2(.5*params.y,.1),.03)),separationLine1)+valueNoise(uv*30)*.03*valueNoise(uv));
-}
-M roadMaterial(vec2 uv)
-{
-  vec2 laneUV=uv/3.5;
-  float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
-  tireTrails=mix(mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),smoothstep(-.25,1.,fBm(laneUV*vec2(15,.1),2,.7,.4)),.2),fBm(laneUV*vec2(150,6),1,1.,1.),.1);
-  float roughness=mix(.8,.4,tireTrails);
-  vec3 color=vec3(mix(vec3(.11,.105,.1),vec3(.15),tireTrails));
-  tireTrails=roadMarkings(uv.yx);
-  color=mix(color,vec3(1),tireTrails);
-  roughness=mix(roughness,.7,tireTrails);
-  return M(tireTrails>.5?
-    3:
-    0,color,roughness);
+  directionAndCurvature=normalize(vec3(-1,-1,0));
+  return mix(roadP2,roadP1,spline_t_and_index.x);
 }
 float roadBumpHeight(float d)
 {
@@ -337,7 +140,7 @@ float roadBumpHeight(float d)
 vec4 getRoadPositionDirectionAndCurvature(float t,out vec3 position)
 {
   vec4 directionAndCurvature;
-  position.xz=GetPositionOnSpline(GetTAndIndex(t),directionAndCurvature.xzw);
+  position.xz=GetPositionOnSpline(vec2(t),directionAndCurvature.xzw);
   position.y=0.;
   directionAndCurvature.y=0.;
   directionAndCurvature.xyz=normalize(directionAndCurvature.xyz);
@@ -359,18 +162,15 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
     res=MinDist(res,vec2(len,11));
   }
   res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),13));
-  {
-    vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
-    float len=Box3(pObj,vec3(.1,7,.1),.1);
-    pObj=vec3(pRoad.x+.7,pRoad.y-7.,pObj.z);
-    pObj.xy*=Rotation(-.2);
-    len=min(len,Box3(pObj,vec3(1.8,.05,.05),.1));
-    pObj.x+=1.2;
-    res=MinDist(res,vec2(len,11));
-    len=Box3(pObj,vec3(.7,.1,.1),.1);
-    res=MinDist(res,vec2(len,14));
-  }
-  return res;
+  pReflector=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
+  relativeHeight=Box3(pReflector,vec3(.1,7,.1),.1);
+  pReflector=vec3(pRoad.x+.7,pRoad.y-7.,pReflector.z);
+  pReflector.xy*=Rotation(-.2);
+  relativeHeight=min(relativeHeight,Box3(pReflector,vec3(1.8,.05,.05),.1));
+  pReflector.x+=1.2;
+  res=MinDist(res,vec2(relativeHeight,11));
+  relativeHeight=Box3(pReflector,vec3(.7,.1,.1),.1);
+  return MinDist(res,vec2(relativeHeight,14));
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
@@ -412,7 +212,7 @@ float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
   if(1.-smoothstep(50.,2e2,current_t)>0.)
     {
       vec2 pNoise=vec2(2.*atan(localP.z,localP.x),localP.y)+id;
-      d+=fBm(3.*pNoise,2,.7,.5)+1.;
+      d+=fBm(3.*pNoise,2,.7)+1.;
     }
   return d;
 }
@@ -444,97 +244,23 @@ vec3 motoToWorld(vec3 v,bool isPos)
     v+=motoPos;
   return v;
 }
-vec3 worldToMoto(vec3 v,bool isPos)
+vec3 worldToMoto(vec3 v)
 {
-  if(isPos)
-    v-=motoPos;
+  v-=motoPos;
   v.xz*=Rotation(motoYaw);
   v.yz*=Rotation(motoRoll);
   v.xy*=Rotation(motoPitch);
   return v;
 }
-vec3 meter3(vec2 uv,float value)
-{
-  float verticalLength=.04+.15*smoothstep(.1,.4,uv.x);
-  return smoothstep(.001,0.,Box2(uv,vec2(.5,verticalLength),.01))*float(uv.y>0.)*(smoothstep(.5,.7,fract(uv.x*30.))*smoothstep(.1,.3,fract(uv.y/verticalLength*2.))*mix(vec3(.01),mix(vec3(.7,.9,.8),vec3(.8,0,0),smoothstep(.4,.41,uv.x)),.15+.85*smoothstep(0.,.001,value*.5-uv.x)));
-}
-vec3 meter4(vec2 uv)
-{
-  float value=-.4*PI,angle=atan(uv.y,uv.x),dummy;
-  value=smoothstep(.004,.002,Segment3(uv.xyy,vec3(0),(vec2(sin(value),cos(value))*.07).xyy,dummy));
-  return smoothstep(.7,1.,mod(angle,.25)/.25)*smoothstep(0.,.01,abs(angle+.7)-.7)*smoothstep(0.,.01,.1-length(uv))*smoothstep(0.,.01,length(uv)-.06)*vec3(.36,.16,.12)+vec3(.7)*value;
-}
-float digit(int n,vec2 p2)
-{
-  vec2 size=vec2(.2,.35);
-  bool A=n!=1&&n!=4;
-  p2-=vec2(p2.y*.15,0);
-  float innerBox=-Box2(p2,size-.06,0.),d=1e6;
-  if(A)
-    d=min(d,max(max(innerBox,.01+p2.x-p2.y-size.x+size.y),.01-p2.x-p2.y-size.x+size.y));
-  if(n!=5&&n!=6)
-    d=min(d,max(max(max(innerBox,.01-p2.x+p2.y+size.x-size.y),.01-p2.x-p2.y-size.x+size.y),p2.x-p2.y-(size.x+.06)/2.));
-  if(n!=2)
-    d=min(d,max(max(max(innerBox,.01-p2.x+p2.y-size.x+size.y),.01-p2.x-p2.y+size.x-size.y),p2.x+p2.y-(size.x+.06)/2.));
-  if(A&&n!=7)
-    d=min(d,max(max(innerBox,.01-p2.x+p2.y-size.x+size.y),.01+p2.x+p2.y-size.x+size.y));
-  if(A&&n%2==0)
-    d=min(d,max(max(max(innerBox,.01+p2.x-p2.y+size.x-size.y),.01+p2.x+p2.y-size.x+size.y),-p2.x+p2.y-(size.x+.06)/2.));
-  if(n!=1&&n!=2&&n!=3&&n!=7)
-    d=min(d,max(max(max(innerBox,.01+p2.x-p2.y-size.x+size.y),.01+p2.x+p2.y+size.x-size.y),-p2.x-p2.y-(size.x+.06)/2.));
-  if(n>1&&n!=7)
-    d=min(d,max(max(max(max(-.06+abs(p2.y)*2.,.01+p2.x-p2.y+size.x-size.y),.01-p2.x+p2.y+size.x-size.y),.01+p2.x+p2.y+size.x-size.y),.01-p2.x-p2.y+size.x-size.y));
-  return max(d,Box2(p2,size,size.x*.5));
-}
-vec3 glowy(float d)
-{
-  return mix(mix(vec3(.2),vec3(.5),1./exp(50.*max(0.,-d))),mix(vec3(0),vec3(.5),1./exp(2e2*max(0.,d))),smoothstep(0.,.01,d));
-}
-vec3 motoDashboard(vec2 uv)
-{
-  int speed=105+int(sin(iTime*.5)*10.);
-  vec2 uvSpeed=uv*3.-vec2(.4,1.95);
-  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
-}
-M motoMaterial(int mid,vec3 p,vec3 N)
-{
-  if(mid==5)
-    {
-      vec3 luminance=smoothstep(0.,.01,N.x-.94)*vec3(1,.95,.9);
-      float isDashboard=smoothstep(.9,.95,-N.x+.4*N.y-.07);
-      if(isDashboard>0.)
-        {
-          vec3 color=motoDashboard(p.zy*5.5+vec2(.5,-5));
-          luminance=mix(vec3(0),color,isDashboard);
-        }
-      return M(2,luminance,.08);
-    }
-  if(mid==4)
-    return M(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5);
-  if(mid==3)
-    return M(1,vec3(1),.05);
-  if(mid==2)
-    return M(0,vec3(0),.3);
-  if(mid==1)
-    return M(0,vec3(.008),.8);
-  if(mid==6)
-    {
-      float isCoat=smoothstep(0.,.1,p.y-.84);
-      return M(0,mix(vec3(.02,.025,.04),vec3(.01),isCoat),.7-.1*isCoat);
-    }
-  return mid==7?
-    M(0,vec3(0),.12):
-    M(0,vec3(0),.08);
-}
 vec2 driverShape(vec3 p)
 {
-  p=worldToMoto(p,true)-vec3(-.35,.78,0);
+  p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2||camShowDriver<.5)
     return vec2(d,6);
   vec3 simP=p;
   simP.z=abs(simP.z);
-  float wind=fBm((p.xy+time)*12.,1,.5,.5);
+  float wind=fBm((p.xy+time)*12.,1,.5);
   if(d<.8)
     {
       vec3 pBody=p;
@@ -610,7 +336,7 @@ vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3
 }
 vec2 motoShape(vec3 p)
 {
-  p=worldToMoto(p,true);
+  p=worldToMoto(p);
   float boundingSphere=length(p);
   if(boundingSphere>2.)
     return vec2(boundingSphere-1.5,0);
@@ -719,40 +445,113 @@ vec2 motoShape(vec3 p)
   }
   return d;
 }
-M computeMaterial(int mid,vec3 p,vec3 N)
+const vec3 eyeDir=vec3(.3,0,1),skyColor=vec3(.3,.6,1),animationSpeed=vec3(1),animationAmp=vec3(1,.2,.25);
+const vec2 headRot=vec2(0);
+const vec3 sheepPos=vec3(0);
+float noise(vec3 x)
 {
-  vec4 splineUV;
-  vec3 pRoad=p;
-  if(mid>=10)
-    splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z),pRoad.xz=splineUV.xz;
-  if(mid==9)
-    return M(0,vec3(.1,.2,.05),.7);
-  if(mid==10)
+  vec3 i=floor(x);
+  x=fract(x);
+  x=x*x*x*(x*(x*6.-15.)+10.);
+  return mix(mix(mix(hash31(i+vec3(0)),hash31(i+vec3(1,0,0)),x.x),mix(hash31(i+vec3(0,1,0)),hash31(i+vec3(1,1,0)),x.x),x.y),mix(mix(hash31(i+vec3(0,0,1)),hash31(i+vec3(1,0,1)),x.x),mix(hash31(i+vec3(0,1,1)),hash31(i+vec3(1)),x.x),x.y),x.z)*2.-1.;
+}
+float capsule(vec3 p,vec3 a)
+{
+  p-=a;
+  a=vec3(0,2,4.9)-a;
+  return length(p-a*clamp(dot(p,a)/dot(a,a),0.,1.))-.2;
+}
+float torus(vec3 p)
+{
+  vec2 t=vec2(.14,.05);
+  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
+}
+float cappedCone(vec3 p,float h,float r1,float r2)
+{
+  vec2 q=vec2(length(p.xz),p.y),k1=vec2(r2,h),k2=vec2(r2-r1,2.*h),ca=vec2(q.x-min(q.x,q.y<0.?
+    r1:
+    r2),abs(q.y)-h);
+  q=q-k1+k2*clamp(dot(k1-q,k2)/dot(k2,k2),0.,1.);
+  return(q.x<0.&&ca.y<0.?
+    -1.:
+    1.)*sqrt(min(dot(ca,ca),dot(q,q)));
+}
+float smax(float a,float b,float k)
+{
+  k*=1.4;
+  float h=max(k-abs(a-b),0.);
+  return max(a,b)+h*h*h/(6.*k*k);
+}
+float headDist=0.;
+vec2 sheep(vec3 p)
+{
+  p=(p-sheepPos)*2.;
+  p.y-=1.;
+  p.z-=-2.;
+  float tb=iTime*animationSpeed.x;
+  vec3 bodyMove=vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0)*.025*animationAmp.x;
+  tb=length(p*vec3(1,1,.825)-vec3(0,1.5,2.55)-bodyMove)-2.;
+  if(tb<3.)
     {
-      float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
-      vec3 grassColor=vec3(.22,.21,.04);
-      if(isRoad>0.)
-        {
-          M m=roadMaterial(splineUV.xz);
-          m.C=mix(grassColor,m.C,isRoad);
-          return m;
-        }
-      return M(0,grassColor,.8);
+      float n=pow(noise((p-bodyMove+vec3(.05,0,.5))*2.)*.5+.5,.75)*2.-1.;
+      tb=tb+.05-n*.2;
+      n=mod(iTime*animationSpeed.x,2.);
+      float a=smoothstep(0.,.5,n),b=smoothstep(.5,1.,n),c=smoothstep(1.,1.5,n),d=smoothstep(1.5,2.,n);
+      vec4 legsRot=vec4(b*(1.-b),d*(1.-d),a*(1.-a),c*(1.-c)),legsPos=(n*.5-vec4(b,d,a,c))*animationAmp.x;
+      vec3 pl=p;
+      pl.x-=.8;
+      pl.z-=2.+legsPos.x;
+      pl.yz=Rotation(legsRot.x)*pl.yz;
+      a=cappedCone(pl-vec3(0),.7,.3,.2);
+      b=cappedCone(pl-vec3(0,-.8,0),.2,.35,.3);
+      pl=p;
+      pl.x+=1.;
+      pl.z-=2.+legsPos.y;
+      pl.yz=Rotation(legsRot.y)*pl.yz;
+      a=min(a,cappedCone(pl-vec3(0),.7,.3,.2));
+      b=min(b,cappedCone(pl-vec3(0,-.8,0),.2,.35,.3));
+      pl=p;
+      pl.x-=1.;
+      pl.z-=4.+legsPos.z;
+      pl.yz=Rotation(legsRot.z)*pl.yz;
+      a=min(a,cappedCone(pl-vec3(0),.7,.3,.2));
+      b=min(b,cappedCone(pl-vec3(0,-.8,0),.2,.35,.3));
+      pl=p;
+      pl.x+=1.;
+      pl.z-=4.+legsPos.w;
+      pl.yz=Rotation(legsRot.w)*pl.yz;
+      a=min(a,cappedCone(pl-vec3(0),.7,.3,.2));
+      b=min(b,cappedCone(pl-vec3(0,-.8,0),.2,.35,.3));
+      pl=p+vec3(0,-2,-1.2);
+      pl.xz=Rotation((smoothstep(0.,1.,abs(mod(iTime,1.)*2.-1.))*animationSpeed.y-.5)*.25*animationAmp.y+headRot.x)*pl.xz;
+      pl.zy=Rotation(sin(iTime*animationSpeed.y)*.25*animationAmp.y-headRot.y)*pl.zy;
+      c=smin(length(pl-vec3(0,-1.3,-1.2))-1.,length(pl-vec3(0))-.5,1.8);
+      vec3 pp;
+      d=smin(length(pl-vec3(0,.35,-.1))-.55-(cos(pl.z*8.+pl.y*4.5+pl.x*4.)+cos(pl.z*4.+pl.y*6.5+pl.x*8.))*.05,tb,.1);
+      pp=pl;
+      pp.yz=Rotation(-.6)*pp.yz;
+      pp.x=abs(p.x)-.8;
+      pp*=vec3(.3,1,.4);
+      pp-=vec3(0,-.05-pow(pp.x,2.)*5.,-.1);
+      n=smax(length(pp)-.15,-length(pp-vec3(0,-.1,0))+.12,.01);
+      pp.y*=.3;
+      pp.y-=-.11;
+      float earsClip=length(pp)-.16;
+      pp=pl;
+      pp.x=abs(pl.x)-.4;
+      float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=smin(smax(abs(eyes)-.01,smin(-abs(pl.y+pl.z*.025)+.25-smoothstep(.95,.96,0.)*.3+cos(iTime)*.02,-pl.z-1.,.2),.01),c,.02);
+      c=min(c,eyeCap);
+      pp.x=abs(pl.x)-.2;
+      pp.xz=Rotation(-.45)*pp.xz;
+      c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),torus(pp-vec3(-.7,-1.2,-1.94)),.05);
+      eyeCap=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
+      vec2 dmat=MinDist(MinDist(vec2(tb,1),vec2(eyeCap,1)),vec2(d,1));
+      dmat.x=smax(dmat.x,-earsClip,.15);
+      dmat=MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,2)),vec2(c,2)),vec2(eyes,3)),vec2(b,4)),vec2(n,2));
+      headDist=c;
+      return dmat;
     }
-  if(mid<=7)
-    return p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N);
-  M utility=M(1,vec3(.9),.7);
-  return mid==11?
-    utility:
-    mid==14?
-      N.y>-.5?
-        utility:
-        M(2,vec3(5,3,.1),.4):
-      mid==12?
-        M(0,vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15,.6):
-        mid==13?
-          M(3,vec3(1,.4,.05),.2):
-          M(0,fract(p.xyz),1.);
+  return vec2(tb,1);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {
@@ -760,109 +559,91 @@ vec2 sceneSDF(vec3 p,float current_t)
   vec2 d=motoShape(p);
   d=MinDist(d,driverShape(p));
   d=MinDist(d,terrainShape(p,splineUV));
-  return MinDist(d,treesShape(p,splineUV,current_t));
+  d=MinDist(d,treesShape(p,splineUV,current_t));
+  return MinDist(d,sheep(p));
 }
-vec3 evalNormal(vec3 p,float t)
+float fastAO(vec3 pos,vec3 nor,float maxDist,float falloff)
 {
-  vec2 k=vec2(1,-1);
-  return normalize(k.xyy*sceneSDF(p+k.xyy*.002,t).x+k.yyx*sceneSDF(p+k.yyx*.002,t).x+k.yxy*sceneSDF(p+k.yxy*.002,t).x+k.xxx*sceneSDF(p+k.xxx*.002,t).x);
+  float occ1=.5*maxDist-sceneSDF(pos+nor*maxDist*.5,0.).x;
+  maxDist=.95*(maxDist-sceneSDF(pos+nor*maxDist,0.).x);
+  return clamp(1.-falloff*1.5*(occ1+maxDist),0.,1.);
 }
-vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
+float shadow(vec3 ro,vec3 rd)
 {
-  p=ro;
-  float t=0.;
-  vec2 d;
-  for(int i=0;i<250;++i)
+  float res=1.,t=.08;
+  for(int i=0;i<64;i++)
     {
-      d=sceneSDF(p,t);
-      t+=d.x*(d.y==9&&d.x*50<t*t?
-        .5:
-        1.);
-      p=ro+t*rd;
-      float epsilon=t*PIXEL_ANGLE;
-      if(d.x<epsilon)
-        return vec2(t,d.y);
-      if(t>=1e3)
-        return vec2(t,-1);
+      float h=sceneSDF(ro+rd*t,0.).x;
+      res=min(res,30.*h/t);
+      t+=h;
+      if(res<1e-4||t>50.)
+        break;
     }
-  return vec2(t,d.x<20.*t*PIXEL_ANGLE?
-    d.y:
-    -1);
+  return clamp(res,0.,1.);
 }
-vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
+float trace(vec3 ro,vec3 rd)
 {
-  int mid=int(t.y);
-  if(mid==-1)
-    return sky(-V);
-  M m=computeMaterial(mid,p,N);
-  vec3 emissive=vec3(0);
-  if(m.T==2)
+  float t=.01;
+  for(int i=0;i<128;i++)
     {
-      float aligned=clamp(dot(V,N),0.,1.),aligned4=aligned*aligned*aligned*aligned;
-      emissive=m.C*mix(aligned*.1+aligned4,1.,aligned4*aligned4*aligned4*aligned4*aligned4*aligned4*aligned4*aligned4);
+      float d=sceneSDF(ro+rd*t,0.).x;
+      t+=d;
+      if(t>1e2||abs(d)<.001)
+        break;
     }
-  vec3 albedo=vec3(0);
-  if(m.T==0)
-    albedo=m.C;
-  vec3 f0=vec3(.04);
-  if(m.T==1)
-    f0=m.C;
-  if(m.T==3)
-    f0=m.C,N=V;
-  vec3 I0=.01*vec3(.15,.2,1)*mix(1.,.1,N.y*N.y)*(N.x*.5+.5);
-  emissive+=I0*albedo;
-  if(m.R<.25)
-    {
-      vec3 L=reflect(-V,N);
-      emissive+=f0*sky(L);
-    }
-  for(int i=0;i<19;++i)
-    {
-      L light;
-      if(i==16)
-        light=L(moonDirection*1e3,-moonDirection,vec3(.2,.8,1)*.005,0.,0.,1e10);
-      if(i==17)
-        {
-          vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(normalize(vec3(1,-.15,0)),false);
-          light=L(pos,dir,vec3(10),.75,.95,10.);
-        }
-      if(i==18)
-        {
-          vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(normalize(vec3(-1,-.5,0)),false);
-          light=L(pos,dir,vec3(.05,0,0),.3,.9,5.);
-        }
-      if(i<16)
-        {
-          float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength;
-          t=(floor(motoDistanceOnRoad/50.)*50.+t*50.)/roadLength;
-          if(t>=1.)
-            continue;
-          vec3 pos;
-          vec4 roadDirAndCurve=getRoadPositionDirectionAndCurvature(t,pos);
-          roadDirAndCurve.y=0.;
-          pos.xz+=vec2(-roadDirAndCurve.z,roadDirAndCurve)*(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
-          pos.y+=6.9;
-          light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.32,0)*4.,-1.,0.,0.);
-        }
-      emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
-    }
-  return mix(emissive,vec3(1,4,7)*5e-4,1.-exp(-t.x*.002));
+  return t;
 }
-void GenerateSpline(float seed)
+float specular(vec3 v,vec3 l,float size)
 {
-  vec2 direction=normalize(vec2(hash11(seed),hash11(seed+1.))*2.-1.),point=vec2(0);
-  for(int i=0;i<13;i++)
+  float spe=max(dot(v,normalize(l+v)),0.),a=2e3/size;
+  size=3./size;
+  return(pow(spe,a)*(a+2.)+pow(spe,size)*(size+2.)*2.)*.008;
+}
+vec3 rayMarchSceneAnat(vec3 ro,vec3 rd,out vec3 p)
+{
+  float t=trace(ro,rd);
+  p=ro+rd*t;
+  vec2 dmat=sceneSDF(p,t),eps=vec2(1e-4,0);
+  vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy,t).x,dmat.x-sceneSDF(p-eps.yxy,t).x,dmat.x-sceneSDF(p-eps.yyx,t).x)),sunDir=normalize(vec3(3.5,1,-1));
+  float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,shad=shadow(p,sunDir),fre=1.+dot(rd,n);
+  vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0),albedo=vec3(0);
+  if(dmat.y==0.)
+    albedo=vec3(3),sss*=0.,spe*=0.;
+  else if(dmat.y==1.)
+    albedo=vec3(.4),sss*=fre*.5+.5,emi=vec3(.35),spe=pow(spe,vec3(4))*fre*.25;
+  else if(dmat.y==4.)
+    albedo=vec3(.025),sss*=0.,spe=pow(spe,vec3(80))*fre*10.;
+  else if(dmat.y==3.)
     {
-      if(i%2==0)
-        {
-          spline[i]=point+50.*direction;
-          continue;
-        }
-      float ha=hash11(seed+float(i)*3.);
-      point+=direction*1e2;
-      direction*=Rotation(mix(-1.8,1.8,ha));
-      spline[i]=point;
+      sss*=.5;
+      vec3 dir=normalize(eyeDir+(noise(vec3(iTime,iTime*.5,iTime*1.5))*2.-1.)*.01),t=cross(dir,vec3(0,1,0)),b=cross(dir,t);
+      t=cross(b,dir);
+      dir=n.z*dir+n.x*t+n.y*b;
+      t=rd.z*eyeDir+rd.x*t+rd.y*b;
+      vec2 offset=t.xy/t.z*length(dir.xy)/length(ro-p)*.4;
+      dir.xy-=offset*smoothstep(.01,0.,dot(dir,rd));
+      float er=length(dir.xy),theta=atan(dir.x,dir.y);
+      b=mix(vec3(.5,.3,.1),vec3(0,.8,1),smoothstep(.16,.3,er)*.3+cos(theta*15.)*.04);
+      float pupil=smoothstep(.2,.22,er);
+      albedo=mix(b*.3,mix(b*((smoothstep(-.9,1.,noise(vec3(er*10.,theta*30.+cos(er*50.+noise(vec3(theta))*50.),0)))+smoothstep(-.9,1.,noise(vec3(er*10.,theta*40.+cos(er*30.+noise(vec3(theta))*50.)*2.,0))))*.5+.5)*smoothstep(.3,.29,er)*(vec3(1,.8,.7)*pow(max(0.,dot(normalize(vec3(3,1,-1)),dir)),8.)*3e2+.5)*pupil+pow(spe,vec3(800))*3,vec3(.8),smoothstep(.29,.3,er)),smoothstep(0.,.05,abs(er-.3)+.01));
+      n=mix(normalize(n+(eyeDir+n)*4.),n,smoothstep(.3,.32,er));
+      {
+        vec3 l1=normalize(vec3(1,1.5,-1)),l2=vec3(-l1.x,l1.y*.5,l1.z);
+        envm=(mix(mix(vec3(.3,.3,0),vec3(.1),smoothstep(-.7,.2,t.y)),vec3(.3,.65,1),smoothstep(0.,1.,t.y))+(specular(t,l1,.1)+specular(t,l2,2.)*.1+specular(t,normalize(l1+vec3(.2,0,0)),.3)+specular(t,normalize(l1+vec3(.2,0,.2)),.5)+specular(t,normalize(l2+vec3(.1,0,.2)),8.)*.5)*vec3(1,.9,.8))*mix(.15,.2,pupil)*sqrt(fre)*2.5;
+      }
+      sceneSDF(p,0.);
+      albedo*=smoothstep(0.,.015,headDist)*.4+.6;
+      spe*=0.;
     }
+  else if(dmat.y==5.)
+    albedo=vec3(.85,.95,1),sss*=0.,spe=pow(spe,vec3(8))*fre*2.;
+  else if(dmat.y==11.)
+    albedo=vec3(1),diff*=vec3(.1)*fre,amb*=vec3(.1)*fre,bnc*=0.,sss*=0.,spe=pow(spe,vec3(100))*fre*2.;
+  else if(dmat.y==12.)
+    albedo=vec3(1,.01,.01)*.3,diff*=vec3(3),amb*=vec3(2)*fre*fre,sss*=0.,spe=vec3(1,.3,.3)*pow(spe,vec3(500))*5.;
+  else if(dmat.y==2.)
+    albedo=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,5)+2.)*2.,spe=pow(spe,vec3(4))*fre*.02;
+  return clamp(mix((albedo*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi)*(smoothstep(0.,.3,sunDir.y)+.1),skyColor,smoothstep(90.,1e2,t)),0.,1.);
 }
 float verticalBump()
 {
@@ -1003,29 +784,28 @@ void selectShot()
   else if(get_shot(time,10.))
     moonShot(time+20.);
   PIXEL_ANGLE=camFoV/iResolution.x;
-  time=iTime-time;
+  seedOffset=iTime-time;
   roadWidthInMeters=vec3(4,8,8);
-  if(time<60.)
+  if(seedOffset<60.)
     ;
-  else if(time<76.)
+  else if(seedOffset<76.)
     ;
-  else if(time<88.)
+  else if(seedOffset<88.)
     roadWidthInMeters=vec3(8,12,14);
-  else if(time<96.)
+  else if(seedOffset<96.)
     roadWidthInMeters=vec3(8,12,14);
-  else if(time<110.)
+  else if(seedOffset<110.)
     ;
   else
-     roadWidthInMeters=time<120.?
+     roadWidthInMeters=seedOffset<120.?
       vec3(8,12,18):
       vec3(12,16,18);
-  GenerateSpline(2.+floor(time/20)+seedOffset);
-  motoDistanceOnCurve=mix(.1,.9,(mod(time,14.)+iTime-time)/20.);
-  if(time<18.||time>125.)
+  motoDistanceOnCurve=mix(.1,.9,(mod(seedOffset,14.)+iTime-seedOffset)/20.);
+  if(seedOffset<18.||seedOffset>125.)
     motoDistanceOnCurve=.6;
-  if(time>18.&&time<21.)
+  if(seedOffset>18.&&seedOffset<21.)
     motoDistanceOnCurve+=.2;
-  if(time>120.)
+  if(seedOffset>120.)
     motoDistanceOnCurve=min(1.,motoDistanceOnCurve+.1);
 }
 vec3 Uncharted2Tonemap(vec3 x)
@@ -1044,7 +824,6 @@ void main()
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   selectShot();
-  ComputeBezierSegmentsLengthAndAABB();
   computeMotoPosition();
   vec3 ro,rd,cameraTarget=camTa,cameraPosition=camPos;
   if(camMotoSpace>.5)
@@ -1052,8 +831,7 @@ void main()
   else
      getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
-  vec2 t=rayMarchScene(ro,rd,cameraTarget);
-  cameraTarget=max(vec3(0),evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)));
+  cameraTarget=rayMarchSceneAnat(ro,rd,cameraTarget);
   cameraTarget+=bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4,0.)*5.*vec3(1,.9,.8);
   cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e3,1.)*vec3(1,0,0);
   fragColor=vec4(mix(pow(Uncharted2Tonemap(2.*cameraTarget)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.6)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
