@@ -285,11 +285,19 @@ float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
 // -------------------------------------------------------
 // SDF functions
 
+float smin( float d1, float d2, float k )
+{
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return mix( d2, d1, h ) - k*h*(1.0-h);
+}
+
+/*
 float smin(float a, float b, float k)
 {
     k /= 1.0 - sqrt(0.5);
     return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
 }
+*/
 
 float Box2(vec2 p, vec2 size, float corner)
 {
@@ -336,14 +344,6 @@ mat2 Rotation(float angle)
     return mat2(c, s, -s, c);
 }
 
-float DistanceFromAABB(vec2 p, vec4 aabb)
-{
-    vec2 center = (aabb.xy + aabb.zw) / 2.0;
-    vec2 size = aabb.zw - aabb.xy;
-
-    return Box2(p - center, size / 2.0, 0.0);
-}
-
 // -------------------------------------------------------
 // Bézier functions
 
@@ -376,91 +376,6 @@ vec4 FindCubicRoots(float a, float b, float c)
 float GetWinding(vec2 a, vec2 b)
 {
     return 2.0 * step(a.x * b.y, a.y * b.x) - 1.0;
-}
-
-// Returns the signed distance from a point to a Bezier curve
-// Mostly from: https://www.shadertoy.com/view/MdXBzB by tomkh
-vec2 BezierSDF(vec2 A, vec2 B, vec2 C, vec2 p)
-{
-    vec2 a = B - A, b = A - B * 2.0 + C, c = a * 2.0, d = A - p;
-    float dotbb = dot(b, b);
-
-    vec3 k = vec3(3.0 * dot(a, b), 2. * dot(a, a) + dot(d, b), dot(d, a)) / dotbb;
-    vec4 t = FindCubicRoots(k.x, k.y, k.z);
-    vec2 tsat = clamp(t.xy, 0., 1.);
-
-    vec2 dp1 = d + (c + b * tsat.x) * tsat.x;
-    float d1 = dot(dp1, dp1);
-    vec2 dp2 = d + (c + b * tsat.y) * tsat.y;
-    float d2 = dot(dp2, dp2);
-
-    // Find closest distance and t
-    vec4 r = (d1 < d2) ? vec4(d1, t.x, dp1) : vec4(d2, t.y, dp2);
-
-    // Check the distance sign
-    float s = GetWinding(r.zw, 2.0 * b * r.y + c);
-    
-    return vec2(s * sqrt(r.x), r.y);
-}
-
-// Calc the length of a quadratic bezier at the start/end points and at the specified value for the parameter t.
-// X = length of the bezier up to "t" 
-// Y = total length of the curve
-float BezierCurveLengthAt(vec2 A, vec2 B, vec2 C, float t)
-{
-    // Bezier curve function:
-    // f(t) = t^2(A - 2B + C) + t(2B - 2A) + A
-
-    // Calc the bezier curve derivative (velocity function):
-    // f'(t) = t(2A-4B+2C) + 2B - 2A = a1t + b1
-    vec2 a1 = 2.0 * (A - 2.0 * B + C);
-    vec2 b1 = 2.0 * (B - A);
-
-    // Calc the velocity function magnitude:
-    // ||f'(t)|| = sqrt(t^2 * k1 + t * k2 + k3)
-    float k1 = dot(a1, a1);
-    float k2 = 2.0 * dot(a1, b1);
-    float k3 = dot(b1, b1);
-
-    // Reparametrize for easier integration
-    // t^2k1 + tk2 + k3 = k1((t + k4)^2 + k5)
-    float k4 = 0.5 * k2 / k1;
-    float k5 = k3 / k1 - k4 * k4;
-
-    // Calculate the definite integrals of the velocity function to obtain the distance function
-    // solution to this integral form is from:
-    // https://en.wikipedia.org/wiki/List_of_integrals_of_irrational_functions
-    // S ||f'(t)|| dt = 0.5 * sqrt(k1) * [(k4 + t) * sqrt((t + k4)^2 + k5) + k5 ln(k4 + t + sqrt((t + k4)^2 + k5))]  
-    vec2 ti = vec2(0.0, t); // calc at both integration bounds at once
-    vec2 vt = sqrt((ti + k4) * (ti + k4) + k5);
-    vec2 sdft = sqrt(k1) * 0.5 * ((k4 + ti) * vt + k5 * log(abs(k4 + ti + vt)));
-    return sdft.y - sdft.x;
-}
-
-// Quadradic Bézier curve exact bounding box from IQ:
-// https://www.shadertoy.com/view/XdVBWd
-vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
-{
-    // extremes (min: xy, max: zw)
-    vec4 res = vec4(min(A, C), max(A, C));
-
-    // maxima/minima point, if p1 is outside the current bbox/hull
-    if (B.x < res.x || B.x > res.z ||
-        B.y < res.y || B.y > res.w)
-    {
-        // p = (1-t)^2*p0 + 2(1-t)t*p1 + t^2*p2
-        // dp/dt = 2(t-1)*p0 + 2(1-2t)*p1 + 2t*p2 = t*(2*p0-4*p1+2*p2) + 2*(p1-p0)
-        // dp/dt = 0 -> t*(p0-2*p1+p2) = (p0-p1);
-
-        vec2 t = clamp((A - B) / (A - 2.0*B+C),0.0,1.0);
-        vec2 s = 1.0 - t;
-        vec2 q = s*s*A + 2.0*s*t*B + t*t*C;
-        
-        res.xy = min(res.xy, q);
-        res.zw = max(res.zw, q);
-    }
-    
-    return res;
 }
 
 // -------------------------------------------------------

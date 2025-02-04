@@ -18,6 +18,14 @@ const int ROAD_WALL_ID = 12;
 const int ROAD_REFLECTOR_ID = 13;
 const int ROAD_LIGHT_ID = 14;
 
+const float COTON = 16.;
+const float SKIN = 17.;
+const float EYE = 18.;
+const float CLOGS = 19.;
+const float METAL = 20.;
+const float BLACK_METAL = 21.;
+const float BLOOD = 22.;
+
 #ifdef DEBUG
 const int DEBUG_ID = 9999;
 #endif

@@ -1,9 +1,9 @@
 #version 150
 
 // #define DEBUG 1
-const bool ENABLE_STOCHASTIC_MOTION_BLUR = true;
+const bool ENABLE_STOCHASTIC_MOTION_BLUR = false;
 // #define ENABLE_STEP_COUNT
-#define ENABLE_DAY_MODE
+// #define ENABLE_DAY_MODE
 // #define DISABLE_MOTO
 // #define DISABLE_MOTO_DRIVER
 // #define DISABLE_TERRAIN
@@ -167,16 +167,13 @@ void main()
     vec3 radiance = rayMarchSceneAnat(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
 
     // Bloom around headlight
-    radiance += bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.) * 5.*vec3(1., 0.9, .8);
+    radiance += 0.2*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.) * 5.*vec3(1., 0.9, .8);
     radiance += bloom(ro, rd, breakLightOffsetFromMotoRoot, vec3(-1.0, -0.5, 0.0), 2000., 1.) * vec3(1., 0., 0.);
 
-    // Final tonemapping, fade, accumulation, and dithering
-    vec3 i_color = toneMapping(radiance) *
-        smoothstep(0., 4., iTime) * // fade in
-        smoothstep(138., 132., iTime); // fade out
+    vec3 i_color = radiance;
 
     // Motion blur
     fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.6)
-    +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
+        +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
     , 1.);
 }

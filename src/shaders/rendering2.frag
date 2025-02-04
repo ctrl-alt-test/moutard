@@ -1,5 +1,6 @@
 // Rendering code from The Sheep and the Flower
 
+const vec3 skyColor = vec3(0.5, 0.7, 1.);
 float sceneSDF_t = 0.;
 
 float fastAO( in vec3 pos, in vec3 nor, float maxDist, float falloff ) {
@@ -61,8 +62,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     // ----------------------------------------------------------------
     // Shade
     // ----------------------------------------------------------------
-    vec3 sunDir = normalize(vec3(3.5,1.,-1.));
-    float night = smoothstep(0.,.3, sunDir.y)+.1;
+    vec3 sunDir = normalize(vec3(3.5,3.,-1.));
     
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
     
@@ -80,10 +80,14 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     vec3 emi = vec3(0.);
     
     vec3 albedo = vec3(0.);
-    if(dmat.y == GROUND) {
-        albedo = vec3(3.);
+    if(dmat.y == GROUND_ID) {
+        albedo = vec3(0.5);
         sss *= 0.;
-        spe *= 0.;
+        spe *= 0.1;
+    } else if (IsMoto(int(dmat.y))) {
+        albedo = 0.3*vec3(.85,.95,1.);
+        sss *= 0.;
+        spe = pow(spe, vec3(8.))*fre*2.;
     } else if (dmat.y == COTON) {
         albedo = vec3(.4);
         sss *= fre*.5+.5;
@@ -149,17 +153,6 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         // shadow on the edges of the eyes
         sceneSDF(p, sceneSDF_t);
         albedo *= smoothstep(0.,0.015, headDist)*.4+.6;
-        
-        // flower
-        /*
-        float shape = abs(sin(theta * 5.)) - smoothstep(.15, 0.7, er)*4.;
-        shape = smoothstep(0.449, 0.45, shape);
-        vec3 flower = mix(vec3(0.), vec3(.75,0.5,1.)*.5, shape);
-        flower = mix(vec3(.7, .7, 0.), flower, smoothstep(.06, .1, er));
-        flower *= smoothstep(135.2, 135.6, iTime);
-        
-        albedo += flower;
-        */
         spe *= 0.;
     } else if(dmat.y == METAL) {
         albedo = vec3(.85,.95,1.);
@@ -187,7 +180,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     }
     
     // fog
-    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi) *  night, skyColor, smoothstep(90.,100.,t)), 0., 1.);
+    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi), skyColor, smoothstep(80.,100.,t)), 0., 1.);
     
     // vignetting
     // fragColor = vec4(col / (1.+pow(length(uv*2.-1.),4.)*.04),1.);

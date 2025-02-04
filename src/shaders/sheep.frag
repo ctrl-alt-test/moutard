@@ -1,20 +1,5 @@
-const float GROUND = 0.;
-const float COTON = 1.;
-const float SKIN = 2.;
-const float EYE = 3.;
-const float CLOGS = 4.;
-const float METAL = 5.;
-const float PANEL = 6.;
-const float PANEL_FOOD = 7.;
-const float PISTIL = 8.;
-const float PETAL = 9.;
-const float TIGE = 10.;
-const float BLACK_METAL = 11.;
-const float BLOOD = 12.;
-
 const vec3 eyeDir = vec3(.3,.0,1.);
 const float eyesSurprise = 0.;
-const vec3 skyColor = vec3(0.3, 0.6, 1.);
 const vec3 animationSpeed = vec3(1);
 const vec3 animationAmp = vec3(1.,.2, .25);
 const vec2 headRot = vec2(0.);
@@ -68,7 +53,9 @@ float smax( float a, float b, float k )
 float headDist = 0.; // distance to head (for eyes AO)
 vec2 sheep(vec3 p) {
     p -= sheepPos;
-    p *= 2.;
+    p.y -= 0.3;
+    p.xz *= Rotation(2.1);
+
     float time = mod(iTime, 1.);
     time = smoothstep(0., 1., abs(time * 2. - 1.));
 
