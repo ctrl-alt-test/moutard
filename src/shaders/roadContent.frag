@@ -148,49 +148,6 @@ vec4 getRoadPositionDirectionAndCurvature(float t, out vec3 position)
     return directionAndCurvature;
 }
 
-vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
-    vec2 res = vec2(1e6, NO_ID);
-    vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
-
-    pRoad.x -= roadWidthInMeters.x * 1.2;
-
-    vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
-
-	// Traffic barrier
-    if (true) // guardrailHeight > -0.5)
-    {
-        float height = 0.8;
-        vec3 pObj = vec3(pRoad.x, pRoad.y - height, 0.);
-        float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
-
-        pObj = vec3(pRoad.x + 0.1, pRoad.y - height, 0.);
-        len = max(len, -Box3(pObj, vec3(0.1), 0.1));
-
-        pObj = vec3(pRoad.x - 0.1, pRoad.y - height + 0.5, pReflector.z);
-        len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
-        res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
-    }
-
-    float reflector = Box3(pReflector, vec3(0.05), 0.01);
-    res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
-
-    // street lamp
-    float distanceBetween = DISTANCE_BETWEEN_LAMPS;
-    vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / distanceBetween) * distanceBetween - pRoad.z);
-    float len = Box3(pObj, vec3(0.1, lampHeight, 0.1), 0.1);
-
-    pObj = vec3(pRoad.x + 0.7, pRoad.y - lampHeight, pObj.z);
-    pObj.xy *= Rotation(-0.2);
-    len = min(len, Box3(pObj, vec3(1.8, 0.05, 0.05), 0.1));
-
-    pObj.x += 1.2;
-    res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
-    len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
-    res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
-
-    return res;
-}
-
 vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     float heightToDistanceFactor = 0.75;
@@ -216,10 +173,6 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
         // Get the point on the center line of the spline
         vec3 directionAndCurvature;
         vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw, directionAndCurvature);
-
-        // Get the terrain height at the center line
-        roadHeight = 0.;
-        d = MinDist(d, roadSideItems(splineUV, p.y - roadHeight));
 
         roadHeight += roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
     }
@@ -286,7 +239,7 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     if (leaves > 0.)
     {
         vec2 pNoise = vec2(2.*atan(localP.z, localP.x), localP.y) + id;
-        d += fBm(3. * pNoise, 2, 0.7, 0.5) + 1.;
+        d += 0.5*fBm(2. * pNoise, 2, 0.7, 0.5) + 1.;
     }
 
     return d;

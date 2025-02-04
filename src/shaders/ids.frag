@@ -38,5 +38,5 @@ bool IsMoto(int mid)
 
 bool IsRoad(int mid)
 {
-    return mid >= GROUND_ID;
+    return mid >= GROUND_ID && mid <= ROAD_LIGHT_ID;
 }

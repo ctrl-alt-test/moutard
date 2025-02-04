@@ -81,11 +81,25 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     
     vec3 albedo = vec3(0.);
     if(dmat.y == GROUND_ID) {
-        albedo = vec3(0.5);
+        albedo = vec3(0.1, 0.4, 0.1);
         sss *= 0.;
         spe *= 0.1;
+
+        vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+        float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
+        vec3 grassColor = vec3(0.22, 0.21, 0.04);
+        if (isRoad > 0.99)
+        {
+            albedo = vec3(0.5);
+        }
+
+
     } else if (IsMoto(int(dmat.y))) {
         albedo = 0.3*vec3(.85,.95,1.);
+        sss *= 0.;
+        spe = pow(spe, vec3(8.))*fre*2.;
+    } else if (dmat.y == TREE_ID) {
+        albedo = vec3(.35,.75,0.2);
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*2.;
     } else if (dmat.y == COTON) {
@@ -180,7 +194,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     }
     
     // fog
-    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi), skyColor, smoothstep(80.,100.,t)), 0., 1.);
+    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi), skyColor, smoothstep(60.,100.,t)), 0., 1.);
     
     // vignetting
     // fragColor = vec4(col / (1.+pow(length(uv*2.-1.),4.)*.04),1.);

@@ -1,5 +1,5 @@
-const vec3 eyeDir = vec3(.3,.0,1.);
-const float eyesSurprise = 0.;
+const vec3 eyeDir = vec3(1.,.0,1.);
+const float eyesSurprise = 0.2;
 const vec3 animationSpeed = vec3(1);
 const vec3 animationAmp = vec3(1.,.2, .25);
 const vec2 headRot = vec2(0.);
