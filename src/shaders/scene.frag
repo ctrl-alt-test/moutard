@@ -33,6 +33,9 @@ float camProjectionRatio;
 float camShowDriver;
 vec3 camPos;
 vec3 camTa;
+vec3 sheepPos = vec3(0.);
+float wheelie = 0.;
+
 // x: actual width
 // y: width + transition
 // z: max width

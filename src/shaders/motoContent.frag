@@ -33,6 +33,11 @@ void computeMotoPosition()
 
     motoYaw = atan(motoDirAndTurn.z, motoDirAndTurn.x);
     motoPitch = atan(motoDirAndTurn.y, length(motoDirAndTurn.zx));
+    
+    if (wheelie > 0.) { // wheelie
+        motoPitch += mix(0., 0.5, wheelie);
+        motoPos.y += mix(0., 0.35, wheelie);
+    }
     motoRoll = 20. * motoDirAndTurn.w;
 }
 
@@ -231,7 +236,7 @@ vec2 motoShape(vec3 p)
         d = MinDist(d, wheelShape(p - vec3(-0.85, rearWheelRadius + rearWheelTireRadius, 0.0), rearWheelRadius, rearWheelTireRadius, 0.18, vec3(0.2, 0.2, 0.01)));
     
         // Break light
-        if (true)
+        if (false)
         {
             vec3 pBreak = p - breakLightOffsetFromMotoRoot;
             float breakBlock = Box3(pBreak, vec3(0.02, 0.025, 0.1), 0.02);

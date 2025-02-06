@@ -4,7 +4,8 @@ vec2 iResolution=vec2(1280,720);
 uniform float iTime;
 uniform sampler2D tex;
 float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
-vec3 camPos,camTa;
+vec3 camPos,camTa,sheepPos=vec3(0);
+float wheelie=0.;
 const vec3 roadWidthInMeters=vec3(4,8,8);
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
@@ -201,6 +202,8 @@ void computeMotoPosition()
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
   motoYaw=atan(motoDirAndTurn.z,motoDirAndTurn.x);
   motoPitch=atan(motoDirAndTurn.y,length(motoDirAndTurn.zx));
+  if(wheelie>0.)
+    motoPitch+=mix(0.,.5,wheelie),motoPos.y+=mix(0.,.35,wheelie);
   motoRoll=20.*motoDirAndTurn.w;
 }
 vec3 motoToWorld(vec3 v,bool isPos)
@@ -313,10 +316,6 @@ vec2 motoShape(vec3 p)
   d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,.22,vec3(.02,.02,.12)));
   d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,.18,vec3(.2,.2,.01)));
   {
-    vec3 pBreak=p-breakLightOffsetFromMotoRoot;
-    d=MinDist(d,vec2(Box3(pBreak,vec3(.02,.025,.1),.02),4));
-  }
-  {
     vec3 pFork=p,pForkTop=vec3(-.48,.66,0),pForkAngle=pForkTop+vec3(-.14,.04,.05);
     pFork.z=abs(pFork.z);
     pFork-=frontWheelPos+vec3(0,0,.12);
@@ -415,7 +414,6 @@ vec2 motoShape(vec3 p)
 }
 const vec3 eyeDir=vec3(1,0,1),animationSpeed=vec3(1),animationAmp=vec3(1,.2,.25);
 const vec2 headRot=vec2(0);
-const vec3 sheepPos=vec3(0);
 float noise(vec3 x)
 {
   vec3 i=floor(x);
@@ -453,11 +451,12 @@ float smax(float a,float b,float k)
 float headDist=0.;
 vec2 sheep(vec3 p)
 {
-  p-=sheepPos;
-  p.y-=.3;
-  p.xz*=Rotation(2.1);
-  p.y-=1.;
-  p.z-=-2.;
+  p=p-motoPos-vec3(-.25,1.2,-.3);
+  p.xz*=Rotation(-.7);
+  p.yz*=Rotation(.5);
+  if(wheelie>0.)
+    p.yz*=Rotation(wheelie*.4),p.y-=mix(0.,.35,wheelie),p.z-=mix(0.,.2,wheelie);
+  p/=.2;
   float tb=iTime*animationSpeed.x;
   vec3 bodyMove=vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0)*.025*animationAmp.x;
   tb=length(p*vec3(1,1,.825)-vec3(0,1.5,2.55)-bodyMove)-2.;
@@ -519,9 +518,10 @@ vec2 sheep(vec3 p)
       dmat.x=smax(dmat.x,-earsClip,.15);
       dmat=MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,17)),vec2(c,17)),vec2(eyes,18)),vec2(b,19)),vec2(n,17));
       headDist=c;
+      dmat.x*=.2;
       return dmat;
     }
-  return vec2(tb,16);
+  return vec2(tb*.2,16);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {
@@ -717,13 +717,14 @@ void selectShot()
   float time=iTime;
   camProjectionRatio=1.;
   camMotoSpace=1.;
-  camShowDriver=1.;
   camFoV=atan(1./camProjectionRatio);
+  sheepPos=vec3(0,1.2,0);
+  wheelie=0.;
   float seedOffset=0.;
   if(get_shot(time,4.5))
     camMotoSpace=0.,camPos=vec3(1,1,0),camTa=vec3(0,1,5),camProjectionRatio=1.5;
-  else if(get_shot(time,5.))
-    camTa=vec3(0,1,0),camPos=vec3(30.-.1*time,2.-.2*time,-2-.5*time),camProjectionRatio=1.;
+  else if(get_shot(time,8.))
+    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,1.-.2*time,1-.5*time),camProjectionRatio=1.,wheelie=smoothstep(3.,3.5,time);
   else if(get_shot(time,6.))
     seedOffset=10.,sideShotRear();
   else if(get_shot(time,5.))

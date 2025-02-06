@@ -3,7 +3,6 @@ const vec3 animationSpeed = vec3(1);
 const vec3 animationAmp = vec3(1.,.2, .25);
 const vec2 headRot = vec2(0.);
 const float blink = 0.;
-const vec3 sheepPos = vec3(0.);
 
 float noise(vec3 x) {
 
@@ -50,17 +49,27 @@ float smax( float a, float b, float k )
 
 float headDist = 0.; // distance to head (for eyes AO)
 vec2 sheep(vec3 p) {
-    p -= sheepPos;
-    p.y -= 0.3;
-    p.xz *= Rotation(2.1);
+    const float SCALE = 0.2;
+
+    if (true) { // sheep on moto
+      p -= motoPos;
+      p -= vec3(-0.25, 1.2, -0.3);
+      p.xz *= Rotation(-0.7);
+      p.yz *= Rotation(0.5);
+
+      if (wheelie > 0.) { // wheelie
+        p.yz *= Rotation(wheelie * 0.4);
+        p.y -= mix(0., 0.35, wheelie);
+        p.z -= mix(0., 0.2, wheelie);
+      }
+    } else {
+      p -= sheepPos;
+    }
+    p /= SCALE;
 
     float time = mod(iTime, 1.);
     time = smoothstep(0., 1., abs(time * 2. - 1.));
-
-    p.y -= 1.;
-    p.z -= -2.;
-
-    
+   
     // Body
     float tb = iTime*animationSpeed.x;
     vec3 bodyMove = vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0.)*.025*animationAmp.x;
@@ -174,8 +183,9 @@ vec2 sheep(vec3 p) {
         dmat = MinDist(dmat, vec2(ears, SKIN));
         
         headDist = head;
+        dmat.x *= SCALE;
         return dmat;
     } else {
-        return vec2(body, COTON);
+        return vec2(body * SCALE, COTON);
     }
 }

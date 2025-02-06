@@ -126,8 +126,10 @@ void selectShot() {
 
     camProjectionRatio = 1.;
     camMotoSpace = 1.;
-    camShowDriver = 1.;
+    // camShowDriver = 1.;
     camFoV = atan(1. / camProjectionRatio);
+    sheepPos = vec3(0., 1.2, 0.);
+    wheelie = 0.;
 
     float seedOffset = 0.;
     if (get_shot(time, 4.5)) {
@@ -136,11 +138,13 @@ void selectShot() {
         camTa = vec3(-0., 1., 5.);// + t_in_shot);
         camProjectionRatio = 1.5;
 
-    } else if (get_shot(time, 5.)) {
+    } else if (get_shot(time, 8.)) {
         // staticRoadShotMotoArrives2(time);
         camTa = vec3(0., 1., 0.);
-        camPos = vec3(30. - 0.1*time, 2.-0.2*time, -2-0.5*time);
+        camPos = vec3(5. - 0.1*time, 1.-0.2*time, 1-0.5*time);
         camProjectionRatio = 1.;
+        wheelie = smoothstep(3., 3.5, time);
+
     } else if (get_shot(time, 6.)) {
         seedOffset = 10.;
         sideShotRear();
