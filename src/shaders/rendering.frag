@@ -21,6 +21,8 @@ vec2 sceneSDF(vec3 p, float current_t)
     d = MinDist(d, treesShape(p, splineUV, current_t));
 #endif
 
+    d = MinDist(d, blood(p));
+
     d = MinDist(d, sheep(p));
     return d;
 }

@@ -126,7 +126,7 @@ void selectShot() {
 
     camProjectionRatio = 1.;
     camMotoSpace = 1.;
-    // camShowDriver = 1.;
+    camShowDriver = 1.;
     camFoV = atan(1. / camProjectionRatio);
     sheepPos = vec3(0., 1.2, 0.);
     wheelie = 0.;
@@ -144,6 +144,7 @@ void selectShot() {
         camPos = vec3(5. - 0.1*time, 2.-0.2*time, 1-0.5*time);
         camProjectionRatio = 1.;
         wheelie = smoothstep(3., 3.5, time);
+        driverIsSleeping = true;
 
     } else if (get_shot(time, 6.)) {
         seedOffset = 10.;

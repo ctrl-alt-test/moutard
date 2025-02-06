@@ -35,6 +35,7 @@ vec3 camPos;
 vec3 camTa;
 vec3 sheepPos = vec3(0.);
 float wheelie = 0.;
+bool driverIsSleeping = false; // of course, he's not dead!
 
 // x: actual width
 // y: width + transition

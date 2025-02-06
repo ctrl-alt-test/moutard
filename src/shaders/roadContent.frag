@@ -79,6 +79,18 @@ float roadMarkings(vec2 uv, float width, vec2 params)
     return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
 }
 
+vec2 blood(vec3 p) {
+    p -= vec3(1, 1.2, 0);
+
+    float d = p.y + smoothstep(1.5,8.,length(p.xz)) + 1.;
+    if (d < 0.4) {
+        d -= pow((noise(p*.9+0.)*.5+noise(p*1.6)*.3+noise(p*2.7)*.1)*.5+.5, 3.) *.45
+             ;//* (1.-exp(-(iTime-137.3)*3.));
+        return vec2(d, BLOOD);
+    }
+    return vec2(d, GROUND_ID);
+}
+
 float roadBumpHeight(float d)
 {
     float x = clamp(abs(d / roadWidthInMeters.x), 0., 1.);

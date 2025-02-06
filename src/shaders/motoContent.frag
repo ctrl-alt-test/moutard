@@ -67,10 +67,14 @@ vec3 worldToMoto(vec3 v, bool isPos)
 
 vec2 driverShape(vec3 p)
 {
-    p = worldToMoto(p, true);
-
-    // Place roughly on the seat
-    p -= vec3(-0.35, 0.78, 0.0);
+    if (driverIsSleeping) {
+        p -= vec3(0.4, 0.5, -2.5);
+        p.yz *= Rotation(1.2);
+    } else {
+        p = worldToMoto(p, true);
+        // Place roughly on the seat
+        p -= vec3(-0.35, 0.78, 0.0);
+    }
 
     float d = length(p);
     if (d > 1.2 || camShowDriver < 0.5)
@@ -135,8 +139,10 @@ vec2 driverShape(vec3 p)
         vec3 pLeg = simP;
 
         pLeg -= vec3(0.0, 0.0, 0.13);
-        pLeg.xy *= Rotation(1.55);
-        pLeg.yz *= Rotation(-0.45);
+        if (!driverIsSleeping) {
+            pLeg.xy *= Rotation(1.55);
+            pLeg.yz *= Rotation(-0.45);
+        }
         float h2 = Capsule(pLeg, 0.35, 0.09);
         d = smin(d, h2, 0.01);
 

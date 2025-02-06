@@ -6,7 +6,7 @@ const float blink = 0.;
 
 float headDist = 0.; // distance to head (for eyes AO)
 vec2 sheep(vec3 p) {
-    const float SCALE = 0.2;
+    const float SCALE = 0.15;
 
     if (true) { // sheep on moto
       p -= motoPos;
