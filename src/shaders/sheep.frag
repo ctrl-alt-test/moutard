@@ -1,10 +1,8 @@
 const vec3 eyeDir = vec3(1.,.0,1.);
-const float eyesSurprise = 0.2;
 const vec3 animationSpeed = vec3(1);
 const vec3 animationAmp = vec3(1.,.2, .25);
 const vec2 headRot = vec2(0.);
 const float blink = 0.;
-const float noseSize = 1.;
 const vec3 sheepPos = vec3(0.);
 
 float noise(vec3 x) {
@@ -145,19 +143,19 @@ vec2 sheep(vec3 p) {
         //eyes
         pp = ph;
         pp.x = abs(ph.x)-.4;
-        float eyes = length(pp*vec3(1.,1.,1.-eyesSurprise)-vec3(0.,0.,-1.)) - .3;
+        float eyes = length(pp*vec3(1.,1.,0.8)-vec3(0.,0.,-1.)) - .3;
         
         float eyeCap = abs(eyes)-.01;
         //eyeCap = smax(eyeCap, -ph.z-1.1-smoothstep(0.95,0.96,blink)*.4, .01);
-        eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-smoothstep(0.95,0.96,blink)*.3+cos(iTime*1.)*.02, -ph.z-1.-eyesSurprise*1.8, .2), .01);
+        eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-smoothstep(0.95,0.96,blink)*.3+cos(iTime*1.)*.02, -ph.z-0.64, .2), .01);
         eyeCap = smin(eyeCap, head, .02);
         head = min(head, eyeCap);
 
         // nostrils
         pp.x = abs(ph.x)-.2;
         pp.xz = Rotation(-.45) * pp.xz;
-        head = smax(head, -length(pp-vec3(-0.7,-1.2,-2.05)) + .14*noseSize, .1);
-        head = smin(head, torus(pp-vec3(-0.7,-1.2,-1.94), vec2(.14*noseSize,.05)), .05);
+        head = smax(head, -length(pp-vec3(-0.7,-1.2,-2.05)) + .14, .1);
+        head = smin(head, torus(pp-vec3(-0.7,-1.2,-1.94), vec2(.14,.05)), .05);
 
         // tail
         float tail =  capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5.), vec3(0.,2.,4.9), .2);

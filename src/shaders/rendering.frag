@@ -165,12 +165,6 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 {
     int mid = int(t.y);
-    // if (mid == CITY_ID) {
-    //     return mix(
-    //         abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),
-    //         mix(vec3(0), vec3(.06,.04,.03),V.y),
-    //         min(t.x*.001,1.));
-    // }
 
     if (mid == NO_ID)
     {
@@ -267,43 +261,6 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
             vec3 dir = motoToWorld(dirBreakLight, false);
             light = L(pos, dir, vec3(0.05, 0., 0.), 0.3, 0.9, 5.0);
-        }
-
-        // Road lights
-        if (i < MAX_ROAD_LIGHTS)
-        {
-            float t = float(i/2 - MAX_ROAD_LIGHTS/4 + 1);
-
-            float roadLength = 100.; // splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
-            float motoDistanceOnRoad = motoDistanceOnCurve * roadLength;
-
-            float distanceBetween = DISTANCE_BETWEEN_LAMPS;
-
-            float distanceOfFirstLamp = floor(motoDistanceOnRoad / distanceBetween) * distanceBetween;
-            float distanceOfCurrentLamp = distanceOfFirstLamp + t * distanceBetween;
-
-            float distanceOnCurve = distanceOfCurrentLamp / roadLength;
-            if (distanceOnCurve >= 1.)
-            {
-                // End of the road.
-                // (hard coded 0.97 value because I couldn't determine
-                // the exact condition; I suspect the +0.02 in
-                // getRoadDirectionAndPosition)
-                continue;
-            }
-            vec3 pos;
-            vec4 roadDirAndCurve = getRoadPositionDirectionAndCurvature(distanceOnCurve, pos);
-            roadDirAndCurve.y = 0.;
-
-            pos.xz += vec2(-roadDirAndCurve.z, roadDirAndCurve.x) * (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
-            pos.y += lampHeight - .1;
-            // 90° rotation:
-            //roadDirAndCurve.xz = vec2(roadDirAndCurve.z, -roadDirAndCurve.x);
-
-            //vec3 coldNeon = vec3(0.8, 0.9, 1.);
-            //vec3 warmNeon = vec3(1., 0.9, 0.7);
-            vec3 sodium = vec3(1., 0.32, 0.0);
-            light = L(pos, pos + roadDirAndCurve.xyz, sodium * 4., -1.0, 0.0, 0.0);
         }
 
         radiance += lightContribution(light, p, V, N, albedo, f0, m.R);

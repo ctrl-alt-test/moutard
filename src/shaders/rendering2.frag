@@ -133,7 +133,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         ne.xy -= offset * smoothstep(0.01,.0, dot(ne,rd));
         
         const float i_irisSize = .3;
-        float pupilSize = .2 + eyesSurprise*.5;
+        float pupilSize = .3;
         
         // polar coordinate
         float er = length(ne.xy);
