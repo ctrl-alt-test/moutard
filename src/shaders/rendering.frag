@@ -124,8 +124,9 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         spe = pow(spe, vec3(8.))*fre*2.;
     } else if (dmat.y == TREE_ID) {
         albedo = vec3(.35,.75,0.2);
-        sss *= 0.;
-        spe = pow(spe, vec3(8.))*fre*2.;
+        sss *= 0.1;
+        bnc *= 0.;
+        spe *= 0.;
     } else if (dmat.y == COTON) {
         albedo = vec3(.4);
         sss *= fre*.5+.5;

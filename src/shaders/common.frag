@@ -133,6 +133,21 @@ float valueNoise(vec2 p)
     fp.y);
 }
 
+float noise(vec3 x) {
+
+    vec3 i = floor(x);
+    vec3 f = fract(x);
+    f = f*f*f*(f*(f*6.0-15.0)+10.0);
+    return mix(mix(mix( hash31(i+vec3(0,0,0)), 
+                        hash31(i+vec3(1,0,0)),f.x),
+                   mix( hash31(i+vec3(0,1,0)), 
+                        hash31(i+vec3(1,1,0)),f.x),f.y),
+               mix(mix( hash31(i+vec3(0,0,1)), 
+                        hash31(i+vec3(1,0,1)),f.x),
+                   mix( hash31(i+vec3(0,1,1)), 
+                        hash31(i+vec3(1,1,1)),f.x),f.y),f.z)*2.-1.;
+}
+
 // TODO: merge with previous function?
 vec2 valueNoise2(float p)
 {
@@ -183,6 +198,31 @@ float smin(float a, float b, float k)
 }
 */
 
+// merge with other capsule function?
+float capsule( vec3 p, vec3 a, vec3 b, float r )
+{
+  vec3 pa = p - a, ba = b - a;
+  return length( pa - ba*clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 ) ) - r;
+}
+
+float cappedCone( vec3 p, float h, float r1, float r2 )
+{
+  vec2 q = vec2( length(p.xz), p.y );
+  vec2 k1 = vec2(r2,h);
+  vec2 k2 = vec2(r2-r1,2.0*h);
+  vec2 ca = vec2(q.x-min(q.x,(q.y<0.0)?r1:r2), abs(q.y)-h);
+  vec2 cb = q - k1 + k2*clamp( dot(k1-q,k2)/dot(k2,k2), 0.0, 1.0 );
+  float s = (cb.x<0.0 && ca.y<0.0) ? -1.0 : 1.0;
+  return s*sqrt( min(dot(ca,ca),dot(cb,cb)) );
+}
+
+float smax( float a, float b, float k )
+{
+    k *= 1.4;
+    float h = max(k-abs(a-b),0.0);
+    return max(a, b) + h*h*h/(6.0*k*k);
+}
+
 float Box2(vec2 p, vec2 size, float corner)
 {
    p = abs(p) - size + corner;
@@ -195,11 +235,11 @@ float Box3(vec3 p, vec3 size, float corner)
    return length(max(p, 0.)) + min(max(max(p.x, p.y), p.z), 0.) - corner;
 }
 
-float Ellipsoid( in vec3 p, in vec3 r )
+float Ellipsoid(in vec3 p, in vec3 r)
 {
-    float k0 = length(p/r);
-    float k1 = length(p/(r*r));
-    return k0*(k0-1.0)/k1;
+    float k0 = length(p / r);
+    float k1 = length(p / (r*r));
+    return k0 * (k0-1.0) / k1;
 }
 
 float Segment3(vec3 p, vec3 a, vec3 b, out float h)
@@ -216,9 +256,9 @@ float Capsule(vec3 p, float h, float r)
     return length(p) - r;
 }
 
-float Torus( vec3 p, vec2 t )
+float Torus(vec3 p, vec2 t)
 {
-    return length( vec2(length(p.xz)-t.x,p.y) )-t.y;
+    return length(vec2(length(p.xz) - t.x,p.y)) - t.y;
 }
 
 mat2 Rotation(float angle)
@@ -226,34 +266,6 @@ mat2 Rotation(float angle)
     float c = cos(angle);
     float s = sin(angle);
     return mat2(c, s, -s, c);
-}
-
-// -------------------------------------------------------
-// Bézier functions
-
-// Piece of code copy-pasted from:
-// https://www.shadertoy.com/view/NltBRB
-// Credit: MMatteini
-
-// Roots of the cubic equation for the closest point to a bezier.
-// From: https://www.shadertoy.com/view/MdXBzB by tomkh
-vec4 FindCubicRoots(float a, float b, float c)
-{
-    float p = b - a * a / 3.0, p3 = p * p * p;
-    float q = a * (2.0 * a * a - 9.0 * b) / 27.0 + c;
-    float d = q * q + 4.0 * p3 / 27.0;
-    float offset = -a / 3.0;
-    if (d >= 0.0) {
-        float z = sqrt(d);
-        vec2 x = (vec2(z, -z) - q) / 2.0;
-        vec2 uv = sign(x) * pow(abs(x), vec2(1.0, 1.0) / 3.0);
-        return vec4(offset + uv.x + uv.y, 0, 0, 1.0);
-    }
-
-    float v = acos(-sqrt(-27.0 / p3) * q / 2.0) / 3.0;
-    float m = cos(v);
-    float n = sin(v) * sqrt(3.0);
-    return vec4(vec3(m + m, -n - m, n - m) * sqrt(-p / 3.0) + offset, 3.0);
 }
 
 // Returns 1.0 if the two vector are clockwise sorted, -1.0 otherwise
@@ -275,40 +287,6 @@ vec2 MinDist(vec2 d1, vec2 d2)
 // -------------------------------------------------------
 // Camera functions
 
-/*
-vec3 sphericalToCartesian(float r, float phi, float theta)
-{
-    float cosTheta = cos(theta);
-    float x = cosTheta * cos(phi);
-    float y = sin(theta);
-    float z = cosTheta * sin(phi);
-    return r * vec3(x, y, z);
-}
-
-vec3 worldToCubeMap(vec3 v)
-{
-    return vec3(v.x, v.y, -v.z);
-}
-
-void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out vec3 rd)
-{
-    lat = clamp(lat, -PI, PI);
-    vec3 cameraPosition = sphericalToCartesian(dist, lon, lat);
-    vec3 cameraTarget = vec3(0.);
-    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
-    vec3 cameraUp = vec3(0., 1., 0.);
-    if (abs(dot(cameraForward, cameraUp)) > 0.99)
-    {
-        cameraUp = vec3(1., 0., 0.);
-    }
-    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
-    cameraUp = normalize(cross(cameraRight, cameraForward));
-
-    ro = cameraPosition;
-    rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
-}
-*/
-
 void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, out vec3 ro, out vec3 rd)
 {
     vec3 cameraForward = normalize(cameraTarget - cameraPosition);
@@ -324,5 +302,3 @@ void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp,
     ro = cameraPosition;
     rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
 }
-
-// -------------------------------------------------------

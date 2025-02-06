@@ -103,41 +103,21 @@ vec4 getRoadPositionDirectionAndCurvature(float t, out vec3 position)
 
 vec2 terrainShape(vec3 p, vec4 splineUV)
 {
-    float heightToDistanceFactor = 0.75;
-    // First, compute the smooth terrain
-    float terrainHeight = 0.;
-    float relativeHeight = p.y;
-
-    // If the distance is sufficiently large, stop there
-    if (relativeHeight > 10.)
-    {
-        return vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
-    }
-
-    vec2 d = vec2(1e6, GROUND_ID);
-
     // Compute the road presence
     float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
 
     // If (even partly) on the road, flatten road
-    float roadHeight = terrainHeight;
+    float height = 0.;
     if (isRoad > 0.0)
     {
         // Get the point on the center line of the spline
         vec3 directionAndCurvature;
         vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw, directionAndCurvature);
 
-        roadHeight += roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
+        height += roadBumpHeight(splineUV.x) + pow(valueNoise(mod(p.xz*40, 100)), .01) * .1;
     }
 
-    // Combine terrain height and road heigt
-    float height = mix(terrainHeight, roadHeight, isRoad);
-
-    relativeHeight = p.y - height;
-    
-    d = MinDist(d, vec2(heightToDistanceFactor * relativeHeight, GROUND_ID));
-
-    return d;
+    return vec2(p.y - height, GROUND_ID);
 }
 
 const float halfTreeSpace = 5.;
@@ -146,7 +126,7 @@ const float maxTreeHeight = 20.;
 float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     float h1 = hash21(id);
     float h2 = hash11(h1);
-    float terrainHeight = 0.;
+    float terrainHeight = -1.;
 
     float verticalClearance = globalP.y - terrainHeight - maxTreeHeight;
     if (verticalClearance > 0.)
@@ -192,7 +172,7 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     if (leaves > 0.)
     {
         vec2 pNoise = vec2(2.*atan(localP.z, localP.x), localP.y) + id;
-        d += 0.5*fBm(2. * pNoise, 2, 0.7, 0.5) + 1.;
+        d += 0.2*fBm(2. * pNoise, 2, 0.7, 0.5) + 1.;
     }
 
     return d;

@@ -141,7 +141,7 @@ void selectShot() {
     } else if (get_shot(time, 8.)) {
         // staticRoadShotMotoArrives2(time);
         camTa = vec3(0., 1., 0.);
-        camPos = vec3(5. - 0.1*time, 1.-0.2*time, 1-0.5*time);
+        camPos = vec3(5. - 0.1*time, 2.-0.2*time, 1-0.5*time);
         camProjectionRatio = 1.;
         wheelie = smoothstep(3., 3.5, time);
 

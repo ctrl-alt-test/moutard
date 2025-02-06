@@ -4,49 +4,6 @@ const vec3 animationAmp = vec3(1.,.2, .25);
 const vec2 headRot = vec2(0.);
 const float blink = 0.;
 
-float noise(vec3 x) {
-
-    vec3 i = floor(x);
-    vec3 f = fract(x);
-    f = f*f*f*(f*(f*6.0-15.0)+10.0);
-    return mix(mix(mix( hash31(i+vec3(0,0,0)), 
-                        hash31(i+vec3(1,0,0)),f.x),
-                   mix( hash31(i+vec3(0,1,0)), 
-                        hash31(i+vec3(1,1,0)),f.x),f.y),
-               mix(mix( hash31(i+vec3(0,0,1)), 
-                        hash31(i+vec3(1,0,1)),f.x),
-                   mix( hash31(i+vec3(0,1,1)), 
-                        hash31(i+vec3(1,1,1)),f.x),f.y),f.z)*2.-1.;
-}
-
-float capsule( vec3 p, vec3 a, vec3 b, float r )
-{
-  vec3 pa = p - a, ba = b - a;
-  return length( pa - ba*clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 ) ) - r;
-}
-float torus( vec3 p, vec2 t )
-{
-  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
-}
-
-float cappedCone( vec3 p, float h, float r1, float r2 )
-{
-  vec2 q = vec2( length(p.xz), p.y );
-  vec2 k1 = vec2(r2,h);
-  vec2 k2 = vec2(r2-r1,2.0*h);
-  vec2 ca = vec2(q.x-min(q.x,(q.y<0.0)?r1:r2), abs(q.y)-h);
-  vec2 cb = q - k1 + k2*clamp( dot(k1-q,k2)/dot(k2,k2), 0.0, 1.0 );
-  float s = (cb.x<0.0 && ca.y<0.0) ? -1.0 : 1.0;
-  return s*sqrt( min(dot(ca,ca),dot(cb,cb)) );
-}
-
-float smax( float a, float b, float k )
-{
-    k *= 1.4;
-    float h = max(k-abs(a-b),0.0);
-    return max(a, b) + h*h*h/(6.0*k*k);
-}
-
 float headDist = 0.; // distance to head (for eyes AO)
 vec2 sheep(vec3 p) {
     const float SCALE = 0.2;
@@ -164,10 +121,10 @@ vec2 sheep(vec3 p) {
         pp.x = abs(ph.x)-.2;
         pp.xz = Rotation(-.45) * pp.xz;
         head = smax(head, -length(pp-vec3(-0.7,-1.2,-2.05)) + .14, .1);
-        head = smin(head, torus(pp-vec3(-0.7,-1.2,-1.94), vec2(.14,.05)), .05);
+        head = smin(head, Torus(pp-vec3(-0.7,-1.2,-1.94), vec2(.14,.05)), .05);
 
         // tail
-        float tail =  capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5.), vec3(0.,2.,4.9), .2);
+        float tail = capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5.), vec3(0.,2.,4.9), .2);
         tail -= (cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02;
         tail = smin(body, tail, .1);
         

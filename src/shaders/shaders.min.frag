@@ -34,6 +34,13 @@ float valueNoise(vec2 p)
   p=p*p*(3.-2.*p);
   return mix(mix(hash21(p00),hash21(p00+vec2(1,0)),p.x),mix(hash21(p00+vec2(0,1)),hash21(p00+vec2(1)),p.x),p.y);
 }
+float noise(vec3 x)
+{
+  vec3 i=floor(x);
+  x=fract(x);
+  x=x*x*x*(x*(x*6.-15.)+10.);
+  return mix(mix(mix(hash31(i+vec3(0)),hash31(i+vec3(1,0,0)),x.x),mix(hash31(i+vec3(0,1,0)),hash31(i+vec3(1,1,0)),x.x),x.y),mix(mix(hash31(i+vec3(0,0,1)),hash31(i+vec3(1,0,1)),x.x),mix(hash31(i+vec3(0,1,1)),hash31(i+vec3(1)),x.x),x.y),x.z)*2.-1.;
+}
 vec2 valueNoise2(float p)
 {
   float p0=floor(p);
@@ -58,6 +65,28 @@ float smin(float d1,float d2,float k)
 {
   float h=clamp(.5+.5*(d2-d1)/k,0.,1.);
   return mix(d2,d1,h)-k*h*(1.-h);
+}
+float capsule(vec3 p,vec3 a)
+{
+  p-=a;
+  a=vec3(0,2,4.9)-a;
+  return length(p-a*clamp(dot(p,a)/dot(a,a),0.,1.))-.2;
+}
+float cappedCone(vec3 p,float h,float r1,float r2)
+{
+  vec2 q=vec2(length(p.xz),p.y),k1=vec2(r2,h),k2=vec2(r2-r1,2.*h),ca=vec2(q.x-min(q.x,q.y<0.?
+    r1:
+    r2),abs(q.y)-h);
+  q=q-k1+k2*clamp(dot(k1-q,k2)/dot(k2,k2),0.,1.);
+  return(q.x<0.&&ca.y<0.?
+    -1.:
+    1.)*sqrt(min(dot(ca,ca),dot(q,q)));
+}
+float smax(float a,float b,float k)
+{
+  k*=1.4;
+  float h=max(k-abs(a-b),0.);
+  return max(a,b)+h*h*h/(6.*k*k);
 }
 float Box3(vec3 p,vec3 size,float corner)
 {
@@ -146,24 +175,19 @@ vec4 getRoadPositionDirectionAndCurvature(float t,out vec3 position)
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
-  float relativeHeight=p.y;
-  if(relativeHeight>10.)
-    return vec2(.75*relativeHeight,10);
-  float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x)),roadHeight=0.;
-  if(isRoad>0.)
+  float height=0.;
+  if(1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x))>0.)
     {
       vec3 directionAndCurvature;
       vec2 positionOnSpline=GetPositionOnSpline(splineUV.yw,directionAndCurvature);
-      roadHeight+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
+      height+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
     }
-  isRoad=mix(0.,roadHeight,isRoad);
-  relativeHeight=p.y-isRoad;
-  return MinDist(vec2(1e6,10),vec2(.75*relativeHeight,10));
+  return vec2(p.y-height,10);
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
   float h1=hash21(id),h2=hash11(h1);
-  if(globalP.y-20.>0.)
+  if(globalP.y+1.-20.>0.)
     return 1e6;
   float d=3.5;
   if(h1>=1.)
@@ -175,13 +199,13 @@ float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
     return d;
   treeClearance=mix(5.,20.,1.-h1*h1);
   float treeWidth=treeClearance*mix(.3,.5,h2*h2);
-  localP.y-=.5*treeClearance;
+  localP.y-=-1.+.5*treeClearance;
   localP.xz+=(vec2(h1,h2)-.5)*1.5;
   d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeClearance,treeWidth)));
   if(1.-smoothstep(50.,2e2,current_t)>0.)
     {
       vec2 pNoise=vec2(2.*atan(localP.z,localP.x),localP.y)+id;
-      d+=.5*fBm(2.*pNoise,2,.7)+1.;
+      d+=.2*fBm(2.*pNoise,2,.7)+1.;
     }
   return d;
 }
@@ -414,40 +438,6 @@ vec2 motoShape(vec3 p)
 }
 const vec3 eyeDir=vec3(1,0,1),animationSpeed=vec3(1),animationAmp=vec3(1,.2,.25);
 const vec2 headRot=vec2(0);
-float noise(vec3 x)
-{
-  vec3 i=floor(x);
-  x=fract(x);
-  x=x*x*x*(x*(x*6.-15.)+10.);
-  return mix(mix(mix(hash31(i+vec3(0)),hash31(i+vec3(1,0,0)),x.x),mix(hash31(i+vec3(0,1,0)),hash31(i+vec3(1,1,0)),x.x),x.y),mix(mix(hash31(i+vec3(0,0,1)),hash31(i+vec3(1,0,1)),x.x),mix(hash31(i+vec3(0,1,1)),hash31(i+vec3(1)),x.x),x.y),x.z)*2.-1.;
-}
-float capsule(vec3 p,vec3 a)
-{
-  p-=a;
-  a=vec3(0,2,4.9)-a;
-  return length(p-a*clamp(dot(p,a)/dot(a,a),0.,1.))-.2;
-}
-float torus(vec3 p)
-{
-  vec2 t=vec2(.14,.05);
-  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
-}
-float cappedCone(vec3 p,float h,float r1,float r2)
-{
-  vec2 q=vec2(length(p.xz),p.y),k1=vec2(r2,h),k2=vec2(r2-r1,2.*h),ca=vec2(q.x-min(q.x,q.y<0.?
-    r1:
-    r2),abs(q.y)-h);
-  q=q-k1+k2*clamp(dot(k1-q,k2)/dot(k2,k2),0.,1.);
-  return(q.x<0.&&ca.y<0.?
-    -1.:
-    1.)*sqrt(min(dot(ca,ca),dot(q,q)));
-}
-float smax(float a,float b,float k)
-{
-  k*=1.4;
-  float h=max(k-abs(a-b),0.);
-  return max(a,b)+h*h*h/(6.*k*k);
-}
 float headDist=0.;
 vec2 sheep(vec3 p)
 {
@@ -512,7 +502,7 @@ vec2 sheep(vec3 p)
       c=min(c,eyeCap);
       pp.x=abs(pl.x)-.2;
       pp.xz=Rotation(-.45)*pp.xz;
-      c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),torus(pp-vec3(-.7,-1.2,-1.94)),.05);
+      c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),Torus(pp-vec3(-.7,-1.2,-1.94),vec2(.14,.05)),.05);
       eyeCap=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
       vec2 dmat=MinDist(MinDist(vec2(tb,16),vec2(eyeCap,16)),vec2(d,16));
       dmat.x=smax(dmat.x,-earsClip,.15);
@@ -592,7 +582,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   else if(int(dmat.y)<=7)
     sunDir=.2*vec3(.85,.95,1),sss*=0.,spe=pow(spe,vec3(8))*fre*2.;
   else if(dmat.y==9)
-    sunDir=vec3(.35,.75,.2),sss*=0.,spe=pow(spe,vec3(8))*fre*2.;
+    sunDir=vec3(.35,.75,.2),sss*=.1,bnc*=0.,spe*=0.;
   else if(dmat.y==16.)
     sunDir=vec3(.4),sss*=fre*.5+.5,emi=vec3(.35),spe=pow(spe,vec3(4))*fre*.25;
   else if(dmat.y==19.)
@@ -724,7 +714,7 @@ void selectShot()
   if(get_shot(time,4.5))
     camMotoSpace=0.,camPos=vec3(1,1,0),camTa=vec3(0,1,5),camProjectionRatio=1.5;
   else if(get_shot(time,8.))
-    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,1.-.2*time,1-.5*time),camProjectionRatio=1.,wheelie=smoothstep(3.,3.5,time);
+    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,2.-.2*time,1-.5*time),camProjectionRatio=1.,wheelie=smoothstep(3.,3.5,time);
   else if(get_shot(time,6.))
     seedOffset=10.,sideShotRear();
   else if(get_shot(time,5.))
