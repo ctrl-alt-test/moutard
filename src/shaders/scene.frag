@@ -29,19 +29,6 @@ const float lampHeight = 7.;
 uniform float iTime;
 uniform sampler2D tex;
 
-#ifdef USE_VERTEX_SHADER
-// Inputs:
-in float camFoV;
-in float camMotoSpace;
-in float camProjectionRatio;
-in float camShowDriver;
-in vec3 camPos;
-in vec3 camTa;
-in vec3 roadWidthInMeters;
-in float motoDistanceOnCurve;
-
-#else
-
 float camFoV;
 float camMotoSpace;
 float camProjectionRatio;
@@ -51,19 +38,14 @@ vec3 camTa;
 // x: actual width
 // y: width + transition
 // z: max width
-vec3 roadWidthInMeters;
+const vec3 roadWidthInMeters = vec3(4.0, 8.0, 8.0);
 
-#endif
 
 // Outputs:
 out vec4 fragColor;
 
 // Semantic constants:
-#ifdef USE_VERTEX_SHADER
-float PIXEL_ANGLE = camFoV / iResolution.x;
-#else
 float PIXEL_ANGLE;
-#endif
 float time;
 
 #include "common.frag"
@@ -74,9 +56,7 @@ float time;
 #include "sheep.frag"
 #include "rendering.frag"
 #include "rendering2.frag"
-#ifndef USE_VERTEX_SHADER
 #include "camera.frag"
-#endif
 
 vec3 Uncharted2Tonemap(vec3 x)
 {
@@ -119,9 +99,7 @@ void main()
         time = iTime;
     }
 
-#ifndef USE_VERTEX_SHADER
     selectShot();
-#endif
     computeMotoPosition();
 
     // Compute moto position
@@ -173,7 +151,8 @@ void main()
     vec3 i_color = radiance;
 
     // Motion blur
-    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.6)
-        +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
+    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.3)
+        //+vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.02-0.01
     , 1.);
+    //fragColor = vec4(radiance, 0.);
 }

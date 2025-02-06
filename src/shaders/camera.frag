@@ -130,24 +130,7 @@ void selectShot() {
     camFoV = atan(1. / camProjectionRatio);
 
     float seedOffset = 0.;
-    if (get_shot(time, 10.5)) {
-        moonShot(time);
-    } else if (get_shot(time, 5.)) {
-        // staticRoadShot1;
-        camMotoSpace = 0.;
-        camPos = vec3(4., 1.7, 1.);
-        camTa = vec3(4., 1.8 + 1.7 - 0.17*min(5.,time), 4.);
-        camProjectionRatio = 1.5;
-
-    } else if (get_shot(time, 4.5)) {
-        // staticRoadShot2(time);
-        camMotoSpace = 0.;
-        vec3 dp = vec3(.2, .2, 1.) * time;
-        camPos = vec3(3., 1.5 , 5.) + dp;
-        camTa = vec3(3., 1.5, 6.) + dp;
-        camProjectionRatio = 1.5;
-
-    } else if (get_shot(time, 4.5)) {
+    if (get_shot(time, 4.5)) {
         camMotoSpace = 0.;
         camPos = vec3(1., 1., 0.);
         camTa = vec3(-0., 1., 5.);// + t_in_shot);
@@ -205,37 +188,12 @@ void selectShot() {
         moonShot(time + 20.);
     }
 
-#ifndef USE_VERTEX_SHADER
     PIXEL_ANGLE = camFoV / iResolution.x;
-#endif
 
     float shotStartTime = iTime - time;
-    roadWidthInMeters = vec3(4.0, 8.0, 8.0);
-    if (shotStartTime < 60.) {
-    } else if (shotStartTime < 76.) {
-    } else if (shotStartTime < 88.) {
-        roadWidthInMeters = vec3(8, 12.0, 14.0);
-    } else if (shotStartTime < 96.) {
-        roadWidthInMeters = vec3(8, 12.0, 14.0);
-    } else if (shotStartTime < 110.) {
-    } else if (shotStartTime < 120.) {
-        roadWidthInMeters = vec3(8., 12.0, 18.0);
-    } else {
-        roadWidthInMeters = vec3(12., 16.0, 18.0);
-    }
 
     // Use mix to skip the beginning/end of the road.
     float t = mod(shotStartTime, 14.)
         + (iTime - shotStartTime);
     motoDistanceOnCurve = mix(0.1, 0.9, t/20.);
-    if (shotStartTime < 18. || shotStartTime > 125.) {
-        motoDistanceOnCurve = 0.6;
-    }
-    if (shotStartTime > 18. && shotStartTime < 21.) {
-        // staticRoadShotMotoArrives
-        motoDistanceOnCurve += 0.2;
-    }
-    if (shotStartTime > 120.) {
-        motoDistanceOnCurve = min(1., motoDistanceOnCurve+0.1);
-    }
 }

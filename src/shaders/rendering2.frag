@@ -1,6 +1,5 @@
 // Rendering code from The Sheep and the Flower
 
-const vec3 skyColor = vec3(0.5, 0.7, 1.);
 float sceneSDF_t = 0.;
 
 float fastAO( in vec3 pos, in vec3 nor, float maxDist, float falloff ) {
@@ -26,12 +25,12 @@ float shadow( vec3 ro, vec3 rd)
 }
 
 
-float trace(vec3 ro, vec3 rd) {
-    float t = 0.01;
-    for(int i=0; i<128; i++) {
+float trace(vec3 ro, vec3 rd, int max_steps) {
+    float t = 0.1;
+    for(int i=0; i<max_steps; i++) {
         float d = sceneSDF(ro+rd*t, sceneSDF_t).x;
         t += d;
-        if (t > 100. || abs(d) < 0.001) break;
+        if (t > 150. || abs(d) < 0.001) break;
     }
     
     return t;
@@ -53,8 +52,9 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
 )
 {
     // Trace : intersection point + normal
-    float t = trace(ro,rd);
+    float t = trace(ro,rd, max_steps);
     p = ro + rd * t;
+
     vec2 dmat = sceneSDF(p, t);
     vec2 eps = vec2(0.0001,0.0);
     vec3 n = normalize(vec3(dmat.x - sceneSDF(p - eps.xyy, t).x, dmat.x - sceneSDF(p - eps.yxy, t).x, dmat.x - sceneSDF(p - eps.yyx, t).x));
@@ -63,6 +63,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     // Shade
     // ----------------------------------------------------------------
     vec3 sunDir = normalize(vec3(3.5,3.,-1.));
+    vec3 skyColor = mix(vec3(0.6,0.7,0.8), vec3(0.5,0.8,1.5), rd.y);
     
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
     
@@ -80,6 +81,10 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     vec3 emi = vec3(0.);
     
     vec3 albedo = vec3(0.);
+    if (t >= 150.) {
+        return skyColor;
+    }
+
     if(dmat.y == GROUND_ID) {
         albedo = vec3(0.1, 0.4, 0.1);
         sss *= 0.;
@@ -95,7 +100,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
 
 
     } else if (IsMoto(int(dmat.y))) {
-        albedo = 0.3*vec3(.85,.95,1.);
+        albedo = 0.2*vec3(.85,.95,1.);
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*2.;
     } else if (dmat.y == TREE_ID) {
@@ -191,10 +196,13 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         amb *= vec3(1.,.75,.75);
         sss = pow(sss, vec3(.5,2.5,5.0)+2.)*2.;// * fre;// * pow(fre, 1.);
         spe = pow(spe, vec3(4.))*fre*.02;
+    } else {
+        albedo = vec3(1, 0.5, 0); // unused?
     }
     
+
     // fog
-    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi), skyColor, smoothstep(60.,100.,t)), 0., 1.);
+    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi), skyColor, smoothstep(60.,150.,t)), 0., 1.);
     
     // vignetting
     // fragColor = vec4(col / (1.+pow(length(uv*2.-1.),4.)*.04),1.);
