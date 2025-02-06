@@ -52,7 +52,7 @@ float time;
 #include "roadContent.frag"
 #include "motoContent.frag"
 #include "sheep.frag"
-#include "rendering2.frag"
+#include "rendering.frag"
 #include "camera.frag"
 
 float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float falloff, float distFalloff)
