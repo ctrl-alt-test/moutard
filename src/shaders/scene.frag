@@ -10,9 +10,8 @@ const bool ENABLE_STOCHASTIC_MOTION_BLUR = false;
 // #define DISABLE_TREES
 
 // Constants:
-const int MAX_ROAD_LIGHTS = 2 * 8; // Pairs of lights
 const int MAX_RAY_MARCH_STEPS = 250;
-const float MAX_RAY_MARCH_DIST = 1000.0;
+const float MAX_RAY_MARCH_DIST = 500.;
 const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
 const float NORMAL_DP = 2.*1e-3;
@@ -22,7 +21,6 @@ const float INF = 1e6;
 #include "shared.h"
 vec2 iResolution = vec2(XRES, YRES);
 
-const float DISTANCE_BETWEEN_LAMPS = 50.;
 const float lampHeight = 7.;
 
 // Uniforms:
@@ -54,29 +52,8 @@ float time;
 #include "roadContent.frag"
 #include "motoContent.frag"
 #include "sheep.frag"
-#include "rendering.frag"
 #include "rendering2.frag"
 #include "camera.frag"
-
-vec3 Uncharted2Tonemap(vec3 x)
-{
-  float A = 0.2; // Shoulder strength (0.22 ~ 0.15)
-  float B = 0.3; // Linear strength (0.30 ~ 0.50)
-  float C = 0.1; // Linear angle (0.10)
-  float D = 0.2; // Toe strength (0.20)
-  float E = 0.01; // Toe numerator (0.01 ~ 0.02) (E/F: Toe angle)
-  float F = 0.50; // Toe denominator (0.30)
-  return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
-}
-
-vec3 toneMapping(vec3 hdrColor)
-{
-  float W = 11.2; // Linear white point value
-  vec3 sdrColor = Uncharted2Tonemap(2.*hdrColor) / Uncharted2Tonemap(vec3(W));
-
-  float gamma = 2.2;
-  return pow(sdrColor, vec3(1.0 / gamma));
-}
 
 float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float falloff, float distFalloff)
 {
@@ -132,17 +109,7 @@ void main()
 
 
     vec3 p;
-#ifdef ENABLE_STEP_COUNT
-    int steps = 0;
-    vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p, steps);
-    fragColor = vec4(stepsToColor(steps), 1.);
-    return;
-#else
-    // vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
-#endif
-    // vec3 i_N = evalNormal(p, t.x);
-    // vec3 radiance = max(vec3(0), evalRadiance(t, p, -rd, i_N));
-    vec3 radiance = rayMarchSceneAnat(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
+    vec3 radiance = rayMarchScene(ro, rd, p);
 
     // Bloom around headlight
     radiance += 0.2*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.) * 5.*vec3(1., 0.9, .8);
@@ -152,7 +119,10 @@ void main()
 
     // Motion blur
     fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.3)
-        //+vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.02-0.01
+        +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
     , 1.);
+
+    fragColor /= 1.+pow(length(uv),4.)*.1;
+
     //fragColor = vec4(radiance, 0.);
 }

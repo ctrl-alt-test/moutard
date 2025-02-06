@@ -2,6 +2,29 @@
 
 float sceneSDF_t = 0.;
 
+vec2 sceneSDF(vec3 p, float current_t)
+{
+    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+
+#ifndef DISABLE_MOTO
+    vec2 d = motoShape(p);
+#else
+    vec2 d = vec2(INF, NO_ID);
+#endif
+#ifndef DISABLE_MOTO_DRIVER
+    d = MinDist(d, driverShape(p));
+#endif
+#ifndef DISABLE_TERRAIN
+    d = MinDist(d, terrainShape(p, splineUV));
+#endif
+#ifndef DISABLE_TREES
+    d = MinDist(d, treesShape(p, splineUV, current_t));
+#endif
+
+    d = MinDist(d, sheep(p));
+    return d;
+}
+
 float fastAO( in vec3 pos, in vec3 nor, float maxDist, float falloff ) {
     float occ1 = .5*maxDist - sceneSDF(pos + nor*maxDist *.5, sceneSDF_t).x;
     float occ2 = .95*(maxDist - sceneSDF(pos + nor*maxDist, sceneSDF_t).x);
@@ -25,12 +48,12 @@ float shadow( vec3 ro, vec3 rd)
 }
 
 
-float trace(vec3 ro, vec3 rd, int max_steps) {
+float trace(vec3 ro, vec3 rd) {
     float t = 0.1;
-    for(int i=0; i<max_steps; i++) {
-        float d = sceneSDF(ro+rd*t, sceneSDF_t).x;
+    for(int i = 0; i < MAX_RAY_MARCH_STEPS; i++) {
+        float d = sceneSDF(ro + rd*t, sceneSDF_t).x;
         t += d;
-        if (t > 150. || abs(d) < 0.001) break;
+        if (t > MAX_RAY_MARCH_DIST || abs(d) < 0.001) break;
     }
     
     return t;
@@ -45,14 +68,10 @@ float specular(vec3 v, vec3 l, float size)
     return (pow(spe, a)*(a+2.) + pow(spe, b)*(b+2.)*2.)*0.008;
 }
 
-vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
-#ifdef ENABLE_STEP_COUNT
-, out int steps
-#endif
-)
+vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
 {
     // Trace : intersection point + normal
-    float t = trace(ro,rd, max_steps);
+    float t = trace(ro,rd);
     p = ro + rd * t;
 
     vec2 dmat = sceneSDF(p, t);
@@ -81,7 +100,7 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     vec3 emi = vec3(0.);
     
     vec3 albedo = vec3(0.);
-    if (t >= 150.) {
+    if (t >= MAX_RAY_MARCH_DIST) {
         return skyColor;
     }
 
@@ -202,9 +221,9 @@ vec3 rayMarchSceneAnat(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     
 
     // fog
-    vec3 col = clamp(mix((albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi), skyColor, smoothstep(60.,150.,t)), 0., 1.);
-    
-    // vignetting
-    // fragColor = vec4(col / (1.+pow(length(uv*2.-1.),4.)*.04),1.);
+    vec3 radiance = albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi;
+    float fogAmount = 1.0 - exp(-t*0.01);
+    vec3 col = mix(radiance, skyColor, fogAmount);
+
     return col;
 }

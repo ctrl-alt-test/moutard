@@ -79,53 +79,6 @@ float roadMarkings(vec2 uv, float width, vec2 params)
     return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
 }
 
-M roadMaterial(vec2 uv, float width, vec2 params)
-{
-    vec2 laneUV = uv / laneWidth;
-
-    float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
-    tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
-
-    float largeScaleNoise = smoothstep(-0.25, 1., fBm(laneUV * vec2(15., 0.1), 2, .7, .4));
-    tireTrails = mix(tireTrails, largeScaleNoise, 0.2);
-
-    float highFreqNoise = fBm(laneUV * vec2(150., 6.), 1, 1., 1.);
-    tireTrails = mix(tireTrails, highFreqNoise, 0.1);
-
-    float roughness = mix(0.8, 0.4, tireTrails);
-    vec3 color = vec3(mix(vec3(0.11, 0.105, 0.1), vec3(0.15), tireTrails));
-
-
-    float paint = roadMarkings(uv.yx, width, params);
-    color = mix(color, vec3(1), paint);
-    roughness = mix(roughness, .7, paint);
-
-    // DEBUG --------
-    /*
-    vec2 marks = abs(fract(laneUV) * 2. - 1.);
-    vec2 dmarks = fwidth(marks);
-    marks = smoothstep(-dmarks, dmarks, marks - 0.99);
-    vec3 debugUV = vec3(laneUV, 0.);
-    debugUV = fract(debugUV);
-    debugUV = clamp(debugUV, 0., 1.);
-    debugUV = mix(debugUV * 0.5, vec3(1.), max(marks.x, marks.y));
-    if (laneUV.x < 0.)
-    {
-        color = debugUV;
-    }
-    else
-    {
-        color = mix(color, vec3(1.), marks.x);
-    }
-    /**/
-    // --------------
-
-    return M(paint > 0.5 ? MATERIAL_TYPE_RETROREFLECTIVE : MATERIAL_TYPE_DIELECTRIC, color, roughness);
-}
-
-const float terrain_fBm_weight_param = 0.6;
-const float terrain_fBm_frequency_param = 0.5;
-
 float roadBumpHeight(float d)
 {
     float x = clamp(abs(d / roadWidthInMeters.x), 0., 1.);

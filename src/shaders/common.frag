@@ -61,30 +61,6 @@ vec3 stepsToColor(int steps)
 }
 #endif
 
-// -------------------------------------------------------
-// Scene description functions
-
-struct L // light
-{
-    vec3 P; // Start position for rod light, position for cone light.
-    vec3 Q; // End position for rod light, direction for cone light.
-    vec3 C; // Color
-    float A; // Start cos angle; -1 for rod light.
-    float B; // End cos angle.
-    float F; // Collimation factor (point light vs focused torch light).
-};
-
-const int MATERIAL_TYPE_DIELECTRIC = 0;
-const int MATERIAL_TYPE_METALLIC = 1;
-const int MATERIAL_TYPE_EMISSIVE = 2;
-const int MATERIAL_TYPE_RETROREFLECTIVE = 3;
-
-struct M // material
-{
-    int T; // Type
-    vec3 C; // Albedo for dielectric, metallic and retroreflective, luminance for emissive.
-    float R; // Roughness
-};
 
 // -------------------------------------------------------
 // Shading functions
@@ -117,98 +93,6 @@ vec3 cookTorrance(
 	vec3 F = x + f0 * (1. - x*x*x*x*x);
 
 	return F * D * V;
-}
-
-vec3 lightContribution(L l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
-{
-    vec3 L, irradiance;
-    vec3 L0 = l.P - p;
-    float d0 = length(L0);
-    float NdotL;
-
-    if (l.A != -1.0)
-    {
-        //
-        // Cone light contribution
-        //
-        L = L0 / d0;
-
-        NdotL = dot(N, L);
-
-        float LdotD = dot(L, -l.Q);
-        vec3 freq = 180. + vec3(0., .4, .8);
-        float angleFallOff = smoothstep(l.A, l.B, LdotD);
-        angleFallOff *= angleFallOff;
-        angleFallOff *= angleFallOff;
-        angleFallOff *= angleFallOff;
-
-        vec3 radiant_intensity = l.C;
-        radiant_intensity *= (sin(freq/LdotD) * 0.5 + 0.5) * 0.2 + 0.8;
-        radiant_intensity *= angleFallOff;
-        radiant_intensity *= (1.0 + l.F) / (l.F + d0 * d0);
-        irradiance = radiant_intensity * NdotL;
-    }
-    else
-    {
-        //
-        // Rod light contribution
-        //
-        vec3 L1 = l.Q - p;
-        float d1 = length(L1);
-
-        // Approximating what the impact of the light will be.
-        // This approximation assumes a diffuse material. In case
-        // of artifacts with shiny materials, maybe the area can
-        // be elongated based on the roughness.
-        //float roughContribution = dot(intensity, vec3(1.0)) * (0.5 * dot(N, L0) / dot(L0, L0));
-        //if (roughContribution * 1000.0 < 1.0) return vec3(0.);
-        float falloff = 1.0;//smoothstep(0.001, 0.002, roughContribution);
-
-        // DEBUG:
-        //if (p.x < 0.) return vec3(roughContribution);
-    
-        float NdotL0 = dot(N, L0) / d0;
-        float NdotL1 = dot(N, L1) / d1;
-
-        float angularContribution = max(0., NdotL0 + NdotL1);
-        float geometricAttenuation = d0 * d1 + dot(L0, L1);
-        float contribution = angularContribution / geometricAttenuation;
-        // The Karis paper has a +2 term in the bottom part,
-        // but I found the result to better match point lights
-        // when the length is zero.
-        // Then again, there could be an implementation error.
-
-        contribution *= falloff;
-        if (contribution <= 0.)
-        {
-            return vec3(0.);
-        }
-
-        vec3 radiant_intensity = l.C;
-        irradiance = radiant_intensity * contribution;
-
-        vec3 Ld = l.Q - l.P;
-        vec3 R = reflect(-V, N);
-        float RdotLd = dot(R, Ld);
-    
-        float t = clamp((dot(R, L0) * RdotLd - dot(L0, Ld)) / (dot(Ld, Ld) - RdotLd * RdotLd), 0., 1.);
-
-        // Most representative light direction
-        L = normalize(mix(L0, L1, t));
-        NdotL = dot(N, L);
-    }
-
-    if (NdotL <= 0.)
-        return vec3(0.);
-
-    vec3 H = normalize(L + V);
-    vec3 NcrossH = cross(N, H);
-    float VdotH = max(0., dot(V, H));
-    float NdotV = max(0., dot(N, V));
-
-    vec3 spec = cookTorrance(f0, roughness, NcrossH, VdotH, NdotL, NdotV);
-
-    return irradiance * (albedo + spec);
 }
 
 // -------------------------------------------------------

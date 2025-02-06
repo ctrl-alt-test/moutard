@@ -1,6 +1,6 @@
 #version 150
 
-vec2 iResolution=vec2(1920,1080);
+vec2 iResolution=vec2(1280,720);
 uniform float iTime;
 uniform sampler2D tex;
 float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
@@ -9,8 +9,6 @@ const vec3 roadWidthInMeters=vec3(4,8,8);
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
 const float PI=acos(-1.);
-struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;};
-struct M{int T;vec3 C;float R;};
 float hash11(float x)
 {
   return fract(sin(x)*43758.5453);
@@ -511,7 +509,7 @@ vec2 sheep(vec3 p)
       float earsClip=length(pp)-.16;
       pp=pl;
       pp.x=abs(pl.x)-.4;
-      float eyes=length(pp*vec3(1,1,.8)-vec3(0,0,-1))-.3,eyeCap=smin(smax(abs(eyes)-.01,smin(-abs(pl.y+pl.z*.025)+.25-smoothstep(.95,.96,0.)*.3+cos(iTime)*.02,-pl.z-1.-.36,.2),.01),c,.02);
+      float eyes=length(pp*vec3(1,1,.8)-vec3(0,0,-1))-.3,eyeCap=smin(smax(abs(eyes)-.01,smin(-abs(pl.y+pl.z*.025)+.25-smoothstep(.95,.96,0.)*.3+cos(iTime)*.02,-pl.z-.64,.2),.01),c,.02);
       c=min(c,eyeCap);
       pp.x=abs(pl.x)-.2;
       pp.xz=Rotation(-.45)*pp.xz;
@@ -560,7 +558,7 @@ float trace(vec3 ro,vec3 rd)
     {
       float d=sceneSDF(ro+rd*t,0.).x;
       t+=d;
-      if(t>150.||abs(d)<.001)
+      if(t>5e2||abs(d)<.001)
         break;
     }
   return t;
@@ -571,7 +569,7 @@ float specular(vec3 v,vec3 l,float size)
   size=3./size;
   return(pow(spe,a)*(a+2.)+pow(spe,size)*(size+2.)*2.)*.008;
 }
-vec3 rayMarchSceneAnat(vec3 ro,vec3 rd,out vec3 p)
+vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
 {
   float t=trace(ro,rd);
   p=ro+rd*t;
@@ -580,7 +578,7 @@ vec3 rayMarchSceneAnat(vec3 ro,vec3 rd,out vec3 p)
   float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,shad=shadow(p,sunDir),fre=1.+dot(rd,n);
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
-  if(t>=150.)
+  if(t>=5e2)
     return skyColor;
   if(dmat.y==10)
     {
@@ -631,7 +629,8 @@ vec3 rayMarchSceneAnat(vec3 ro,vec3 rd,out vec3 p)
     sunDir=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,5)+2.)*2.,spe=pow(spe,vec3(4))*fre*.02;
   else
      sunDir=vec3(1,.5,0);
-  return clamp(mix(sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi,skyColor,smoothstep(60.,150.,t)),0.,1.);
+  diff=sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi;
+  return mix(diff,skyColor,1.-exp(-t*.01));
 }
 float verticalBump()
 {
@@ -772,7 +771,7 @@ float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff
 }
 void main()
 {
-  vec2 texCoord=gl_FragCoord.xy/iResolution.xy;
+  vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   time=iTime;
   selectShot();
   computeMotoPosition();
@@ -781,10 +780,11 @@ void main()
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   else
      getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
-  setupCamera((texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x),cameraPosition,cameraTarget,ro,rd);
-  cameraTarget=rayMarchSceneAnat(ro,rd,cameraTarget);
+  setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
+  cameraTarget=rayMarchScene(ro,rd,cameraTarget);
   cameraTarget+=.2*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4,0.)*5.*vec3(1,.9,.8);
   cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e3,1.)*vec3(1,0,0);
-  fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3),1);
+  fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
+  fragColor/=1.+pow(length(uv),4.)*.1;
 }
 
