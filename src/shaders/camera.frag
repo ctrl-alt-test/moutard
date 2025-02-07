@@ -187,13 +187,18 @@ void selectShot() {
     } else if (get_shot(time, 10.)) {
         // staticRoadShotEnd(time);
         camMotoSpace = 0.;
-        camPos = vec3(1., 1.5, 0.);
+        camPos = vec3(1., 1.5, 1.);
         camTa = vec3(2., 3. + 0.5*time, -10.);
         camProjectionRatio = 1.5;
 
     } else if (get_shot(time, 10.)) {
         moonShot(time + 20.);
     }
+
+    // camPos = vec3(2, 1, 5);
+    // camTa = vec3(2, 1, 0);
+    // camMotoSpace = 0.;
+    // driverIsSleeping = true;
 
     PIXEL_ANGLE = camFoV / iResolution.x;
 

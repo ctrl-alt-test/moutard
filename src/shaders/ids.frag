@@ -25,6 +25,7 @@ const float CLOGS = 19.;
 const float METAL = 20.;
 const float BLACK_METAL = 21.;
 const float BLOOD = 22.;
+const float PANEL = 23.;
 
 #ifdef DEBUG
 const int DEBUG_ID = 9999;

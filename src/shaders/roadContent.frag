@@ -19,8 +19,8 @@ float tOnSegment(vec2 A, vec2 B, vec2 p) {
 }
 
 const float roadScale = 200.;
-const vec2 roadP1 = vec2(-1., -1.) * roadScale;
-const vec2 roadP2 = vec2(1., 1.) * roadScale;
+const vec2 roadP1 = vec2(0., -1.) * roadScale;
+const vec2 roadP2 = vec2(0, 1.) * roadScale;
 
 // Compute a simple signed distance approximation for a road
 vec4 ToSplineLocalSpace(vec2 p, float splineWidth) {
@@ -41,7 +41,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth) {
 //
 vec2 GetPositionOnSpline(vec2 spline_t_and_index, out vec3 directionAndCurvature)
 {
-    directionAndCurvature = normalize(vec3(-1., -1., 0.));
+    directionAndCurvature = normalize(vec3(0., -1., 0.));
     return mix(roadP2, roadP1, spline_t_and_index.x);
 }
 
@@ -77,6 +77,24 @@ float roadMarkings(vec2 uv, float width, vec2 params)
     float pattern = min(min(sideLine1, sideLine2), separationLine1);
 
     return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
+}
+
+vec2 panelWarning(vec3 p) {
+    p -= panelWarningPos;
+    float pan = Triangle(p - vec3(0., 3.75,-5.), vec2(1.7, .1), .3);
+    if (pan < 8.) {
+        pan = smax(pan, -Triangle(p - vec3(0.,3.75,-5.1), vec2(1.6,.1), .3), .001);
+        
+        float tube = Box3(p-vec3(0., 2.,-5.1), vec3(.11, 2., .08), 0.);
+        vec3 pp = p;
+        pp.y = abs(pp.y - 3.65)-.3;
+        tube = min(tube, Box3(pp-vec3(0.,0.,-5.05), vec3(.35,.1,.05), 0.));
+        
+        vec2 dmat = vec2(tube, METAL);
+        return MinDist(dmat, vec2(pan, PANEL));
+    } else {
+        return vec2(INF, GROUND_ID);
+    }
 }
 
 vec2 blood(vec3 p) {
@@ -120,6 +138,11 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
     // If (even partly) on the road, flatten road
     float height = 0.;
+    height = mix(
+        valueNoise(p.xz*5.)*0.1 + 0.5 * 1. * fBm(p.xz * 2. / 5., 1, 0.6, 0.5),
+        0.,
+        isRoad*isRoad);
+
     if (isRoad > 0.0)
     {
         // Get the point on the center line of the spline

@@ -268,6 +268,24 @@ mat2 Rotation(float angle)
     return mat2(c, s, -s, c);
 }
 
+float Triangle(vec3 p, vec2 h, float r)
+{
+  return max(
+        abs(p.z) - h.y,
+        smax(smax(p.x*0.9 + p.y*0.5, -p.x*0.9 + p.y*0.5, r),-p.y,r) - h.x*0.5);
+}
+
+float UnevenCapsule2d( vec2 p, float r1, float r2, float h )
+{
+    p.x = abs(p.x);
+    float b = (r1-r2)/h;
+    float a = sqrt(1.0-b*b);
+    float k = dot(p,vec2(-b,a));
+    if( k < 0.0 ) return length(p) - r1;
+    if( k > a*h ) return length(p-vec2(0.0,h)) - r2;
+    return dot(p, vec2(a,b) ) - r1;
+}
+
 // Returns 1.0 if the two vector are clockwise sorted, -1.0 otherwise
 float GetWinding(vec2 a, vec2 b)
 {

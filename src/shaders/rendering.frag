@@ -8,7 +8,8 @@ vec2 sceneSDF(vec3 p, float current_t)
     d = MinDist(d, terrainShape(p, splineUV));
     d = MinDist(d, treesShape(p, splineUV, current_t));
     d = MinDist(d, blood(p));
-    d = MinDist(d, sheep(p));
+    d = MinDist(d, panelWarning(p));
+    d = MinDist(d, sheep(p, true));
     return d;
 }
 
@@ -209,7 +210,40 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         amb *= vec3(2.)*fre*fre;
         sss *= 0.;
         spe = vec3(1.,.3,.3) * pow(spe, vec3(500.))*5.;
-    } 
+    }
+    else if (dmat.y == PANEL) {
+       vec3 p = p - panelWarningPos;
+        sss *= 0.;
+        spe = pow(spe, vec3(8.))*fre*20.;
+
+        if (n.z > .5) {
+            vec3 pp = p;
+            pp -= vec3(-0.3,3.5,0.);
+
+            float symbol;
+            if (true) {
+                pp.xy *= 0.9;
+                float dist = 5.;
+                headRot = vec2(0., -0.8);
+                animationSpeed = vec3(0);
+                for (float x = -0.2; x <= 0.2; x += 0.08) {
+                    vec3 point = vec3(x, pp.y, pp.x);
+                    point.xz *= Rotation(0.1);
+                    dist = min(dist, sheep(point, false).x);
+                }
+                symbol = 1. - smoothstep(0.001, 0.01, dist);
+            } else {
+                symbol = smoothstep(0.13,0.1295, distance(p, vec3(0.,3.3,-4.9)));
+                symbol += smoothstep(0.005,0.,UnevenCapsule2d(p.xy-vec2(0.,3.6), .06,.14,0.8));
+            }
+            float tri = Triangle(p-vec3(0.,3.75,-5.), vec2(1.3,.2), .01);
+            albedo = vec3(1.5,0.,0.);
+            albedo = mix(albedo, vec3(2.), smoothstep(0.005,.0, tri));
+            albedo = mix(albedo, vec3(0.), symbol);
+        } else {
+            albedo = vec3(.85,.95,1.);
+        }
+    }
     else if (dmat.y == SKIN) {
         albedo = vec3(1.,.7,.5)*1.;
         amb *= vec3(1.,.75,.75);

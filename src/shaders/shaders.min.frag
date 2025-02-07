@@ -7,6 +7,7 @@ float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa,sheepPos=vec3(0);
 float wheelie=0.;
 bool driverIsSleeping=false,sheepOnMoto=false;
+vec3 panelWarningPos=vec3(6,0,0);
 const vec3 roadWidthInMeters=vec3(4,8,8);
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
@@ -121,6 +122,10 @@ mat2 Rotation(float angle)
   angle=sin(angle);
   return mat2(c,angle,-angle,c);
 }
+float Triangle(vec3 p,vec2 h,float r)
+{
+  return max(abs(p.z)-h.y,smax(smax(p.x*.9+p.y*.5,-p.x*.9+p.y*.5,r),-p.y,r)-h.x*.5);
+}
 vec2 MinDist(vec2 d1,vec2 d2)
 {
   return d1.x<d2.x?
@@ -149,15 +154,31 @@ float tOnSegment(vec2 p)
   vec2 A=roadP1,AB=roadP2-A;
   return clamp(dot(p-A,AB)/dot(AB,AB),0.,1.);
 }
-const vec2 roadP1=vec2(-1)*2e2,roadP2=vec2(1)*2e2;
+const vec2 roadP1=vec2(0,-1)*2e2,roadP2=vec2(0,1)*2e2;
 vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
 {
   return vec4(distanceToSegment(p),0,tOnSegment(p),1);
 }
 vec2 GetPositionOnSpline(vec2 spline_t_and_index,out vec3 directionAndCurvature)
 {
-  directionAndCurvature=normalize(vec3(-1,-1,0));
+  directionAndCurvature=normalize(vec3(0,-1,0));
   return mix(roadP2,roadP1,spline_t_and_index.x);
+}
+vec2 panelWarning(vec3 p)
+{
+  p-=panelWarningPos;
+  float pan=Triangle(p-vec3(0,3.75,-5),vec2(1.7,.1),.3);
+  if(pan<8.)
+    {
+      pan=smax(pan,-Triangle(p-vec3(0,3.75,-5.1),vec2(1.6,.1),.3),.001);
+      float tube=Box3(p-vec3(0,2,-5.1),vec3(.11,2,.08),0.);
+      vec3 pp=p;
+      pp.y=abs(pp.y-3.65)-.3;
+      tube=min(tube,Box3(pp-vec3(0,0,-5.05),vec3(.35,.1,.05),0.));
+      vec2 dmat=vec2(tube,20);
+      return MinDist(dmat,vec2(pan,23));
+    }
+  return vec2(1e6,10);
 }
 vec2 blood(vec3 p)
 {
@@ -183,8 +204,8 @@ vec4 getRoadPositionDirectionAndCurvature(float t,out vec3 position)
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
-  float height=0.;
-  if(1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x))>0.)
+  float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x)),height=mix(valueNoise(p.xz*5.)*.1+.5*fBm(p.xz*2./5.,1,.6,.5),0.,isRoad*isRoad);
+  if(isRoad>0.)
     {
       vec3 directionAndCurvature;
       vec2 positionOnSpline=GetPositionOnSpline(splineUV.yw,directionAndCurvature);
@@ -447,16 +468,20 @@ vec2 motoShape(vec3 p)
   }
   return d;
 }
-const vec3 eyeDir=vec3(1,0,1),animationSpeed=vec3(1),animationAmp=vec3(1,.2,.25);
-const vec2 headRot=vec2(0);
+const vec3 eyeDir=vec3(1,0,1);
+vec3 animationSpeed=vec3(1);
+const vec3 animationAmp=vec3(1,.2,.25);
+vec2 headRot=vec2(0);
 float headDist=0.;
-vec2 sheep(vec3 p)
+vec2 sheep(vec3 p,bool shiftPos)
 {
-  p=p-motoPos-vec3(-.25,1.2,-.3);
-  p.xz*=Rotation(-.7);
-  p.yz*=Rotation(.5);
-  if(wheelie>0.)
-    p.yz*=Rotation(wheelie*.4),p.y-=mix(0.,.35,wheelie),p.z-=mix(0.,.2,wheelie);
+  if(shiftPos)
+    {
+      p=p-motoPos-vec3(0,1.2,-.3);
+      p.yz*=Rotation(.5);
+      if(wheelie>0.)
+        p.yz*=Rotation(wheelie*.4),p.y-=mix(0.,.35,wheelie),p.z-=mix(0.,.2,wheelie);
+    }
   p/=.15;
   float tb=iTime*animationSpeed.x;
   vec3 bodyMove=vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0)*.025*animationAmp.x;
@@ -530,8 +555,8 @@ vec2 sceneSDF(vec3 p,float current_t)
   vec2 d=motoShape(p);
   d=MinDist(d,driverShape(p));
   d=MinDist(d,terrainShape(p,splineUV));
-  d=MinDist(MinDist(d,treesShape(p,splineUV,current_t)),blood(p));
-  return MinDist(d,sheep(p));
+  d=MinDist(MinDist(MinDist(d,treesShape(p,splineUV,current_t)),blood(p)),panelWarning(p));
+  return MinDist(d,sheep(p,true));
 }
 float fastAO(vec3 pos,vec3 nor,float maxDist,float falloff)
 {
@@ -634,6 +659,33 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
     sunDir=vec3(1),diff*=vec3(.1)*fre,amb*=vec3(.1)*fre,bnc*=0.,sss*=0.,spe=pow(spe,vec3(100))*fre*2.;
   else if(dmat.y==22.)
     sunDir=vec3(1,.01,.01)*.3,diff*=vec3(3),amb*=vec3(2)*fre*fre,sss*=0.,spe=vec3(1,.3,.3)*pow(spe,vec3(500))*5.;
+  else if(dmat.y==23.)
+    {
+      vec3 p=p-panelWarningPos;
+      sss*=0.;
+      spe=pow(spe,vec3(8))*fre*20.;
+      if(n.z>.5)
+        {
+          vec3 pp=p-vec3(-.3,3.5,0);
+          float symbol;
+          {
+            pp.xy*=.9;
+            float dist=5.;
+            headRot=vec2(0,-.8);
+            animationSpeed=vec3(0);
+            for(float x=-.2;x<=.2;x+=.08)
+              {
+                vec3 point=vec3(x,pp.yx);
+                point.xz*=Rotation(.1);
+                dist=min(dist,sheep(point,false).x);
+              }
+            symbol=1.-smoothstep(.001,.01,dist);
+          }
+          sunDir=mix(mix(vec3(1.5,0,0),vec3(2),smoothstep(.005,0.,Triangle(p-vec3(0,3.75,-5),vec2(1.3,.2),.01))),vec3(0),symbol);
+        }
+      else
+         sunDir=vec3(.85,.95,1);
+    }
   else if(dmat.y==17.)
     sunDir=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,5)+2.)*2.,spe=pow(spe,vec3(4))*fre*.02;
   diff=sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi;
@@ -764,7 +816,7 @@ void selectShot()
   else if(get_shot(time,6.))
     viewFromBehind(time),sheepOnMoto=true,driverIsSleeping=true;
   else if(get_shot(time,10.))
-    camMotoSpace=0.,camPos=vec3(1,1.5,0),camTa=vec3(2,3.+.5*time,-10),camProjectionRatio=1.5;
+    camMotoSpace=0.,camPos=vec3(1,1.5,1),camTa=vec3(2,3.+.5*time,-10),camProjectionRatio=1.5;
   else if(get_shot(time,10.))
     moonShot(time+20.);
   PIXEL_ANGLE=camFoV/iResolution.x;
@@ -788,10 +840,10 @@ void main()
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   else
-     getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
+     cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   cameraTarget=rayMarchScene(ro,rd,cameraTarget);
-  cameraTarget+=.3*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4)*5.*vec3(1,.9,.8);
+  cameraTarget+=.3*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),2e5)*5.*vec3(1,.9,.8);
   cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),1e5)*2.*vec3(1,0,0);
   fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
   fragColor/=1.+pow(length(uv),4.)*.1;
