@@ -182,6 +182,8 @@ void selectShot() {
         dashBoardUnderTheShoulderShot(time);
     } else if (get_shot(time, 6.)) {
         viewFromBehind(time);
+        sheepOnMoto = true;
+        driverIsSleeping = true;
     } else if (get_shot(time, 10.)) {
         // staticRoadShotEnd(time);
         camMotoSpace = 0.;

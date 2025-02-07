@@ -6,6 +6,7 @@ uniform sampler2D tex;
 float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa,sheepPos=vec3(0);
 float wheelie=0.;
+bool driverIsSleeping=false,sheepOnMoto=false;
 const vec3 roadWidthInMeters=vec3(4,8,8);
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
@@ -48,7 +49,7 @@ vec2 valueNoise2(float p)
   p=p*p*(3.-2.*p);
   return mix(hash12(p0),hash12(p0+1.),p);
 }
-float fBm(vec2 p,int iterations,float weight_param)
+float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
 {
   float v=0.,weight=1.,frequency=1.,offset=0.;
   for(int i=0;i<iterations;++i)
@@ -56,7 +57,7 @@ float fBm(vec2 p,int iterations,float weight_param)
       float noise=valueNoise(p*frequency+offset)*2.-1.;
       v+=weight*noise;
       weight*=clamp(weight_param,0.,1.);
-      frequency*=1.+2.*clamp(.5,0.,1.);
+      frequency*=1.+2.*clamp(frequency_param,0.,1.);
       offset+=1.;
     }
   return v;
@@ -138,7 +139,6 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
   ro=cameraPosition;
   rd=normalize(cameraTarget*camProjectionRatio+uv.x*cameraRight+uv.y*cameraUp);
 }
-vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
 float distanceToSegment(vec2 p)
 {
   vec2 B=roadP2,A=roadP1,AB=B-A;
@@ -158,6 +158,14 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index,out vec3 directionAndCurvature)
 {
   directionAndCurvature=normalize(vec3(-1,-1,0));
   return mix(roadP2,roadP1,spline_t_and_index.x);
+}
+vec2 blood(vec3 p)
+{
+  p-=vec3(1,1.2,0);
+  float d=p.y+smoothstep(1.5,8.,length(p.xz))+1.;
+  return d<.4?
+    d-=pow((noise(p*.9)*.5+noise(p*1.6)*.3+noise(p*2.7)*.1)*.5+.5,3.)*.45,vec2(d,22):
+    vec2(d,10);
 }
 float roadBumpHeight(float d)
 {
@@ -205,7 +213,7 @@ float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
   if(1.-smoothstep(50.,2e2,current_t)>0.)
     {
       vec2 pNoise=vec2(2.*atan(localP.z,localP.x),localP.y)+id;
-      d+=.2*fBm(2.*pNoise,2,.7)+1.;
+      d+=.2*fBm(2.*pNoise,2,.7,.5)+1.;
     }
   return d;
 }
@@ -216,7 +224,7 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   localP.xz-=id;
   return vec2(tree(p,localP,id,splineUV,current_t),9);
 }
-vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0);
+vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1,.75,0);
 float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
@@ -249,13 +257,16 @@ vec3 worldToMoto(vec3 v)
 }
 vec2 driverShape(vec3 p)
 {
-  p=worldToMoto(p)-vec3(-.35,.78,0);
+  if(driverIsSleeping)
+    p-=vec3(.4,.5,-2.5),p.yz*=Rotation(1.2);
+  else
+     p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2||camShowDriver<.5)
     return vec2(d,6);
   vec3 simP=p;
   simP.z=abs(simP.z);
-  float wind=fBm((p.xy+time)*12.,1,.5);
+  float wind=fBm((p.xy+time)*12.,1,.5,.5);
   if(d<.8)
     {
       vec3 pBody=p;
@@ -294,8 +305,8 @@ vec2 driverShape(vec3 p)
   d+=.01*wind;
   {
     vec3 pLeg=simP-vec3(0,0,.13);
-    pLeg.xy*=Rotation(1.55);
-    pLeg.yz*=Rotation(-.45);
+    if(!driverIsSleeping)
+      pLeg.xy*=Rotation(1.55),pLeg.yz*=Rotation(-.45);
     float h2=Capsule(pLeg,.35,.09);
     d=smin(d,h2,.01);
     pLeg.y+=.4;
@@ -446,7 +457,7 @@ vec2 sheep(vec3 p)
   p.yz*=Rotation(.5);
   if(wheelie>0.)
     p.yz*=Rotation(wheelie*.4),p.y-=mix(0.,.35,wheelie),p.z-=mix(0.,.2,wheelie);
-  p/=.2;
+  p/=.15;
   float tb=iTime*animationSpeed.x;
   vec3 bodyMove=vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0)*.025*animationAmp.x;
   tb=length(p*vec3(1,1,.825)-vec3(0,1.5,2.55)-bodyMove)-2.;
@@ -508,10 +519,10 @@ vec2 sheep(vec3 p)
       dmat.x=smax(dmat.x,-earsClip,.15);
       dmat=MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,17)),vec2(c,17)),vec2(eyes,18)),vec2(b,19)),vec2(n,17));
       headDist=c;
-      dmat.x*=.2;
+      dmat.x*=.15;
       return dmat;
     }
-  return vec2(tb*.2,16);
+  return vec2(tb*.15,16);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {
@@ -519,7 +530,7 @@ vec2 sceneSDF(vec3 p,float current_t)
   vec2 d=motoShape(p);
   d=MinDist(d,driverShape(p));
   d=MinDist(d,terrainShape(p,splineUV));
-  d=MinDist(d,treesShape(p,splineUV,current_t));
+  d=MinDist(MinDist(d,treesShape(p,splineUV,current_t)),blood(p));
   return MinDist(d,sheep(p));
 }
 float fastAO(vec3 pos,vec3 nor,float maxDist,float falloff)
@@ -534,12 +545,18 @@ float shadow(vec3 ro,vec3 rd)
   for(int i=0;i<64;i++)
     {
       float h=sceneSDF(ro+rd*t,0.).x;
-      res=min(res,30.*h/t);
+      res=min(res,10.*h/t);
       t+=h;
       if(res<1e-4||t>50.)
         break;
     }
   return clamp(res,0.,1.);
+}
+vec3 sky(vec3 V,vec3 fogColor)
+{
+  float cloud=smoothstep(0.,1.,fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7)+1.);
+  cloud=mix(.15,1.,cloud*cloud);
+  return mix(mix(vec3(.6,.8,1),vec3(.01,.35,1),pow(smoothstep(.15,1.,V.y),.4)),fogColor,cloud);
 }
 float trace(vec3 ro,vec3 rd)
 {
@@ -564,12 +581,14 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   float t=trace(ro,rd);
   p=ro+rd*t;
   vec2 dmat=sceneSDF(p,t),eps=vec2(1e-4,0);
-  vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy,t).x,dmat.x-sceneSDF(p-eps.yxy,t).x,dmat.x-sceneSDF(p-eps.yyx,t).x)),sunDir=normalize(vec3(3.5,3,-1)),skyColor=mix(vec3(.6,.7,.8),vec3(.5,.8,1.5),rd.y);
-  float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,shad=shadow(p,sunDir),fre=1.+dot(rd,n);
+  vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy,t).x,dmat.x-sceneSDF(p-eps.yxy,t).x,dmat.x-sceneSDF(p-eps.yyx,t).x)),sunDir=normalize(vec3(3.5,3,-1)),fogColor=mix(vec3(.6,.7,.8),vec3(.5,.8,1.5),rd.y);
+  float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,shad=shadow(p,sunDir);
+  shad=mix(.7,1.,shad);
+  float fre=1.+dot(rd,n);
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
   if(t>=5e2)
-    return skyColor;
+    return sky(rd,fogColor);
   if(dmat.y==10)
     {
       sunDir=vec3(.1,.4,.1);
@@ -617,10 +636,8 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
     sunDir=vec3(1,.01,.01)*.3,diff*=vec3(3),amb*=vec3(2)*fre*fre,sss*=0.,spe=vec3(1,.3,.3)*pow(spe,vec3(500))*5.;
   else if(dmat.y==17.)
     sunDir=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,5)+2.)*2.,spe=pow(spe,vec3(4))*fre*.02;
-  else
-     sunDir=vec3(1,.5,0);
   diff=sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi;
-  return mix(diff,skyColor,1.-exp(-t*.01));
+  return mix(diff,fogColor,1.-exp(-t*.015));
 }
 float verticalBump()
 {
@@ -707,6 +724,7 @@ void selectShot()
   float time=iTime;
   camProjectionRatio=1.;
   camMotoSpace=1.;
+  camShowDriver=1.;
   camFoV=atan(1./camProjectionRatio);
   sheepPos=vec3(0,1.2,0);
   wheelie=0.;
@@ -714,7 +732,7 @@ void selectShot()
   if(get_shot(time,4.5))
     camMotoSpace=0.,camPos=vec3(1,1,0),camTa=vec3(0,1,5),camProjectionRatio=1.5;
   else if(get_shot(time,8.))
-    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,2.-.2*time,1-.5*time),camProjectionRatio=1.,wheelie=smoothstep(3.,3.5,time);
+    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,2.-.2*time,1-.5*time),camProjectionRatio=1.,wheelie=smoothstep(3.,3.5,time),driverIsSleeping=true;
   else if(get_shot(time,6.))
     seedOffset=10.,sideShotRear();
   else if(get_shot(time,5.))
@@ -744,7 +762,7 @@ void selectShot()
   else if(get_shot(time,8.))
     dashBoardUnderTheShoulderShot(time);
   else if(get_shot(time,6.))
-    viewFromBehind(time);
+    viewFromBehind(time),sheepOnMoto=true,driverIsSleeping=true;
   else if(get_shot(time,10.))
     camMotoSpace=0.,camPos=vec3(1,1.5,0),camTa=vec3(2,3.+.5*time,-10),camProjectionRatio=1.5;
   else if(get_shot(time,10.))
@@ -753,12 +771,12 @@ void selectShot()
   seedOffset=iTime-time;
   motoDistanceOnCurve=mix(.1,.9,(mod(seedOffset,14.)+iTime-seedOffset)/20.);
 }
-float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff,float distFalloff)
+float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff)
 {
   ro=motoToWorld(lightPosition,true)-ro;
   lightPosition=normalize(ro);
   float aligned=max(0.,dot(lightPosition,-motoToWorld(normalize(lightDirection),false)));
-  return aligned/(1.+falloff*(1.-dot(rd,lightPosition)))/mix(1.,length(ro),distFalloff);
+  return aligned/(1.+falloff*(1.-dot(rd,lightPosition)))/mix(1.,length(ro),0.);
 }
 void main()
 {
@@ -773,8 +791,8 @@ void main()
      getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   cameraTarget=rayMarchScene(ro,rd,cameraTarget);
-  cameraTarget+=.2*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4,0.)*5.*vec3(1,.9,.8);
-  cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e3,1.)*vec3(1,0,0);
+  cameraTarget+=.3*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4)*5.*vec3(1,.9,.8);
+  cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),1e5)*2.*vec3(1,0,0);
   fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
   fragColor/=1.+pow(length(uv),4.)*.1;
 }

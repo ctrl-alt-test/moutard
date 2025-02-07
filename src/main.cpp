@@ -4,11 +4,13 @@
 	#define FULLSCREEN          0
 	#define DESPERATE           0
 	#define BREAK_COMPATIBILITY 0
+	// #define SOUND_ON
 #else
 	#define OPENGL_DEBUG        0
 	#define FULLSCREEN          1
 	#define DESPERATE           0
 	#define BREAK_COMPATIBILITY 0
+	#define SOUND_ON
 #endif
 #include <windows.h>
 #include <mmsystem.h>
@@ -17,7 +19,6 @@
 #include "definitions.h"
 
 // Global defines
-#define SOUND_ON
 //#define USE_FXAA 1
 #define USE_CREATE_SHADER_PROGRAM // Save almost 40 bytes, require OpenGL 4.1 (Anat : doesn't work on my emulated windows)
 //#define USE_POSTPROCESS 0

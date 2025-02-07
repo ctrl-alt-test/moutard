@@ -1,28 +1,13 @@
-// Rendering code from The Sheep and the Flower
-
-float sceneSDF_t = 0.;
+float sceneSDF_t = 0.; // TODO
 
 vec2 sceneSDF(vec3 p, float current_t)
 {
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
-
-#ifndef DISABLE_MOTO
     vec2 d = motoShape(p);
-#else
-    vec2 d = vec2(INF, NO_ID);
-#endif
-#ifndef DISABLE_MOTO_DRIVER
     d = MinDist(d, driverShape(p));
-#endif
-#ifndef DISABLE_TERRAIN
     d = MinDist(d, terrainShape(p, splineUV));
-#endif
-#ifndef DISABLE_TREES
     d = MinDist(d, treesShape(p, splineUV, current_t));
-#endif
-
     d = MinDist(d, blood(p));
-
     d = MinDist(d, sheep(p));
     return d;
 }
@@ -33,22 +18,32 @@ float fastAO( in vec3 pos, in vec3 nor, float maxDist, float falloff ) {
     return clamp(1. - falloff*1.5*(occ1 + occ2), 0., 1.);
 }
 
-float shadow( vec3 ro, vec3 rd)
+float shadow(vec3 ro, vec3 rd)
 {
     float res = 1.0;
     float t = 0.08;
-    for( int i=0; i<64; i++ )
+    for(int i = 0; i < 64; i++)
     {
-        float h = sceneSDF( ro + rd*t, sceneSDF_t ).x;
-        res = min( res, 30.0*h/t );
+        float h = sceneSDF(ro + rd*t, sceneSDF_t).x;
+        res = min(res, 10.*h / t);
         t += h;
         
-        if( res<0.0001 || t>50. ) break;
+        if(res < 0.0001 || t > 50.) break;
         
     }
     return clamp( res, 0.0, 1.0 );
 }
 
+vec3 sky(vec3 V, vec3 fogColor)
+{
+    vec3 col = mix(vec3(0.6, 0.8, 1.), vec3(0.01, 0.35, 1.), pow(smoothstep(0.15, 1., V.y), 0.4));
+    float cloud = fBm(0.015*time+V.xz/(0.01 + V.y) * 0.5, 5, 0.55, 0.7);
+    cloud = smoothstep(0., 1., cloud+1.);
+    cloud *= cloud;
+    cloud = mix(0.15, 1., cloud);
+
+    return mix(col, fogColor, cloud);
+}
 
 float trace(vec3 ro, vec3 rd) {
     float t = 0.1;
@@ -84,11 +79,13 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     // Shade
     // ----------------------------------------------------------------
     vec3 sunDir = normalize(vec3(3.5,3.,-1.));
-    vec3 skyColor = mix(vec3(0.6,0.7,0.8), vec3(0.5,0.8,1.5), rd.y);
+    vec3 fogColor = mix(vec3(0.6,0.7,0.8), vec3(0.5,0.8,1.5), rd.y);
+    vec3 skyColor = sky(rd, fogColor);
     
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
     
     float shad = shadow(p, sunDir);
+    shad = mix(0.7, 1., shad);
     float fre = 1.0+dot(rd,n);
     
     vec3 diff = vec3(1.,.8,.7) * max(dot(n,sunDir), 0.) * pow(vec3(shad), vec3(1.,1.2,1.5));
@@ -218,15 +215,12 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         amb *= vec3(1.,.75,.75);
         sss = pow(sss, vec3(.5,2.5,5.0)+2.)*2.;// * fre;// * pow(fre, 1.);
         spe = pow(spe, vec3(4.))*fre*.02;
-    } else {
-        albedo = vec3(1, 0.5, 0); // unused?
     }
-    
 
     // fog
     vec3 radiance = albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi;
-    float fogAmount = 1.0 - exp(-t*0.01);
-    vec3 col = mix(radiance, skyColor, fogAmount);
+    float fogAmount = 1.0 - exp(-t*0.015);
+    vec3 col = mix(radiance, fogColor, fogAmount);
 
     return col;
 }

@@ -4,10 +4,6 @@
 const bool ENABLE_STOCHASTIC_MOTION_BLUR = false;
 // #define ENABLE_STEP_COUNT
 // #define ENABLE_DAY_MODE
-// #define DISABLE_MOTO
-// #define DISABLE_MOTO_DRIVER
-// #define DISABLE_TERRAIN
-// #define DISABLE_TREES
 
 // Constants:
 const int MAX_RAY_MARCH_STEPS = 250;
@@ -36,6 +32,7 @@ vec3 camTa;
 vec3 sheepPos = vec3(0.);
 float wheelie = 0.;
 bool driverIsSleeping = false; // of course, he's not dead!
+bool sheepOnMoto = false;
 
 // x: actual width
 // y: width + transition
@@ -116,8 +113,10 @@ void main()
     vec3 radiance = rayMarchScene(ro, rd, p);
 
     // Bloom around headlight
-    radiance += 0.2*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.) * 5.*vec3(1., 0.9, .8);
-    radiance += bloom(ro, rd, breakLightOffsetFromMotoRoot, vec3(-1.0, -0.5, 0.0), 2000., 1.) * vec3(1., 0., 0.);
+    radiance += 0.3*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.)
+        * 5.*vec3(1., 0.9, .8);
+    radiance += bloom(ro, rd, breakLightOffsetFromMotoRoot, vec3(-1.0, -0.5, 0.0), 100000., 0.)
+        * 2. * vec3(1., 0., 0.);
 
     vec3 i_color = radiance;
 
