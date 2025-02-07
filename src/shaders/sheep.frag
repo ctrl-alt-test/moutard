@@ -1,18 +1,17 @@
-const vec3 eyeDir = vec3(1.,.0,1.);
+vec3 eyeDir = vec3(0.,0.,1.);
 vec3 animationSpeed = vec3(1);
 const vec3 animationAmp = vec3(1.,.2, .25);
 vec2 headRot = vec2(0.);
-const float blink = 0.;
+float blink = 0.;
 
 float headDist = 0.; // distance to head (for eyes AO)
 vec2 sheep(vec3 p, bool shiftPos) {
     const float SCALE = 0.15;
 
     if (shiftPos) {
-      if (true || sheepOnMoto) { // sheep on moto
+      if (sheepOnMoto) { // sheep on moto
         p -= motoPos;
         p -= vec3(0., 1.2, -0.3);
-        //p.xz *= Rotation(-0.7);
         p.yz *= Rotation(0.5);
 
         if (wheelie > 0.) { // wheelie

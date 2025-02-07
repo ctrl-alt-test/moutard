@@ -130,13 +130,45 @@ void selectShot() {
     camFoV = atan(1. / camProjectionRatio);
     sheepPos = vec3(0., 1.2, 0.);
     wheelie = 0.;
+    blink = max(fract(iTime*.333), fract(iTime*.123+.1));
 
     float seedOffset = 0.;
-    if (get_shot(time, 4.5)) {
+
+    if (get_shot(time, 8.)) {
+        // intro shot, sheep face
         camMotoSpace = 0.;
-        camPos = vec3(1., 1., 0.);
-        camTa = vec3(-0., 1., 5.);// + t_in_shot);
+        float motion = time*.1;
+        float vshift = smoothstep(5., 0., time);
+        camPos = vec3(1., 0.9 + vshift*.5, 6. - motion);
+        camTa = vec3(1., 0.8 + vshift*1., 7. - motion);// + t_in_shot);
+        sheepPos = vec3(1., 0.5, 7. - motion);
         camProjectionRatio = 1.5;
+        
+    } else if (get_shot(time, 5.)) {
+        // sheep walking
+        camMotoSpace = 0.;
+        float motion = time*.1;
+        camPos = vec3(3., 0.5, 1. - motion);
+        sheepPos = vec3(1., 0.5, 5. - motion);
+        camTa = vec3(0., 1., 4. - motion);// + t_in_shot);
+        camProjectionRatio = 1.5;
+
+    } else if (get_shot(time, 5.)) { // moto 1
+        float shift = smoothstep(0., 5., time);
+        camPos = vec3(3. - shift, 0.5, -2.);
+        camTa = vec3(0., 1.5, 1.);
+
+    } else if (get_shot(time, 5.)) {
+        // sheep walking 2
+        float shift = smoothstep(0., 5., time);
+        camMotoSpace = 0.;
+        float motion = time*.1;
+        camPos = vec3(3., 1., 3. + motion);
+        sheepPos = vec3(1., 0.5, 4. - motion);
+        vec3 signPos = vec3(0., 1.5, 2.);
+        panelWarningPos = vec3(-1.5, 0.5, 2.5);
+        warningIsSheep = false;
+        camTa = mix(sheepPos+vec3(0,0.5,1), signPos, smoothstep(1., 4., time));
 
     } else if (get_shot(time, 8.)) {
         // staticRoadShotMotoArrives2(time);

@@ -34,11 +34,12 @@ float wheelie = 0.;
 bool driverIsSleeping = false; // of course, he's not dead!
 bool sheepOnMoto = false;
 vec3 panelWarningPos = vec3(6., 0., 0.);
+bool warningIsSheep = true;
 
 // x: actual width
 // y: width + transition
 // z: max width
-const vec3 roadWidthInMeters = vec3(4.0, 8.0, 8.0);
+const vec3 roadWidthInMeters = vec3(3.5, 5.0, 8.0);
 
 
 // Outputs:
@@ -95,8 +96,8 @@ void main()
         //cameraUp = motoToWorld(cameraUp, false);
     } else {
         // getRoadPositionDirectionAndCurvature(0.7, cameraPosition);
-        cameraTarget = cameraPosition + camTa;
-        cameraPosition += camPos;
+        cameraTarget = camTa;
+        cameraPosition = camPos;
     }
     setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
 
@@ -125,6 +126,9 @@ void main()
     fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.3)
         +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
     , 1.);
+
+    // fade in
+    fragColor *= smoothstep(0., 6., time);
 
     fragColor /= 1.+pow(length(uv),4.)*.1;
 

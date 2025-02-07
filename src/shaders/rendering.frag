@@ -221,7 +221,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             pp -= vec3(-0.3,3.5,0.);
 
             float symbol;
-            if (true) {
+            if (warningIsSheep) {
                 pp.xy *= 0.9;
                 float dist = 5.;
                 headRot = vec2(0., -0.8);
