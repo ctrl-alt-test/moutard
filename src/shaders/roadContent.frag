@@ -18,7 +18,7 @@ float tOnSegment(vec2 A, vec2 B, vec2 p) {
     return clamp(dot(p - A, AB) / dot(AB, AB), 0.0, 1.0);
 }
 
-const float roadScale = 200.;
+const float roadScale = 1000.;
 const vec2 roadP1 = vec2(0., -1.) * roadScale;
 const vec2 roadP2 = vec2(0, 1.) * roadScale;
 
@@ -100,7 +100,7 @@ vec2 panelWarning(vec3 p) {
 }
 
 vec2 blood(vec3 p) {
-    p -= vec3(1, 1.2, 0);
+    p -= vec3(100, 1.2, 0);
 
     float d = p.y + smoothstep(1.5,8.,length(p.xz)) + 1.;
     if (d < 0.4) {

@@ -135,7 +135,7 @@ void selectShot() {
 
     float seedOffset = 0.;
 
-    if (get_shot(time, 8.)) {
+    if (get_shot(time, 9.)) {
         // intro shot, sheep face
         camMotoSpace = 0.;
         float motion = time*.1;
@@ -153,9 +153,9 @@ void selectShot() {
         // sheep walking
         camMotoSpace = 0.;
         float motion = time*.1;
-        camPos = vec3(3., 0.5, 1. - motion);
+        camPos = vec3(2.5, 0.5, 3. - motion);
         sheepPos = vec3(1., 0.5, 5. - motion);
-        camTa = vec3(0., 1., 4. - motion);// + t_in_shot);
+        camTa = vec3(0., 1., 4.8 - motion);// + t_in_shot);
         camProjectionRatio = 1.5;
 
     } else if (get_shot(time, 5.)) { // moto 1
@@ -168,18 +168,19 @@ void selectShot() {
         float shift = smoothstep(0., 5., time);
         camMotoSpace = 0.;
         float motion = time*.1;
-        camPos = vec3(3., 1., 3. + motion);
-        sheepPos = vec3(1., 0.5, 4. - motion);
+        camPos = vec3(3., 1., 2. + motion);
+        sheepPos = vec3(1., 0.5, 3.7 - motion);
         vec3 signPos = vec3(0., 1.5, 2.);
         panelWarningPos = vec3(-1.5, 0.5, 2.5);
         warningIsSheep = false;
         camTa = mix(sheepPos+vec3(0,0.5,1), signPos, smoothstep(2., 3., time));
 
-    } else if (get_shot(time, 5.)) { // moto 1
+    } else if (get_shot(time, 5.)) {
+        // moto + sheep warning sign
         float shift = smoothstep(0., 5., time);
         camPos = vec3(-3. - 2.*shift, 0.5, -2.);
         camTa = vec3(0., 1.5, 1.);
-        panelWarningPos = vec3(3., 0.5, -55.);
+        panelWarningPos = vec3(3., 0.5, -250.);
 
     } else if (get_shot(time, 8.)) {
         // staticRoadShotMotoArrives2(time);
@@ -187,7 +188,10 @@ void selectShot() {
         camPos = vec3(5. - 0.1*time, 2.-0.2*time, 1-0.5*time);
         camProjectionRatio = 1.;
         wheelie = smoothstep(3., 3.5, time);
+        headRot = vec2(0., 0.2);
         driverIsSleeping = true;
+        sheepOnMoto = true;
+        camProjectionRatio = 1.5;
 
     } else if (get_shot(time, 6.)) {
         seedOffset = 10.;
@@ -250,5 +254,5 @@ void selectShot() {
     // Use mix to skip the beginning/end of the road.
     float t = mod(shotStartTime, 14.)
         + (iTime - shotStartTime);
-    motoDistanceOnCurve = mix(0.1, 0.9, t/20.);
+    motoDistanceOnCurve = mix(0.3, 0.7, t/20.);
 }

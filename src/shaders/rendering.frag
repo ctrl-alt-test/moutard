@@ -105,26 +105,34 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     }
 
     if(dmat.y == GROUND_ID) {
-        albedo = vec3(0.1, 0.4, 0.1);
-        sss *= 0.;
-        spe *= 0.1;
+        albedo = vec3(0.2, 0.2, 0.05);
 
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
         vec3 grassColor = vec3(0.22, 0.21, 0.04);
         if (isRoad > 0.99)
         {
-            albedo = vec3(0.5);
+            sss *= 0.;
+            albedo = vec3(0.4);
+            spe *= 0.1;
+        } else {
+            sss *= 0.5;
+            spe *= 0.;
         }
 
-
     } else if (IsMoto(int(dmat.y))) {
-        albedo = 0.2*vec3(.85,.95,1.);
+        if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
+            albedo = vec3(.2);
+            spe *= 0.2;
+        } else {
+            albedo = vec3(.1);
+            spe *= pow(spe, vec3(15.))*fre*2.;
+            // spe = pow(spe, vec3(8.))*fre*2.;
+        }
         sss *= 0.;
-        spe = pow(spe, vec3(8.))*fre*2.;
     } else if (dmat.y == TREE_ID) {
-        albedo = vec3(.35,.75,0.2);
-        sss *= 0.1;
+        albedo = vec3(.05,.07,0.);
+        sss *= 0.8;
         bnc *= 0.;
         spe *= 0.;
     } else if (dmat.y == COTON) {
@@ -135,7 +143,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     } else if (dmat.y == CLOGS) {
         albedo = vec3(.025);
         sss *= 0.;
-        spe = pow(spe, vec3(80.))*fre*10.;
+        spe = pow(spe, vec3(15.))*fre*10.;
     } else if (dmat.y == EYE) {
         sss *= .5;
         vec3 dir = normalize(eyeDir + (noise(vec3(iTime,iTime*.5,iTime*1.5))*2.-1.)*.01);

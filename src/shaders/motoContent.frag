@@ -92,20 +92,20 @@ vec2 driverShape(vec3 p)
         pBody.z = max(abs(pBody.z)-0.02,0);
         pBody.xy *= Rotation(3.1);
         pBody.yz *= Rotation(-0.1);
-        d = smin(d, Capsule(pBody, 0.12, 0.12), 0.1);
+        d = smin(d, Capsule(pBody, 0.12, 0.12), 0.4);
 
         pBody.y += 0.2;
         pBody.xy *= Rotation(-0.6);
-        d = smin(d, Capsule(pBody, 0.12, 0.11), 0.02);
+        d = smin(d, Capsule(pBody, 0.12, 0.11), 0.08);
 
         pBody.y += 0.2;
         pBody.xy *= Rotation(-0.3);
         pBody.yz *= Rotation(-0.2);
-        d = smin(d, Capsule(pBody, 0.12, 0.12), 0.02);
+        d = smin(d, Capsule(pBody, 0.12, 0.12), 0.08);
 
         pBody.y += 0.1;
         pBody.yz *= Rotation(1.7);
-        d = smin(d, Capsule(pBody, 0.12, 0.1), 0.015);
+        d = smin(d, Capsule(pBody, 0.12, 0.1), 0.06);
 
         pBody=p;
         pBody.y-=.48;
@@ -124,12 +124,12 @@ vec2 driverShape(vec3 p)
         pArm.yz *= Rotation(-0.6);
         pArm.xy *= Rotation(0.2);
         float arms = Capsule(pArm, 0.29, 0.06);
-        d = smin(d, arms, 0.005);
+        d = smin(d, arms, 0.02);
 
         pArm.y += 0.32;
         pArm.xy *= Rotation(1.5);
         arms = Capsule(pArm, 0.28, 0.04);
-        d = smin(d, arms, 0.005);
+        d = smin(d, arms, 0.02);
     }
     d += 0.01 * wind;
 
@@ -144,18 +144,18 @@ vec2 driverShape(vec3 p)
             pLeg.yz *= Rotation(-0.45);
         }
         float h2 = Capsule(pLeg, 0.35, 0.09);
-        d = smin(d, h2, 0.01);
+        d = smin(d, h2, 0.04);
 
         pLeg.y += 0.4;
         pLeg.xy *= Rotation(-1.5);
         float legs = Capsule(pLeg, 0.4, 0.06);
-        d = smin(d, legs, 0.01);
+        d = smin(d, legs, 0.04);
 
         pLeg.y += 0.45;
         pLeg.xy *= Rotation(1.75);
         pLeg.yz *= Rotation(0.25);
         float feet = Capsule(pLeg, 0.2, 0.04);
-        d = smin(d, feet, 0.01);
+        d = smin(d, feet, 0.04);
     }
     d += 0.002 * wind;
 
@@ -187,7 +187,7 @@ vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius, 
         p.z = abs(p.z);
         float h;
         float cyl = Segment3(p, vec3(0.0), vec3(0.0, 0.0, 1.0), h);
-        wheel = -smin(-wheel, cyl - innerRadius, 0.01);
+        wheel = -smin(-wheel, cyl - innerRadius, 0.04);
 
         /**/
         // Note: the following group of lines is 1 byte smaller written as
@@ -413,7 +413,7 @@ vec2 motoShape(vec3 p)
             pSaddle.xy *= Rotation(0.4);
             float seatSaddleCut = Ellipsoid(pSaddle, vec3(0.5, 0.15, 0.6));
             seat = -min(-seat, seatSaddleCut);
-            seat = -smin(-seat, seatSaddleCut, 0.02);
+            seat = -smin(-seat, seatSaddleCut, 0.08);
 
             vec3 pSeatBottom = pSeat + vec3(0.0, -0.55, 0.0);
             pSeatBottom.xy *= Rotation(0.5);
