@@ -42,6 +42,7 @@ void dashBoardUnderTheShoulderShot(float t)
     float bump = 0.02 * verticalBump();
     camPos = vec3(-0.2 - 0.6 * t, 0.88 + 0.35*t + bump, 0.42);
     camTa = vec3(0.5, 1. + 0.2 * t + bump, 0.25);
+    panelWarningPos = vec3(3., 0.5, -85.);
     camProjectionRatio = 1.5;
 }
 
@@ -143,7 +144,11 @@ void selectShot() {
         camTa = vec3(1., 0.8 + vshift*1., 7. - motion);// + t_in_shot);
         sheepPos = vec3(1., 0.5, 7. - motion);
         camProjectionRatio = 1.5;
-        
+
+    } else if (get_shot(time, 4.)) {
+        viewFromBehind(time);
+        sheepPos = vec3(INF);
+
     } else if (get_shot(time, 5.)) {
         // sheep walking
         camMotoSpace = 0.;
@@ -159,7 +164,7 @@ void selectShot() {
         camTa = vec3(0., 1.5, 1.);
 
     } else if (get_shot(time, 5.)) {
-        // sheep walking 2
+        // sheep walking + /!\ warning
         float shift = smoothstep(0., 5., time);
         camMotoSpace = 0.;
         float motion = time*.1;
@@ -168,7 +173,13 @@ void selectShot() {
         vec3 signPos = vec3(0., 1.5, 2.);
         panelWarningPos = vec3(-1.5, 0.5, 2.5);
         warningIsSheep = false;
-        camTa = mix(sheepPos+vec3(0,0.5,1), signPos, smoothstep(1., 4., time));
+        camTa = mix(sheepPos+vec3(0,0.5,1), signPos, smoothstep(2., 3., time));
+
+    } else if (get_shot(time, 5.)) { // moto 1
+        float shift = smoothstep(0., 5., time);
+        camPos = vec3(-3. - 2.*shift, 0.5, -2.);
+        camTa = vec3(0., 1.5, 1.);
+        panelWarningPos = vec3(3., 0.5, -55.);
 
     } else if (get_shot(time, 8.)) {
         // staticRoadShotMotoArrives2(time);

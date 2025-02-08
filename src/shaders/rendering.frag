@@ -153,7 +153,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         ne.xy -= offset * smoothstep(0.01,.0, dot(ne,rd));
         
         const float i_irisSize = .3;
-        float pupilSize = .3;
+        float pupilSize = .2;
         
         // polar coordinate
         float er = length(ne.xy);
@@ -218,7 +218,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
 
         if (n.z > .5) {
             vec3 pp = p;
-            pp -= vec3(-0.3,3.5,0.);
+            pp -= vec3(-0.3,warningHeight - 0.25,0.);
 
             float symbol;
             if (warningIsSheep) {
@@ -233,10 +233,10 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
                 }
                 symbol = 1. - smoothstep(0.001, 0.01, dist);
             } else {
-                symbol = smoothstep(0.13,0.1295, distance(p, vec3(0.,3.3,-4.9)));
-                symbol += smoothstep(0.005,0.,UnevenCapsule2d(p.xy-vec2(0.,3.6), .06,.14,0.8));
+                symbol = smoothstep(0.13,0.1295, distance(p, vec3(0.,warningHeight-.45,-4.9)));
+                symbol += smoothstep(0.005,0.,UnevenCapsule2d(p.xy-vec2(0.,warningHeight-0.15), .06,.14,0.8));
             }
-            float tri = Triangle(p-vec3(0.,3.75,-5.), vec2(1.3,.2), .01);
+            float tri = Triangle(p-vec3(0.,warningHeight,-5.), vec2(1.3,.2), .01);
             albedo = vec3(1.5,0.,0.);
             albedo = mix(albedo, vec3(2.), smoothstep(0.005,.0, tri));
             albedo = mix(albedo, vec3(0.), symbol);

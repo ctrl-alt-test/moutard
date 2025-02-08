@@ -27,7 +27,7 @@ void computeMotoPosition()
     vec4 motoDirAndTurn = getRoadPositionDirectionAndCurvature(motoDistanceOnCurve, motoPos);
 
     vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
-    float rightOffset = 2.0 + 0.5*sin(time);
+    float rightOffset = 0. + 0.5*sin(time);
     motoPos.xz += motoRight * rightOffset;
     motoPos.y += roadBumpHeight(abs(rightOffset))+.1;
 

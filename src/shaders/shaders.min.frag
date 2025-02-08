@@ -178,10 +178,10 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index,out vec3 directionAndCurvature)
 vec2 panelWarning(vec3 p)
 {
   p-=panelWarningPos;
-  float pan=Triangle(p-vec3(0,3.75,-5),vec2(1.7,.1),.3);
+  float pan=Triangle(p-vec3(0,3,-5),vec2(1.7,.1),.3);
   if(pan<8.)
     {
-      pan=smax(pan,-Triangle(p-vec3(0,3.75,-5.1),vec2(1.6,.1),.3),.001);
+      pan=smax(pan,-Triangle(p-vec3(0,3,-5.1),vec2(1.6,.1),.3),.001);
       float tube=Box3(p-vec3(0,2,-5.1),vec3(.11,2,.08),0.);
       vec3 pp=p;
       pp.y=abs(pp.y-3.65)-.3;
@@ -261,7 +261,7 @@ float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
   vec4 motoDirAndTurn=getRoadPositionDirectionAndCurvature(motoDistanceOnCurve,motoPos);
-  float rightOffset=2.+.5*sin(time);
+  float rightOffset=.5*sin(time);
   motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
   motoYaw=atan(motoDirAndTurn.z,motoDirAndTurn.x);
@@ -547,7 +547,7 @@ vec2 sheep(vec3 p,bool shiftPos)
       float earsClip=length(pp)-.16;
       pp=pl;
       pp.x=abs(pl.x)-.4;
-      float eyes=length(pp*vec3(1,1,.8)-vec3(0,0,-1))-.3,eyeCap=smin(smax(abs(eyes)-.01,smin(-abs(pl.y+pl.z*.025)+.25-smoothstep(.95,.96,blink)*.3+cos(iTime)*.02,-pl.z-.64,.2),.01),c,.02);
+      float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=smin(smax(abs(eyes)-.01,smin(-abs(pl.y+pl.z*.025)+.25-smoothstep(.95,.96,blink)*.3+cos(iTime)*.02,-pl.z-.8,.2),.01),c,.02);
       c=min(c,eyeCap);
       pp.x=abs(pl.x)-.2;
       pp.xz=Rotation(-.45)*pp.xz;
@@ -655,7 +655,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
       dir.xy-=offset*smoothstep(.01,0.,dot(dir,rd));
       float er=length(dir.xy),theta=atan(dir.x,dir.y);
       b=mix(vec3(.5,.3,.1),vec3(0,.8,1),smoothstep(.16,.3,er)*.3+cos(theta*15.)*.04);
-      float pupil=smoothstep(.3,.32,er);
+      float pupil=smoothstep(.2,.22,er);
       sunDir=mix(b*.3,mix(b*((smoothstep(-.9,1.,noise(vec3(er*10.,theta*30.+cos(er*50.+noise(vec3(theta))*50.),0)))+smoothstep(-.9,1.,noise(vec3(er*10.,theta*40.+cos(er*30.+noise(vec3(theta))*50.)*2.,0))))*.5+.5)*smoothstep(.3,.29,er)*(vec3(1,.8,.7)*pow(max(0.,dot(normalize(vec3(3,1,-1)),dir)),8.)*3e2+.5)*pupil+pow(spe,vec3(800))*3,vec3(.8),smoothstep(.29,.3,er)),smoothstep(0.,.05,abs(er-.3)+.01));
       n=mix(normalize(n+(eyeDir+n)*4.),n,smoothstep(.3,.32,er));
       {
@@ -679,7 +679,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
       spe=pow(spe,vec3(8))*fre*20.;
       if(n.z>.5)
         {
-          vec3 pp=p-vec3(-.3,3.5,0);
+          vec3 pp=p-vec3(-.3,2.75,0);
           float symbol;
           if(warningIsSheep)
             {
@@ -696,8 +696,8 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
               symbol=1.-smoothstep(.001,.01,dist);
             }
           else
-             symbol=smoothstep(.13,.1295,length(p-vec3(0,3.3,-4.9)))+smoothstep(.005,0.,UnevenCapsule2d(p.xy-vec2(0,3.6)));
-          sunDir=mix(mix(vec3(1.5,0,0),vec3(2),smoothstep(.005,0.,Triangle(p-vec3(0,3.75,-5),vec2(1.3,.2),.01))),vec3(0),symbol);
+             symbol=smoothstep(.13,.1295,length(p-vec3(0,2.55,-4.9)))+smoothstep(.005,0.,UnevenCapsule2d(p.xy-vec2(0,2.85)));
+          sunDir=mix(mix(vec3(1.5,0,0),vec3(2),smoothstep(.005,0.,Triangle(p-vec3(0,3,-5),vec2(1.3,.2),.01))),vec3(0),symbol);
         }
       else
          sunDir=vec3(.85,.95,1);
@@ -745,6 +745,7 @@ void dashBoardUnderTheShoulderShot(float t)
   float bump=.02*verticalBump();
   camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
   camTa=vec3(.5,1.+.2*t+bump,.25);
+  panelWarningPos=vec3(3,.5,-85);
   camProjectionRatio=1.5;
 }
 void frontWheelCloseUpShot()
@@ -807,6 +808,8 @@ void selectShot()
       sheepPos=vec3(1,.5,7.-motion);
       camProjectionRatio=1.5;
     }
+  else if(get_shot(time,4.))
+    viewFromBehind(time),sheepPos=vec3(1e6);
   else if(get_shot(time,5.))
     {
       camMotoSpace=0.;
@@ -830,7 +833,14 @@ void selectShot()
       sheepPos=vec3(1,.5,4.-motion);
       panelWarningPos=vec3(-1.5,.5,2.5);
       warningIsSheep=false;
-      camTa=mix(sheepPos+vec3(0,.5,1),vec3(0,1.5,2),smoothstep(1.,4.,time));
+      camTa=mix(sheepPos+vec3(0,.5,1),vec3(0,1.5,2),smoothstep(2.,3.,time));
+    }
+  else if(get_shot(time,5.))
+    {
+      float shift=smoothstep(0.,5.,time);
+      camPos=vec3(-3.-2.*shift,.5,-2);
+      camTa=vec3(0,1.5,1);
+      panelWarningPos=vec3(3,.5,-55);
     }
   else if(get_shot(time,8.))
     camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,2.-.2*time,1-.5*time),camProjectionRatio=1.,wheelie=smoothstep(3.,3.5,time),driverIsSleeping=true;

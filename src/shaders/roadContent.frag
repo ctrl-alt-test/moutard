@@ -79,11 +79,13 @@ float roadMarkings(vec2 uv, float width, vec2 params)
     return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
 }
 
+const float warningHeight = 3.;
+
 vec2 panelWarning(vec3 p) {
     p -= panelWarningPos;
-    float pan = Triangle(p - vec3(0., 3.75,-5.), vec2(1.7, .1), .3);
+    float pan = Triangle(p - vec3(0., warningHeight,-5.), vec2(1.7, .1), .3);
     if (pan < 8.) {
-        pan = smax(pan, -Triangle(p - vec3(0.,3.75,-5.1), vec2(1.6,.1), .3), .001);
+        pan = smax(pan, -Triangle(p - vec3(0., warningHeight, -5.1), vec2(1.6,.1), .3), .001);
         
         float tube = Box3(p-vec3(0., 2.,-5.1), vec3(.11, 2., .08), 0.);
         vec3 pp = p;
