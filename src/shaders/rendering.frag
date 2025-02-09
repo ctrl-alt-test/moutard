@@ -37,7 +37,7 @@ float shadow(vec3 ro, vec3 rd)
 
 vec3 sky(vec3 V, vec3 fogColor)
 {
-    vec3 col = mix(vec3(0.6, 0.8, 1.), vec3(0.01, 0.35, 1.), pow(smoothstep(0.15, 1., V.y), 0.4));
+    vec3 col = mix(vec3(0.6, 0.7, 0.8), vec3(0.01, 0.35, 0.7), pow(smoothstep(0.15, 1., V.y), 0.4));
     float cloud = fBm(0.015*time+V.xz/(0.01 + V.y) * 0.5, 5, 0.55, 0.7);
     cloud = smoothstep(0., 1., cloud+1.);
     cloud *= cloud;
@@ -105,24 +105,23 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     }
 
     if(dmat.y == GROUND_ID) {
-        albedo = vec3(0.2, 0.2, 0.05);
 
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
-        vec3 grassColor = vec3(0.22, 0.21, 0.04);
         if (isRoad > 0.99)
         {
             sss *= 0.;
             albedo = vec3(0.4);
             spe *= 0.1;
-        } else {
-            sss *= 0.5;
+        } else { // grass
+            sss *= 0.4;
+            albedo = vec3(0.15, 0.15, 0.1);
             spe *= 0.;
         }
 
     } else if (IsMoto(int(dmat.y))) {
         if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
-            albedo = vec3(.2);
+            albedo = vec3(.1);
             spe *= 0.2;
         } else {
             albedo = vec3(.1);
@@ -131,8 +130,8 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         }
         sss *= 0.;
     } else if (dmat.y == TREE_ID) {
-        albedo = vec3(.05,.07,0.);
-        sss *= 0.8;
+        albedo = 2.*vec3(.1,.1,0.05);
+        sss *= 0.5;
         bnc *= 0.;
         spe *= 0.;
     } else if (dmat.y == COTON) {

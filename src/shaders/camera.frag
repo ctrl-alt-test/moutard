@@ -186,12 +186,11 @@ void selectShot() {
         // staticRoadShotMotoArrives2(time);
         camTa = vec3(0., 1., 0.);
         camPos = vec3(5. - 0.1*time, 2.-0.2*time, 1-0.5*time);
-        camProjectionRatio = 1.;
         wheelie = smoothstep(3., 3.5, time);
         headRot = vec2(0., 0.2);
         driverIsSleeping = true;
         sheepOnMoto = true;
-        camProjectionRatio = 1.5;
+        camProjectionRatio = 2. - smoothstep(0., 6., time);
 
     } else if (get_shot(time, 6.)) {
         seedOffset = 10.;
