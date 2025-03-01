@@ -1,6 +1,6 @@
 vec3 motoPos;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
-vec3 breakLightOffsetFromMotoRoot = vec3(-1., 0.75, 0.0);
+vec3 breakLightOffsetFromMotoRoot = vec3(-0.8, 0.75, 0.0);
 float motoYaw;
 float motoPitch;
 float motoRoll;
