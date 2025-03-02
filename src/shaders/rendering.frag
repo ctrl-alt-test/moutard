@@ -160,10 +160,10 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         ne.xy -= offset * smoothstep(0.01,.0, dot(ne,rd));
         
         const float i_irisSize = .3;
-        float pupilSize = .2;
+        float pupilSize = .1 + eyesSurprise*.5;
         
         // polar coordinate
-        float er = length(ne.xy);
+        float er = length(ne.xy); // * mix(1., 0.01, eyesSurprise);
         float theta = atan(ne.x, ne.y);
         
         // iris

@@ -35,6 +35,7 @@ bool driverIsSleeping = false; // of course, he's not dead!
 bool sheepOnMoto = false;
 vec3 panelWarningPos = vec3(6., 0., 0.);
 bool warningIsSheep = true;
+float globalFade = 1.;
 
 // x: actual width
 // y: width + transition
@@ -128,7 +129,7 @@ void main()
     , 1.);
 
     // fade in
-    fragColor *= smoothstep(0., 6., time);
+    fragColor *= globalFade;
 
     fragColor /= 1.+pow(length(uv),4.)*0.6;
 

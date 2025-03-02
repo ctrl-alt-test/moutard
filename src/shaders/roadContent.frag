@@ -100,7 +100,10 @@ vec2 panelWarning(vec3 p) {
 }
 
 vec2 blood(vec3 p) {
-    p -= vec3(100, 1.2, 0);
+    if (!driverIsSleeping) {
+        return vec2(INF, GROUND_ID);
+    }
+    p -= vec3(0, 1.2, -2.5);
 
     float d = p.y + smoothstep(1.5,8.,length(p.xz)) + 1.;
     if (d < 0.4) {
