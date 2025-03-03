@@ -71,6 +71,9 @@
     <None Include="src\shaders\rendering2.frag">
       <Filter>shaders</Filter>
     </None>
+    <None Include="src\shaders\logo.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

@@ -583,6 +583,7 @@
     <None Include="src\shaders\common.frag" />
     <None Include="src\shaders\fxaa.frag" />
     <None Include="src\shaders\ids.frag" />
+    <None Include="src\shaders\logo.frag" />
     <None Include="src\shaders\rendering2.frag" />
     <None Include="src\shaders\shared.h" />
     <None Include="src\shaders\motoContent.frag" />

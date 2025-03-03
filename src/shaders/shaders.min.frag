@@ -9,7 +9,7 @@ float wheelie=0.;
 bool driverIsSleeping=false,sheepOnMoto=false;
 vec3 panelWarningPos=vec3(6,0,0);
 bool warningIsSheep=true;
-float globalFade=1.;
+float globalFade=1.,shouldDrawLogo=0.;
 const vec3 roadWidthInMeters=vec3(3.5,5,8);
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
@@ -401,7 +401,7 @@ vec2 motoShape(vec3 p)
     handle=-min(handle,-Ellipsoid(pFork,vec3(.04,.05,.08)));
     pFork.x-=.05;
     pFork.yz*=Rotation(1);
-    handle=min(handle,max(length(pFork.xz)-.003,max(pFork.y,-pFork.y-.15)));
+    handle=min(handle,max(length(pFork.xz)-.003,max(pFork.y,-pFork.y-.2)));
     fork=min(fork,handle);
     d=MinDist(d,vec2(fork,0));
   }
@@ -715,6 +715,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   diff=sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi;
   return mix(diff,fogColor,1.-exp(-t*.015));
 }
+bool hideMoto=false;
 float verticalBump()
 {
   return valueNoise2(6.*time).x;
@@ -735,6 +736,33 @@ void viewFromBehind(float t_in_shot)
   camPos=vec3(-2.-2.5*t_in_shot,.5+.2*t_in_shot,sin(t_in_shot));
   camProjectionRatio=1.;
 }
+void motoFaceImpactShot(float t_in_shot)
+{
+  float shift=smoothstep(0.,9.,t_in_shot),impact=smoothstep(8.7,9.,t_in_shot);
+  vec2 noise=valueNoise2(5e2*t_in_shot)*shift;
+  camPos=vec3(3.-impact-shift*1.2,.5,0);
+  camPos.x+=noise.x*.05;
+  camPos.z+=noise.y*.05;
+  camTa=vec3(0,1.+shift*.2,0);
+  camProjectionRatio=2.+impact*5.;
+  globalFade*=1.-impact;
+}
+void sheepScaredShot(float t_in_shot)
+{
+  camMotoSpace=0.;
+  hideMoto=true;
+  animationSpeed*=0.;
+  float shift=t_in_shot/5.;
+  headRot=vec2(0,-.1);
+  eyeDir=vec3(0,-.1,1);
+  vec2 noise=valueNoise2(1e2*t_in_shot)*smoothstep(0.,5.,t_in_shot);
+  headRot.x+=noise.x*.1;
+  headRot.y+=noise.y*.1;
+  camPos=vec3(1,.9,6.-shift);
+  camTa=vec3(1,.8,7);
+  sheepPos=vec3(1,.5,7);
+  camProjectionRatio=1.5+shift*2.;
+}
 bool get_shot(inout float time,float duration)
 {
   if(time<duration)
@@ -752,7 +780,6 @@ void selectShot()
   sheepPos=vec3(0,1.2,0);
   wheelie=0.;
   blink=max(fract(iTime*.333),fract(iTime*.123+.1));
-  bool hideMoto=false;
   if(get_shot(time,9.))
     {
       globalFade*=smoothstep(0.,6.,time);
@@ -838,6 +865,7 @@ void selectShot()
       camPos=vec3(4.-shift,.8,0);
       camTa=vec3(0,1.4,0);
       camProjectionRatio=1.5+shift;
+      sheepPos=vec3(0,100,0);
     }
   else if(get_shot(time,5.))
     {
@@ -853,59 +881,95 @@ void selectShot()
       eyesSurprise=smoothstep(4.5,4.8,time)*.2;
     }
   else if(get_shot(time,5.))
-    {
-      float shift=smoothstep(0.,5.,time)*.8;
-      camPos=vec3(3.-shift,.5,0);
-      camTa=vec3(0,1.+shift*.2,0);
-      camProjectionRatio=2.+shift;
-    }
-  else if(get_shot(time,5.))
-    {
-      camMotoSpace=0.;
-      hideMoto=true;
-      animationSpeed*=0.;
-      float shift=time/5.;
-      headRot=vec2(0,-.1);
-      eyeDir=vec3(0,-.1,1);
-      vec2 noise=valueNoise2(1e2*time)*smoothstep(0.,5.,time);
-      headRot.x+=noise.x*.1;
-      headRot.y+=noise.y*.1;
-      camPos=vec3(1,.9,6.-shift);
-      camTa=vec3(1,.8,7);
-      sheepPos=vec3(1,.5,7);
-      camProjectionRatio=1.5+shift*2.;
-    }
-  else if(get_shot(time,5.))
-    {
-      float shift=smoothstep(0.,5.,time)*.8,impact=smoothstep(3.,3.3,time);
-      vec2 noise=valueNoise2(5e2*time);
-      camPos=vec3(2.5-impact-shift,.5,0);
-      camPos.x+=noise.x*.05;
-      camPos.z+=noise.y*.05;
-      camTa=vec3(0,1.+shift*.2,0);
-      camProjectionRatio=2.+impact*5.;
-      globalFade*=1.-impact;
-    }
+    motoFaceImpactShot(time);
+  else if(get_shot(time,2.5))
+    sheepScaredShot(time);
+  else if(get_shot(time,2.5))
+    motoFaceImpactShot(time+5.);
+  else if(get_shot(time,2.5))
+    sheepScaredShot(time+2.5);
+  else if(get_shot(time,2.5))
+    motoFaceImpactShot(time+7.5);
   else if(get_shot(time,10.))
     {
-      globalFade*=smoothstep(0.,1.,time);
-      globalFade*=smoothstep(5.,4.,time);
+      globalFade*=smoothstep(0.,2.,time);
+      globalFade*=smoothstep(8.,5.,time);
       camMotoSpace=0.;
       sheepPos=vec3(0,100,0);
-      float motion=time*.5;
-      camPos=vec3(2.5,1.5,-4.+motion);
-      camTa=vec3(1,0,-7.+motion);
+      float motion=time*.4;
+      camPos=vec3(2.5,1.5,-4.5+motion);
+      camTa=vec3(1,0,-7.5+motion);
+      driverIsSleeping=true;
+      hideMoto=true;
+    }
+  else if(get_shot(time,5.))
+    camPos=vec3(2.5,1.5,-4.5),camMotoSpace=0.,globalFade=0.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(5.,4.,time);
+  else if(get_shot(time,5.))
+    {
+      globalFade*=smoothstep(0.,1.,time);
+      vec2 p=vec2(.95,.5);
+      p.x+=mix(-1.,1.,valueNoise2(.5*time).y);
+      p.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
+      p.y+=.05*verticalBump();
+      camPos=vec3(p,-1.5);
+      camTa=vec3(p.x,p.y-.4,0);
+      camProjectionRatio=1.2;
+      sheepOnMoto=true;
+      driverIsSleeping=true;
+    }
+  else if(get_shot(time,5.))
+    {
+      float trans=smoothstep(3.,0.,time);
+      camTa=vec3(3,1.-trans*.8,0);
+      camPos=vec3(5.-.1*time,1,0);
+      camPos.y+=.05*verticalBump();
+      headRot=vec2(0,.2);
       driverIsSleeping=true;
       sheepOnMoto=true;
+      camProjectionRatio=2.-smoothstep(0.,6.,time);
+      animationSpeed=vec3(0);
+      camProjectionRatio=3.-time/5.;
     }
   else if(get_shot(time,10.))
-    globalFade*=smoothstep(0.,1.,time),globalFade*=smoothstep(10.,8.,time),camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,2.-.2*time,1-.5*time),wheelie=smoothstep(3.,3.5,time),headRot=vec2(0,.2),driverIsSleeping=true,sheepOnMoto=true,camProjectionRatio=2.-smoothstep(0.,6.,time);
+    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,.5,-1.-.5*time),wheelie=smoothstep(1.,1.5,time),headRot=vec2(0,.2),driverIsSleeping=true,sheepOnMoto=true,camProjectionRatio=2.-smoothstep(0.,8.,time),animationSpeed=vec3(0),globalFade*=smoothstep(8.,5.,time);
   PIXEL_ANGLE=camFoV/iResolution.x;
   time=iTime-time;
   time=mod(time,14.)+iTime-time;
   if(hideMoto)
     time=0.;
   motoDistanceOnCurve=mix(.3,.7,time/20.);
+}
+float rect(vec2 p,vec2 size)
+{
+  return smoothstep(0.,8e-9,pow(max(abs(p.x)+.01-size.x,0.),4.)+pow(max(abs(p.y)+.01-size.y,0.),4.)-pow(.01,4.));
+}
+float base(vec2 p,float t)
+{
+  float col=1.;
+  vec2 size=vec2(mix(0.,.06,t));
+  for(int i=0;i<4;i++)
+    for(int j=0;j<3;j++)
+      {
+        if(i==3&&j==1)
+          continue;
+        col*=rect(p-vec2(float(i),float(j))*.15,size);
+      }
+  return col;
+}
+float holes(vec2 p,float t)
+{
+  float col=1.;
+  vec2 size=vec2(mix(0.,.0255,t));
+  col=col*rect(p-vec2(.25,2)*.15,size)*rect(p-vec2(.75,1.75)*.15,size)*rect(p-vec2(1.25,1.75)*.15,size)*rect(p-vec2(2.25,1.75)*.15,size)*rect(p-vec2(3.25,2.25)*.15,size)*rect(p-vec2(0,.75)*.15,size)*rect(p-vec2(1.25)*.15,size)*rect(p-vec2(1.75,.75)*.15,size)*rect(p-vec2(2.25,.75)*.15,size)*rect(p-vec2(-.25)*.15,size)*rect(p-vec2(.25,-.25)*.15,size)*rect(p-vec2(1.25,.19)*.15,size)*rect(p-vec2(1.25,-.19)*.15,size)*rect(p-vec2(1.75,-.19)*.15,size)*rect(p-vec2(2.25,.19)*.15,size)*rect(p-vec2(2.75,-.25)*.15,size)*rect(p-vec2(3.25,-.25)*.15,size);
+  return 1.-col;
+}
+vec3 drawLogo(vec2 uv)
+{
+  if(shouldDrawLogo<=0.)
+    return vec3(0);
+  uv+=vec2(.25);
+  float t=shouldDrawLogo;
+  return vec3(1.-base(uv,clamp(t*2.,0.,1.))-holes(uv,clamp(t*2.-1.,0.,1.)));
 }
 float bloom(vec3 ro,vec3 rd)
 {
@@ -930,6 +994,7 @@ void main()
   cameraTarget+=bloom(ro,rd)*2.*vec3(1,0,0);
   fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
   fragColor*=globalFade;
+  fragColor.xyz+=drawLogo(uv);
   fragColor/=1.+pow(length(uv),4.)*.6;
 }
 

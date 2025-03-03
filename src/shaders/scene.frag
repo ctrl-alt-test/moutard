@@ -36,6 +36,7 @@ bool sheepOnMoto = false;
 vec3 panelWarningPos = vec3(6., 0., 0.);
 bool warningIsSheep = true;
 float globalFade = 1.;
+float shouldDrawLogo = 0.;
 
 // x: actual width
 // y: width + transition
@@ -58,6 +59,8 @@ float time;
 #include "sheep.frag"
 #include "rendering.frag"
 #include "camera.frag"
+#include "logo.frag"
+
 
 float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float falloff, float distFalloff)
 {
@@ -130,6 +133,7 @@ void main()
 
     // fade in
     fragColor *= globalFade;
+    fragColor.rgb += drawLogo(uv);
 
     fragColor /= 1.+pow(length(uv),4.)*0.6;
 
