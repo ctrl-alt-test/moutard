@@ -118,6 +118,11 @@ float Torus(vec3 p,vec2 t)
 {
   return length(vec2(length(p.xz)-t.x,p.y))-t.y;
 }
+float Torus2(vec3 p)
+{
+  vec2 t=vec2(.14,.05);
+  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
+}
 mat2 Rotation(float angle)
 {
   float c=cos(angle);
@@ -485,7 +490,7 @@ vec2 motoShape(vec3 p)
 vec3 eyeDir=vec3(0,-.2,1),animationSpeed=vec3(1);
 const vec3 animationAmp=vec3(1,.2,.25);
 vec2 headRot=vec2(0,-.4);
-float blink=0.,eyesSurprise=0.,headDist=0.;
+float blink=0.,eyesSurprise=0.,squintEyes=0.,headDist=0.;
 vec2 sheep(vec3 p,bool shiftPos)
 {
   if(shiftPos)
@@ -550,11 +555,12 @@ vec2 sheep(vec3 p,bool shiftPos)
       float earsClip=length(pp)-.16;
       pp=pl;
       pp.x=abs(pl.x)-.4;
-      float eyes=length(pp*vec3(1,1,1.-eyesSurprise)-vec3(0,0,-1))-.3,eyeCap=smin(smax(abs(eyes)-.01,smin(-abs(pl.y+pl.z*.025)+.25-smoothstep(.95,.96,blink)*.3+cos(iTime)*.02,-pl.z-1.-eyesSurprise*1.8,.2),.01),c,.02);
+      float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=abs(eyes)-.02,blink=mix(smoothstep(.95,.96,blink)*.3+cos(iTime*10.)*.02,.1,squintEyes);
+      eyeCap=smin(smax(eyeCap,smin(-abs(pl.y+pl.z*.025)+.25-blink,-pl.z-1.-eyesSurprise*1.8,.2),.01),c,.02);
       c=min(c,eyeCap);
       pp.x=abs(pl.x)-.2;
       pp.xz=Rotation(-.45)*pp.xz;
-      c=smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.15,.05);
+      c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),Torus2(pp-vec3(-.7,-1.2,-1.94)),.05);
       eyeCap=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
       vec2 dmat=MinDist(MinDist(vec2(tb,16),vec2(eyeCap,16)),vec2(d,16));
       dmat.x=smax(dmat.x,-earsClip,.15);
@@ -738,7 +744,7 @@ void viewFromBehind(float t_in_shot)
 }
 void motoFaceImpactShot(float t_in_shot)
 {
-  float shift=smoothstep(0.,9.,t_in_shot),impact=smoothstep(8.7,9.,t_in_shot);
+  float shift=t_in_shot/10.,impact=smoothstep(9.7,10.,t_in_shot);
   vec2 noise=valueNoise2(5e2*t_in_shot)*shift;
   camPos=vec3(3.-impact-shift*1.2,.5,0);
   camPos.x+=noise.x*.05;
@@ -780,18 +786,19 @@ void selectShot()
   sheepPos=vec3(0,1.2,0);
   wheelie=0.;
   blink=max(fract(iTime*.333),fract(iTime*.123+.1));
-  if(get_shot(time,9.))
+  if(get_shot(time,10.))
     {
-      globalFade*=smoothstep(0.,6.,time);
+      globalFade*=smoothstep(0.,7.,time);
       camMotoSpace=0.;
-      float motion=time*.1,vshift=smoothstep(5.,0.,time);
+      float motion=time*.1,vshift=smoothstep(6.,0.,time);
       camPos=vec3(1,.9+vshift*.5,6.-motion);
       camTa=vec3(1,.8+vshift,7.-motion);
       sheepPos=vec3(1,.5,7.-motion);
       camProjectionRatio=1.5;
-      motion=smoothstep(5.,5.5,time)*smoothstep(8.,7.5,time);
+      motion=smoothstep(6.,6.5,time)*smoothstep(9.,8.5,time);
       headRot=vec2(0,.4-motion*.5);
       eyeDir=vec3(0,.1-motion*.2,1);
+      hideMoto=true;
     }
   else if(get_shot(time,5.))
     viewFromBehind(time),sheepPos=vec3(1e6);
@@ -871,17 +878,27 @@ void selectShot()
     {
       camMotoSpace=0.;
       hideMoto=true;
-      float shift=smoothstep(0.,5.,time),headShift=smoothstep(2.,4.,time);
+      float motion=time*.1,shift=smoothstep(0.,5.,time),headShift=smoothstep(2.,4.,time);
       headRot=vec2(0,.4-headShift*.5);
       eyeDir=vec3(0,.1-headShift*.2,1);
-      camPos=vec3(1,.9,6.-shift);
-      camTa=vec3(1,.8,7);
-      sheepPos=vec3(1,.5,7);
+      camPos=vec3(1,.9,6.-shift-motion);
+      camTa=vec3(1,.8,7.-motion);
+      sheepPos=vec3(1,.5,7.-motion);
       camProjectionRatio=1.5+shift*2.;
-      eyesSurprise=smoothstep(4.5,4.8,time)*.2;
+      eyesSurprise=0.;
+      squintEyes=smoothstep(3.5,3.7,time);
+      eyeDir.x+=.15-smoothstep(4.,4.2,time)*.1;
     }
   else if(get_shot(time,5.))
-    motoFaceImpactShot(time);
+    {
+      float shift=time/10.;
+      vec2 noise=valueNoise2(5e2*time)*shift;
+      camPos=vec3(3.-shift*1.2,.5,0);
+      camPos.x+=noise.x*.05;
+      camPos.z+=noise.y*.05;
+      camTa=vec3(0,.5+shift,0);
+      camProjectionRatio=2.;
+    }
   else if(get_shot(time,2.5))
     sheepScaredShot(time);
   else if(get_shot(time,2.5))
@@ -892,13 +909,13 @@ void selectShot()
     motoFaceImpactShot(time+7.5);
   else if(get_shot(time,10.))
     {
-      globalFade*=smoothstep(0.,2.,time);
-      globalFade*=smoothstep(8.,5.,time);
+      globalFade*=smoothstep(1.,4.,time);
+      globalFade*=smoothstep(9.,7.,time);
       camMotoSpace=0.;
       sheepPos=vec3(0,100,0);
-      float motion=time*.4;
-      camPos=vec3(2.5,1.5,-4.5+motion);
-      camTa=vec3(1,0,-7.5+motion);
+      float motion=time*.5;
+      camPos=vec3(2.5,1.5,-6.+motion);
+      camTa=vec3(1,0,-9.+motion);
       driverIsSleeping=true;
       hideMoto=true;
     }

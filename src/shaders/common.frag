@@ -261,6 +261,12 @@ float Torus(vec3 p, vec2 t)
     return length(vec2(length(p.xz) - t.x,p.y)) - t.y;
 }
 
+// TODO: merge with previous function
+float Torus2(vec3 p, vec2 t)
+{
+  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
+}
+
 mat2 Rotation(float angle)
 {
     float c = cos(angle);
