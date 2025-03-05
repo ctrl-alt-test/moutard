@@ -31,7 +31,8 @@ vec3 camPos;
 vec3 camTa;
 vec3 sheepPos = vec3(0.);
 float wheelie = 0.;
-bool driverIsSleeping = false; // of course, he's not dead!
+int driverIsSleeping = 0; // of course, he's not dead!
+// 0: driving; 1: sleeping; 2: hidden
 bool sheepOnMoto = false;
 vec3 panelWarningPos = vec3(6., 0., 0.);
 bool warningIsSheep = true;

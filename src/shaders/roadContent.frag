@@ -100,7 +100,7 @@ vec2 panelWarning(vec3 p) {
 }
 
 vec2 blood(vec3 p) {
-    if (!driverIsSleeping) {
+    if (driverIsSleeping != 1) {
         return vec2(INF, GROUND_ID);
     }
     p -= vec3(0, 1.2, -2.5);

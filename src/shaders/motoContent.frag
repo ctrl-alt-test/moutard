@@ -69,11 +69,13 @@ vec2 driverShape(vec3 p)
 {
     float wind = fBm((p.xy + time) * 12., 1, 0.5, 0.5);
 
-    if (driverIsSleeping) {
+    if (driverIsSleeping == 1) {
         p -= vec3(0.4, 0.5, -2.5);
         p.yz *= Rotation(1.5);
         p.xz *= Rotation(0.4);
         wind *= 0.;
+    } else if (driverIsSleeping == 2) {
+        return vec2(1e6, MOTO_DRIVER_ID);
     } else {
         p = worldToMoto(p, true);
         // Place roughly on the seat
@@ -142,7 +144,7 @@ vec2 driverShape(vec3 p)
         vec3 pLeg = simP;
 
         pLeg -= vec3(0.0, 0.0, 0.13);
-        if (!driverIsSleeping) {
+        if (driverIsSleeping == 1) {
             pLeg.xy *= Rotation(1.55);
             pLeg.yz *= Rotation(-0.45);
         }

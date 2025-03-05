@@ -232,15 +232,9 @@ void selectShot() {
         float motion = time*.5;
         camPos = vec3(2.5, 1.5, -6. + motion);
         camTa = vec3(1., 0., -9. + motion);
-        driverIsSleeping = true;
+        driverIsSleeping = 1;
         // sheepOnMoto = true;
         hideMoto = true;
-
-    } else if (get_shot(time, 5.)) {
-        camPos = vec3(2.5, 1.5, -4.5);
-        camMotoSpace = 0.;
-        globalFade = 0.;
-        shouldDrawLogo = smoothstep(0., 1., time) * smoothstep(5., 4., time);
 
     } else if (get_shot(time, 5.)) {
         globalFade *= smoothstep(0., 1., time);
@@ -252,7 +246,7 @@ void selectShot() {
         camTa = vec3(p.x, p.y - 0.4, 0.);
         camProjectionRatio = 1.2;
         sheepOnMoto = true;
-        driverIsSleeping = true;
+        driverIsSleeping = 2;
 
     } else if (get_shot(time, 5.)) {
         // sheep driving
@@ -263,7 +257,7 @@ void selectShot() {
         // camTa.y += 0.05 * verticalBump();
         // wheelie = smoothstep(3., 3.5, time);
         headRot = vec2(0., 0.2);
-        driverIsSleeping = true;
+        driverIsSleeping = 2;
         sheepOnMoto = true;
         camProjectionRatio = 2. - smoothstep(0., 6., time);
         animationSpeed = vec3(0.);
@@ -275,12 +269,19 @@ void selectShot() {
         camPos = vec3(5. - 0.1*time, 0.5, -1.-0.5*time);
         wheelie = smoothstep(1., 1.5, time);
         headRot = vec2(0., 0.2);
-        driverIsSleeping = true;
+        driverIsSleeping = 2;
         sheepOnMoto = true;
         camProjectionRatio = 2. - smoothstep(0., 8., time);
         animationSpeed = vec3(0.);
 
         globalFade *= smoothstep(8., 5., time);
+
+    } else if (get_shot(time, 5.)) {
+        camPos = vec3(2.5, 1.5, -4.5);
+        camMotoSpace = 0.;
+        globalFade = 0.;
+        shouldDrawLogo = smoothstep(0., 1., time) * smoothstep(5., 4., time);
+
     }
 
 /*
