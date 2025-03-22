@@ -118,32 +118,29 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             albedo = vec3(0.15, 0.15, 0.1);
             spe *= 0.;
         }
-
-    } else if (IsMoto(int(dmat.y))) {
-        if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
-            albedo = vec3(.1);
-            spe *= 0.2;
-        } else {
-            albedo = vec3(.1);
-            spe *= pow(spe, vec3(15.))*fre*2.;
-            // spe = pow(spe, vec3(8.))*fre*2.;
-        }
+    } else if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
+        albedo = vec3(.1);
+        spe *= 0.1;
+        sss *= 0.;
+    } else if (dmat.y == MOTO_ID) {
+        albedo = vec3(.1);
+        spe *= pow(spe, vec3(15.))*fre*2.;
         sss *= 0.;
     } else if (dmat.y == TREE_ID) {
         albedo = 2.*vec3(.1,.1,0.05);
         sss *= 0.5;
         bnc *= 0.;
         spe *= 0.;
-    } else if (dmat.y == COTON) {
+    } else if (dmat.y == WOOL_ID) {
         albedo = vec3(.4);
         sss *= fre*.5+.5;
         emi = vec3(.35);
         spe = pow(spe, vec3(4.))*fre*.25;
-    } else if (dmat.y == CLOGS) {
+    } else if (dmat.y == CLOGS_ID) {
         albedo = vec3(.025);
         sss *= 0.;
         spe = pow(spe, vec3(15.))*fre*10.;
-    } else if (dmat.y == EYE) {
+    } else if (dmat.y == EYE_ID) {
         sss *= .5;
         vec3 dir = normalize(eyeDir + (noise(vec3(iTime,iTime*.5,iTime*1.5))*2.-1.)*.01);
         
@@ -200,25 +197,18 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         sceneSDF(p, sceneSDF_t);
         albedo *= smoothstep(0.,0.015, headDist)*.4+.6;
         spe *= 0.;
-    } else if(dmat.y == METAL) {
+    } else if(dmat.y == METAL_ID) { // for the road signs
         albedo = vec3(.85,.95,1.);
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*2.;
-    } else if(dmat.y == BLACK_METAL) {
-        albedo = vec3(1.);
-        diff *= vec3(.1)*fre;
-        amb *= vec3(.1)*fre;
-        bnc *= 0.;
-        sss *= 0.;
-        spe = pow(spe, vec3(100.))*fre*2.;
-    }  else if(dmat.y == BLOOD) {
+    }  else if(dmat.y == BLOOD_ID) {
         albedo = vec3(1.,.01,.01)*.3;
         diff *= vec3(3.);
         amb *= vec3(2.)*fre*fre;
         sss *= 0.;
         spe = vec3(1.,.3,.3) * pow(spe, vec3(500.))*5.;
     }
-    else if (dmat.y == PANEL) {
+    else if (dmat.y == PANEL_ID) {
        vec3 p = p - panelWarningPos;
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*20.;
@@ -251,11 +241,13 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             albedo = vec3(.85,.95,1.);
         }
     }
-    else if (dmat.y == SKIN) {
+    else if (dmat.y == SKIN_ID) {
         albedo = vec3(1.,.7,.5)*1.;
         amb *= vec3(1.,.75,.75);
         sss = pow(sss, vec3(.5,2.5,5.0)+2.)*2.;// * fre;// * pow(fre, 1.);
         spe = pow(spe, vec3(4.))*fre*.02;
+    } else {
+        albedo = vec3(1., 0., 1.); // debug
     }
 
     // fog

@@ -118,7 +118,7 @@ void selectShot() {
         float shift = smoothstep(0., 5., time);
         float motion = time*.1;
         camMotoSpace = 0.;
-        camPos = vec3(1., 1.5 - motion, 6. + motion);
+        camPos = vec3(0., 1.5 - motion, 6. + motion);
         sheepPos = vec3(1., 0.5, 3.7 - motion);
         panelWarningPos = vec3(3., 0.5, 2.5);
         camTa = sheepPos+vec3(0,0.5,1);
@@ -139,7 +139,7 @@ void selectShot() {
         float shift = smoothstep(0., 5., time);
         camMotoSpace = 0.;
         float motion = time*.1;
-        camPos = vec3(3., 1., 2.5 - motion);
+        camPos = vec3(3.-motion, 1., 2. - motion);
         sheepPos = vec3(1., 0.5, 3. - motion);
         // panelWarningPos = vec3(-1.5, 0.5, 2.5);
         camTa = sheepPos+vec3(0,0.5,1);
