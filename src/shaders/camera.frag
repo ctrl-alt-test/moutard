@@ -141,7 +141,6 @@ void selectShot() {
         float motion = time*.1;
         camPos = vec3(3.-motion, 1., 2. - motion);
         sheepPos = vec3(1., 0.5, 3. - motion);
-        // panelWarningPos = vec3(-1.5, 0.5, 2.5);
         camTa = sheepPos+vec3(0,0.5,1);
         hideMoto = true;
         headRot = vec2(0., 0.2);
@@ -187,8 +186,8 @@ void selectShot() {
         hideMoto = true;
 
         float motion = time*.1;
-        float shift = smoothstep(0., 5., time);
-        float headShift = smoothstep(2., 4., time);
+        float shift = smoothstep(2., 3., time);
+        float headShift = smoothstep(2., 3., time);
         headRot = vec2(0., 0.4 - headShift*.5);
         eyeDir = vec3(0.,0.1-headShift*0.2,1.);
         camPos = vec3(1., 0.9, 6. - shift - motion);
@@ -283,98 +282,6 @@ void selectShot() {
         shouldDrawLogo = smoothstep(0., 1., time) * smoothstep(5., 4., time);
 
     }
-
-/*
-    } else if (get_shot(time, 5.)) {
-        // OLD - sheep walking + /!\ warning
-        float shift = smoothstep(0., 5., time);
-        camMotoSpace = 0.;
-        float motion = time*.1;
-        camPos = vec3(3., 1., 3. + motion);
-        sheepPos = vec3(1., 0.5, 3.7 - motion);
-        vec3 signPos = vec3(0., 1.5, 2.);
-        panelWarningPos = vec3(-1.5, 0.5, 2.5);
-        warningIsSheep = false;
-        camTa = mix(sheepPos+vec3(0,0.5,1), signPos, smoothstep(2.5, 2.7, time));
-        hideMoto = true;
-
-    } else if (get_shot(time, 5.)) {
-        // OLD - moto + sheep warning sign
-        float shift = smoothstep(0., 5., time);
-        camPos = vec3(3. - 2.*shift, 0.5, -2.);
-        camTa = vec3(0., 1.5, 1.);
-        panelWarningPos = vec3(3., 0.5, -250.);
-
-    } else if (get_shot(time, 8.)) {
-        // staticRoadShotMotoArrives2(time);
-        camTa = vec3(0., 1., 0.);
-        camPos = vec3(5. - 0.1*time, 2.-0.2*time, 1-0.5*time);
-        wheelie = smoothstep(3., 3.5, time);
-        headRot = vec2(0., 0.2);
-        driverIsSleeping = true;
-        sheepOnMoto = true;
-        camProjectionRatio = 2. - smoothstep(0., 6., time);
-
-    } else if (get_shot(time, 5.)) { // moto
-        float shift = smoothstep(0., 5., time);
-        camPos = vec3(3. - shift, 0.5, -2.);
-        camTa = vec3(0., 1.5, 1.);
-    } else if (get_shot(time, 6.)) {
-        seedOffset = 10.;
-        sideShotRear();
-    } else if (get_shot(time, 5.)) {
-        sideShotFront();
-    } else if (get_shot(time, 4.)) {
-        seedOffset = 4.;
-        frontWheelCloseUpShot();
-    } else if (get_shot(time, 8.)) {
-        seedOffset = 2.;
-        overTheHeadShot();
-    } else if (get_shot(time, 8.)) {
-        fpsDashboardShot();
-    } else if (get_shot(time, 8.)) {
-        dashBoardUnderTheShoulderShot(time);
-    } else if (get_shot(time, 8.)) {
-        viewFromBehind(time);
-    } else if (get_shot(time, 8.)) {
-        camTa = vec3(0., 1.5, 0.);
-        camPos = vec3(1. + 2.5*time, 1.5, -2);
-        camProjectionRatio = 1.;
-
-    } else if (get_shot(time, 4.)) {
-        sideShotFront();
-    } else if (get_shot(time, 4.)) {
-        overTheHeadShot();
-    } else if (get_shot(time, 4.)) {
-        sideShotRear();
-    } else if (get_shot(time, 4.)) {
-        frontWheelCloseUpShot();
-    } else if (get_shot(time, 8.)) {
-        fpsDashboardShot();
-    } else if (get_shot(time, 8.)) {
-        dashBoardUnderTheShoulderShot(time);
-    } else if (get_shot(time, 6.)) {
-        viewFromBehind(time);
-        sheepOnMoto = true;
-        driverIsSleeping = true;
-    } else if (get_shot(time, 10.)) {
-        // staticRoadShotEnd(time);
-        camMotoSpace = 0.;
-        camPos = vec3(1., 1.5, 1.);
-        camTa = vec3(2., 3. + 0.5*time, -10.);
-        camProjectionRatio = 1.5;
-
-    } else if (get_shot(time, 10.)) {
-        moonShot(time + 20.);
-    }
-*/
-
-    // camPos = vec3(2, 1, 5);
-    // camTa = vec3(2, 1, 0);
-    // camMotoSpace = 0.;
-    // driverIsSleeping = true;
-
-    PIXEL_ANGLE = camFoV / iResolution.x;
 
     float shotStartTime = iTime - time;
 

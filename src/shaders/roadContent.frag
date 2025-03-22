@@ -1,9 +1,3 @@
-float smoothMin(float a, float b, float k) {
-    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
-    return mix(b, a, h) - k * h * (1.0 - h);
-}
-
-
 // Function to compute the closest distance to a line segment
 float distanceToSegment(vec2 A, vec2 B, vec2 p) {
     vec2 AB = B - A;
@@ -46,39 +40,6 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index, out vec3 directionAndCurvature
 }
 
 const float laneWidth = 3.5;
-
-float roadMarkings(vec2 uv, float width, vec2 params)
-{
-    // Total interval, line length
-    vec2 t1  = vec2(26.0 / 2.0, 3.0);
-    vec2 t1b = vec2(26.0 / 4.0, 1.5);
-    vec2 t2  = vec2(26.0 / 4.0, 3.0);
-    vec2 t3  = vec2(26.0 / 6.0, 3.0);
-    vec2 t3b = vec2(26.0 / 1.0, 20.0);
-    vec2 continuous = vec2(100.0, 100.0);
-
-    vec2 separationLineParams = t1;
-    if (params.x > 0.25) separationLineParams = t1b;
-    if (params.x > 0.50) separationLineParams = t3;
-    if (params.x > 0.75) separationLineParams = continuous;
-
-    vec2 sideLineParams = t2;
-    if (width > 4.0) sideLineParams = t3b;
-
-    float tileY = uv.y - floor(clamp(uv.y, 3.5-width, width) / 3.5) * 3.5;
-    vec2 separationTileUV = vec2(fract(uv.x / separationLineParams.x) * separationLineParams.x, tileY);
-    vec2 sideTileUV = vec2(fract((uv.x + 0.4) / sideLineParams.x) * sideLineParams.x, uv.y);
-
-    float sideLine1 = Box2(sideTileUV - vec2(0.5 * sideLineParams.y, width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
-    float sideLine2 = Box2(sideTileUV - vec2(0.5 * sideLineParams.y, -width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
-
-    float separationLine1 = Box2(separationTileUV - vec2(0.5 * separationLineParams.y, 0.0), vec2(0.5 * separationLineParams.y, 0.10), 0.01);
-
-    float pattern = min(min(sideLine1, sideLine2), separationLine1);
-
-    return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
-}
-
 const float warningHeight = 3.;
 
 vec2 panelWarning(vec3 p) {
@@ -142,8 +103,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
 
     // If (even partly) on the road, flatten road
-    float height = 0.;
-    height = mix(
+    float height = mix(
         valueNoise(p.xz*5.)*0.1 + 0.5 * 1. * fBm(p.xz * 2. / 5., 1, 0.6, 0.5),
         0.,
         isRoad*isRoad);
@@ -154,16 +114,16 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
         vec3 directionAndCurvature;
         vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw, directionAndCurvature);
 
-        height += roadBumpHeight(splineUV.x) + pow(valueNoise(mod(p.xz*40, 100)), .01) * .1;
+        height += roadBumpHeight(splineUV.x) + pow(valueNoise(mod(p.xz*50, 100)), .01) * .1;
     }
 
     return vec2(p.y - height, GROUND_ID);
 }
 
-const float halfTreeSpace = 5.;
+const float treeSpace = 10.;
 const float maxTreeHeight = 20.;
 
-float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
+float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV) {
     float h1 = hash21(id);
     float h2 = hash11(h1);
     float terrainHeight = -1.;
@@ -178,15 +138,7 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
         return INF;
     }
 
-    float d = halfTreeSpace * 0.7;
-
-    // Define if the area has trees
-    float presence = 1.;//smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
-    if (h1 >= presence)
-    {
-        // We'll have to try the next cell.
-        return d;
-    }
+    float d = treeSpace * 0.5 * 0.7;
 
     // Opportunity for early out: there should be no tree part on the road.
     if (abs(splineUV.x) < roadWidthInMeters.x) return d;
@@ -196,34 +148,31 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     // The splineUV is relative to the current position, but we have to
     // check the distance of the road from the position of the potential
     // tree.
-    float treeClearance = roadWidthInMeters.y + halfTreeSpace;
+    float treeClearance = roadWidthInMeters.y + treeSpace * 0.5;
     vec4 splineUVatTree = ToSplineLocalSpace(id, treeClearance);
     if (abs(splineUVatTree.x) < treeClearance) return d;
 
-    float treeHeight = mix(5., maxTreeHeight, 1.-h1*h1);
-    float treeWidth = treeHeight * mix(0.3, 0.5, h2*h2);
+    float treeHeight = mix(10., maxTreeHeight, 1.-h1*h1);
+    float treeWidth = treeHeight * mix(0.3, 0.4, h2*h2);
 
     localP.y -= terrainHeight + 0.5 * treeHeight;
     localP.xz += (vec2(h1, h2) - 0.5) * 1.5; // We cannot move the trees too much due to artifacts.
 
     d = min(d, Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth)));
 
-    float leaves = 1. - smoothstep(50., 200., current_t);
-    if (leaves > 0.)
-    {
-        vec2 pNoise = vec2(2.*atan(localP.z, localP.x), localP.y) + id;
-        d += 0.2*fBm(2. * pNoise, 2, 0.7, 0.5) + 1.;
-    }
+    // leaves
+    vec2 pNoise = vec2(2.*atan(localP.z, localP.x), localP.y) + id;
+    d += 0.2*fBm(2. * pNoise, 2, 0.7, 0.5) + 1.;
 
     return d;
 }
 
-vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
+vec2 treesShape(vec3 p, vec4 splineUV)
 {
     // iq - repeated_ONLY_SYMMETRIC_SDFS (https://iquilezles.org/articles/sdfrepetition/)
     //vec3 lim = vec3(1e8,0,1e8);
-    vec2 id = round(p.xz / (halfTreeSpace * 2.)) * (halfTreeSpace * 2.);
+    vec2 id = round(p.xz / treeSpace) * treeSpace;
     vec3 localP = p;
     localP.xz -= id;
-    return vec2(tree(p, localP, id, splineUV, current_t), TREE_ID);
+    return vec2(tree(p, localP, id, splineUV), TREE_ID);
 }

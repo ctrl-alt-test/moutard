@@ -7,6 +7,26 @@ float eyesSurprise = 0.;
 float squintEyes = 0.;
 
 float headDist = 0.; // distance to head (for eyes AO)
+
+float sunglasses(vec3 p) {
+  // Frame
+  vec3 framePos = p;
+  float h;
+  float middle = Segment3(p - vec3(0, -1.1, -1), vec3(-0.3,0,0), vec3(.3,0,0), h) - 0.04;
+  framePos.x = abs(framePos.x) - 0.5;
+
+  float frame = Segment3(framePos, vec3(0.5, -1., -0.7), vec3(0, -1.5, -1.7), h) - 0.04;
+  frame = min(frame, middle);
+
+  // Lenses
+  vec3 lensPos = p - vec3(0., -1.3, -1.2);
+  lensPos.x = abs(lensPos.x) - 0.4;
+  float lens = length(lensPos * vec3(1., 1.2, 1.)) - 0.3;
+
+  float sunglasses = min(frame, lens);
+  return sunglasses;
+}
+
 vec2 sheep(vec3 p, bool shiftPos) {
     const float SCALE = 0.15;
 
@@ -91,6 +111,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     float head = length(ph-vec3(0.,-1.3,-1.2)) - 1.;
     head = smin(head, length(ph-vec3(0.,0.,0.)) - .5, 1.8);
 
+    float glasses = sunglasses(ph - vec3(0, 1.3, 0.1));
 
     // hair 
     vec3 pp = ph;
@@ -146,6 +167,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     dmat = MinDist(dmat, vec2(eyes, EYE_ID));
     dmat = MinDist(dmat, vec2(clogs, CLOGS_ID));
     dmat = MinDist(dmat, vec2(ears, SKIN_ID));
+    dmat = MinDist(dmat, vec2(glasses, MOTO_DRIVER_HELMET_ID));
     
     headDist = head;
     dmat.x *= SCALE;

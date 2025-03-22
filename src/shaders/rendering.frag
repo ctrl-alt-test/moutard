@@ -1,12 +1,10 @@
-float sceneSDF_t = 0.; // TODO
-
-vec2 sceneSDF(vec3 p, float current_t)
+vec2 sceneSDF(vec3 p)
 {
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
     vec2 d = motoShape(p);
     d = MinDist(d, driverShape(p));
     d = MinDist(d, terrainShape(p, splineUV));
-    d = MinDist(d, treesShape(p, splineUV, current_t));
+    d = MinDist(d, treesShape(p, splineUV));
     d = MinDist(d, blood(p));
     d = MinDist(d, panelWarning(p));
     d = MinDist(d, sheep(p, true));
@@ -14,8 +12,8 @@ vec2 sceneSDF(vec3 p, float current_t)
 }
 
 float fastAO( in vec3 pos, in vec3 nor, float maxDist, float falloff ) {
-    float occ1 = .5*maxDist - sceneSDF(pos + nor*maxDist *.5, sceneSDF_t).x;
-    float occ2 = .95*(maxDist - sceneSDF(pos + nor*maxDist, sceneSDF_t).x);
+    float occ1 = .5*maxDist - sceneSDF(pos + nor*maxDist *.5).x;
+    float occ2 = .95*(maxDist - sceneSDF(pos + nor*maxDist).x);
     return clamp(1. - falloff*1.5*(occ1 + occ2), 0., 1.);
 }
 
@@ -25,7 +23,7 @@ float shadow(vec3 ro, vec3 rd)
     float t = 0.08;
     for(int i = 0; i < 64; i++)
     {
-        float h = sceneSDF(ro + rd*t, sceneSDF_t).x;
+        float h = sceneSDF(ro + rd*t).x;
         res = min(res, 10.*h / t);
         t += h;
         
@@ -49,7 +47,7 @@ vec3 sky(vec3 V, vec3 fogColor)
 float trace(vec3 ro, vec3 rd) {
     float t = 0.1;
     for(int i = 0; i < MAX_RAY_MARCH_STEPS; i++) {
-        float d = sceneSDF(ro + rd*t, sceneSDF_t).x;
+        float d = sceneSDF(ro + rd*t).x;
         t += d;
         if (t > MAX_RAY_MARCH_DIST || abs(d) < 0.001) break;
     }
@@ -72,9 +70,9 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     float t = trace(ro,rd);
     p = ro + rd * t;
 
-    vec2 dmat = sceneSDF(p, t);
+    vec2 dmat = sceneSDF(p);
     vec2 eps = vec2(0.0001,0.0);
-    vec3 n = normalize(vec3(dmat.x - sceneSDF(p - eps.xyy, t).x, dmat.x - sceneSDF(p - eps.yxy, t).x, dmat.x - sceneSDF(p - eps.yyx, t).x));
+    vec3 n = normalize(vec3(dmat.x - sceneSDF(p - eps.xyy).x, dmat.x - sceneSDF(p - eps.yxy).x, dmat.x - sceneSDF(p - eps.yyx).x));
 
     // ----------------------------------------------------------------
     // Shade
@@ -82,7 +80,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     vec3 sunDir = normalize(vec3(3.5,3.,-1.));
     vec3 fogColor = mix(vec3(0.6,0.7,0.8), vec3(0.5,0.8,1.5), rd.y);
     vec3 skyColor = sky(rd, fogColor);
-    
+
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
     
     float shad = shadow(p, sunDir);
@@ -110,9 +108,20 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
         if (isRoad > 0.99)
         {
+            vec2 laneUV = splineUV.xz / laneWidth;
+            float tireTrails = 1;// sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
+            tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
+            //float largeScaleNoise = smoothstep(-0.25, 1., fBm(laneUV * vec2(15., 0.1), 2, .7, .4));
+            //tireTrails = mix(tireTrails, largeScaleNoise, 0.2);
+            float highFreqNoise = fBm(laneUV * vec2(150., 6.), 1, 1., 1.);
+            tireTrails = mix(tireTrails, highFreqNoise, 0.1);
+            float roughness = mix(0.8, 0.4, tireTrails);
+            vec3 color = vec3(mix(vec3(0.11, 0.105, 0.1)*2., vec3(0.35), tireTrails));
+
             sss *= 0.;
-            albedo = vec3(0.4);
-            spe *= 0.1;
+            albedo = color;// vec3(0.4) * tireTrails;
+            // spe *= 0.1;
+            spe *= mix(0., 0.1, tireTrails);
         } else { // grass
             sss *= 0.4;
             albedo = vec3(0.15, 0.15, 0.1);
@@ -194,7 +203,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         }
         
         // shadow on the edges of the eyes
-        sceneSDF(p, sceneSDF_t);
+        sceneSDF(p);
         albedo *= smoothstep(0.,0.015, headDist)*.4+.6;
         spe *= 0.;
     } else if(dmat.y == METAL_ID) { // for the road signs
