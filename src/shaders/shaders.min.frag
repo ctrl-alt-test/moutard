@@ -6,8 +6,7 @@ uniform sampler2D tex;
 float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa,sheepPos=vec3(0);
 float wheelie=0.;
-int driverIsSleeping=0;
-bool sheepOnMoto=false;
+int sceneID=0;
 vec3 panelWarningPos=vec3(6,0,0);
 bool warningIsSheep=true;
 float globalFade=1.,shouldDrawLogo=0.;
@@ -186,21 +185,18 @@ vec2 panelWarning(vec3 p)
 {
   p-=panelWarningPos;
   float pan=Triangle(p-vec3(0,3,-5),vec2(1.7,.1),.3);
-  if(pan<8.)
-    {
-      pan=smax(pan,-Triangle(p-vec3(0,3,-5.1),vec2(1.6,.1),.3),.001);
-      float tube=Box3(p-vec3(0,2,-5.1),vec3(.11,2,.08),0.);
-      vec3 pp=p;
-      pp.y=abs(pp.y-3.65)-.3;
-      tube=min(tube,Box3(pp-vec3(0,0,-5.05),vec3(.35,.1,.05),0.));
-      vec2 dmat=vec2(tube,13);
-      return MinDist(dmat,vec2(pan,15));
-    }
-  return vec2(1e6,4);
+  if(pan>8.)
+    return vec2(1e6,4);
+  pan=smax(pan,-Triangle(p-vec3(0,3,-5.1),vec2(1.6,.1),.3),.001);
+  float tube=Box3(p-vec3(0,2,-5.1),vec3(.11,2,.08),0.);
+  p.y=abs(p.y-3.65)-.3;
+  tube=min(tube,Box3(p-vec3(0,0,-5.05),vec3(.35,.1,.05),0.));
+  vec2 dmat=vec2(tube,13);
+  return MinDist(dmat,vec2(pan,15));
 }
 vec2 blood(vec3 p)
 {
-  if(driverIsSleeping!=1)
+  if(sceneID!=2)
     return vec2(1e6,4);
   p-=vec3(0,1.2,-2.5);
   float d=p.y+smoothstep(1.5,8.,length(p.xz))+1.;
@@ -293,9 +289,9 @@ vec3 worldToMoto(vec3 v)
 vec2 driverShape(vec3 p)
 {
   float wind=0.;
-  if(driverIsSleeping==1)
+  if(sceneID==2)
     p-=vec3(.4,.5,-2.5),p.yz*=Rotation(1.5),p.xz*=Rotation(.4);
-  else if(driverIsSleeping==2)
+  else if(sceneID==3)
     return vec2(1e6,2);
   else
      wind=fBm((p.xy+time)*12.,1,.5,.5),p=worldToMoto(p)-vec3(-.35,.78,0);
@@ -341,7 +337,7 @@ vec2 driverShape(vec3 p)
   d+=.005*wind;
   {
     vec3 pLeg=simP-vec3(0,0,.13);
-    if(driverIsSleeping==1)
+    if(sceneID==2)
       pLeg.xy*=Rotation(1.55),pLeg.yz*=Rotation(-.45);
     float h2=Capsule(pLeg,.35,.09);
     d=smin(d,h2,.04);
@@ -489,7 +485,7 @@ vec2 headRot=vec2(0,-.4);
 float blink=0.,eyesSurprise=0.,squintEyes=0.,headDist=0.;
 float sunglasses(vec3 p)
 {
-  if(driverIsSleeping==0)
+  if(sceneID!=3)
     return 1e6;
   p-=vec3(0,.3,-.9);
   vec3 framePos=p;
@@ -505,7 +501,7 @@ float sunglasses(vec3 p)
 vec2 sheep(vec3 p,bool shiftPos)
 {
   if(shiftPos)
-    if(sheepOnMoto)
+    if(sceneID==3)
       {
         p=p-motoPos-vec3(0,1.2,-.3);
         p.yz*=Rotation(.5);
@@ -929,7 +925,7 @@ void selectShot()
       float motion=time*.5;
       camPos=vec3(2.5,1.5,-6.+motion);
       camTa=vec3(1,0,-9.+motion);
-      driverIsSleeping=1;
+      sceneID=2;
       hideMoto=true;
     }
   else if(get_shot(time,5.))
@@ -942,8 +938,7 @@ void selectShot()
       camPos=vec3(p,-1.5);
       camTa=vec3(p.x,p.y-.4,0);
       camProjectionRatio=1.2;
-      sheepOnMoto=true;
-      driverIsSleeping=2;
+      sceneID=3;
     }
   else if(get_shot(time,5.))
     {
@@ -952,14 +947,13 @@ void selectShot()
       camPos=vec3(5.-.1*time,1,0);
       camPos.y+=.02*verticalBump();
       headRot=vec2(0,.2);
-      driverIsSleeping=2;
-      sheepOnMoto=true;
+      sceneID=3;
       camProjectionRatio=2.-smoothstep(0.,6.,time);
       animationSpeed=vec3(0);
       camProjectionRatio=3.-time/5.;
     }
   else if(get_shot(time,10.))
-    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,.5,-1.-.5*time),wheelie=smoothstep(1.,1.5,time),headRot=vec2(0,.2),driverIsSleeping=2,sheepOnMoto=true,camProjectionRatio=2.-smoothstep(0.,8.,time),animationSpeed=vec3(0),globalFade*=smoothstep(8.,5.,time);
+    camTa=vec3(0,1,0),camPos=vec3(5.-.1*time,.5,-1.-.5*time),wheelie=smoothstep(1.,1.5,time),headRot=vec2(0,.2),sceneID=3,camProjectionRatio=2.-smoothstep(0.,8.,time),animationSpeed=vec3(0),globalFade*=smoothstep(8.,5.,time);
   else if(get_shot(time,5.))
     camPos=vec3(2.5,1.5,-4.5),camMotoSpace=0.,globalFade=0.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(5.,4.,time);
   time=iTime-time;

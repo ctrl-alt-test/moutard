@@ -9,7 +9,7 @@ float squintEyes = 0.;
 float headDist = 0.; // distance to head (for eyes AO)
 
 float sunglasses(vec3 p) {
-  if (driverIsSleeping == 0.) {
+  if (sceneID != SCENE_MOUTARD) {
     return INF;
   }
   // Frame
@@ -36,7 +36,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     const float SCALE = 0.15;
 
     if (shiftPos) {
-      if (sheepOnMoto) { // sheep on moto
+      if (sceneID == SCENE_MOUTARD) { // sheep on moto
         p -= motoPos;
         p -= vec3(0., 1.2, -0.3);
         p.yz *= Rotation(0.5);

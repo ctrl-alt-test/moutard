@@ -231,8 +231,8 @@ void selectShot() {
         float motion = time*.5;
         camPos = vec3(2.5, 1.5, -6. + motion);
         camTa = vec3(1., 0., -9. + motion);
-        driverIsSleeping = 1;
-        // sheepOnMoto = true;
+
+        sceneID = SCENE_SLEEPING;
         hideMoto = true;
 
     } else if (get_shot(time, 5.)) {
@@ -244,8 +244,7 @@ void selectShot() {
         camPos = vec3(p, -1.5);
         camTa = vec3(p.x, p.y - 0.4, 0.);
         camProjectionRatio = 1.2;
-        sheepOnMoto = true;
-        driverIsSleeping = 2;
+        sceneID = SCENE_MOUTARD;
 
     } else if (get_shot(time, 5.)) {
         // sheep driving
@@ -256,8 +255,7 @@ void selectShot() {
         // camTa.y += 0.05 * verticalBump();
         // wheelie = smoothstep(3., 3.5, time);
         headRot = vec2(0., 0.2);
-        driverIsSleeping = 2;
-        sheepOnMoto = true;
+        sceneID = SCENE_MOUTARD;
         camProjectionRatio = 2. - smoothstep(0., 6., time);
         animationSpeed = vec3(0.);
         camProjectionRatio = 3. - time/5.;
@@ -268,8 +266,7 @@ void selectShot() {
         camPos = vec3(5. - 0.1*time, 0.5, -1.-0.5*time);
         wheelie = smoothstep(1., 1.5, time);
         headRot = vec2(0., 0.2);
-        driverIsSleeping = 2;
-        sheepOnMoto = true;
+        sceneID = SCENE_MOUTARD;
         camProjectionRatio = 2. - smoothstep(0., 8., time);
         animationSpeed = vec3(0.);
 

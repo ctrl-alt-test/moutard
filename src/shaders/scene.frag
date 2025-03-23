@@ -23,21 +23,24 @@ const float lampHeight = 7.;
 uniform float iTime;
 uniform sampler2D tex;
 
+const int SCENE_SHEEP = 0;
+const int SCENE_MOTO = 1;
+const int SCENE_SLEEPING = 2; // of course, he's not dead!
+const int SCENE_MOUTARD = 3;
+int sceneID = 0;
+
 float camFoV;
 float camMotoSpace;
 float camProjectionRatio;
 float camShowDriver;
+float wheelie = 0.;
+float globalFade = 1.;
+float shouldDrawLogo = 0.;
 vec3 camPos;
 vec3 camTa;
 vec3 sheepPos = vec3(0.);
-float wheelie = 0.;
-int driverIsSleeping = 0; // of course, he's not dead!
-// 0: driving; 1: sleeping; 2: hidden
-bool sheepOnMoto = false;
 vec3 panelWarningPos = vec3(6., 0., 0.);
 bool warningIsSheep = true;
-float globalFade = 1.;
-float shouldDrawLogo = 0.;
 
 // x: actual width
 // y: width + transition
