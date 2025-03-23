@@ -252,7 +252,7 @@ void selectShot() {
         float trans = smoothstep(3., 0., time);
         camTa = vec3(3., 1. - trans*.8, 0.);
         camPos = vec3(5. - 0.1*time, 1., 0.);
-        camPos.y += 0.05 * verticalBump();
+        camPos.y += 0.02 * verticalBump();
         // camTa.y += 0.05 * verticalBump();
         // wheelie = smoothstep(3., 3.5, time);
         headRot = vec2(0., 0.2);

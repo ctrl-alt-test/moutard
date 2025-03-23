@@ -9,19 +9,24 @@ float squintEyes = 0.;
 float headDist = 0.; // distance to head (for eyes AO)
 
 float sunglasses(vec3 p) {
+  if (driverIsSleeping == 0.) {
+    return INF;
+  }
   // Frame
+  p -= vec3(0, 0.3, -0.9);
   vec3 framePos = p;
   float h;
-  float middle = Segment3(p - vec3(0, -1.1, -1), vec3(-0.3,0,0), vec3(.3,0,0), h) - 0.04;
+  float middle = Segment3(p - vec3(0, -0.1, -0.4), vec3(-0.3,0,0), vec3(.3,0,0), h) - 0.04;
   framePos.x = abs(framePos.x) - 0.5;
 
-  float frame = Segment3(framePos, vec3(0.5, -1., -0.7), vec3(0, -1.5, -1.7), h) - 0.04;
+  float frame = Segment3(framePos, vec3(0.3, 0., -0.), vec3(0.2, -0.1, -0.4), h) - 0.04;
   frame = min(frame, middle);
 
   // Lenses
-  vec3 lensPos = p - vec3(0., -1.3, -1.2);
+  vec3 lensPos = p - vec3(0., -0.25, -0.4);
   lensPos.x = abs(lensPos.x) - 0.4;
-  float lens = length(lensPos * vec3(1., 1.2, 1.)) - 0.3;
+  //float lens = //capsule(lensPos, vec3(0., 0., 0.), vec3(0, 0, 0.), 0.3);
+  float lens = length(lensPos * vec3(0.3, 0.4, 1.)) - 0.1;
 
   float sunglasses = min(frame, lens);
   return sunglasses;
@@ -111,7 +116,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     float head = length(ph-vec3(0.,-1.3,-1.2)) - 1.;
     head = smin(head, length(ph-vec3(0.,0.,0.)) - .5, 1.8);
 
-    float glasses = sunglasses(ph - vec3(0, 1.3, 0.1));
+    float glasses = sunglasses(ph);
 
     // hair 
     vec3 pp = ph;
