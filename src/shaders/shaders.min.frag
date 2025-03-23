@@ -3,13 +3,10 @@
 vec2 iResolution=vec2(1280,720);
 uniform float iTime;
 uniform sampler2D tex;
-float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
-vec3 camPos,camTa,sheepPos=vec3(0);
-float wheelie=0.;
 int sceneID=0;
-vec3 panelWarningPos=vec3(6,0,0);
+float camFoV,camMotoSpace,camProjectionRatio,camShowDriver,wheelie=0.,globalFade=1.,shouldDrawLogo=0.;
+vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0);
 bool warningIsSheep=true;
-float globalFade=1.,shouldDrawLogo=0.;
 const vec3 roadWidthInMeters=vec3(3.5,5,8);
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
@@ -753,13 +750,12 @@ void viewFromBehind(float t_in_shot)
 }
 void motoFaceImpactShot(float t_in_shot)
 {
-  float shift=t_in_shot/10.,impact=smoothstep(9.7,10.,t_in_shot);
-  vec2 noise=valueNoise2(5e2*t_in_shot)*shift;
+  float shift=t_in_shot/10.,impact=smoothstep(9.8,10.,t_in_shot);
   camPos=vec3(3.-impact-shift*1.2,.5,0);
-  camPos.x+=noise.x*.05;
-  camPos.z+=noise.y*.05;
+  camPos.xz+=(valueNoise2(5e2*t_in_shot)*shift).xy*.1;
   camTa=vec3(0,1.+shift*.2,0);
   camProjectionRatio=2.+impact*5.;
+  sheepPos=vec3(0,100,0);
   globalFade*=1.-impact;
 }
 void sheepScaredShot(float t_in_shot)
@@ -826,26 +822,6 @@ void selectShot()
     sideShotFront();
   else if(get_shot(time,5.))
     {
-      float motion=time*.1;
-      camMotoSpace=0.;
-      camPos=vec3(0,1.5-motion,6.+motion);
-      sheepPos=vec3(1,.5,3.7-motion);
-      panelWarningPos=vec3(3,.5,2.5);
-      camTa=sheepPos+vec3(0,.5,1);
-      warningIsSheep=false;
-      hideMoto=true;
-    }
-  else if(get_shot(time,5.))
-    {
-      float t=time/2.,bump=.02*verticalBump();
-      camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
-      camTa=vec3(.5,1.+.2*t+bump,.25);
-      panelWarningPos=vec3(3.5,.5,180);
-      camProjectionRatio=1.5;
-      sheepPos=vec3(1e6);
-    }
-  else if(get_shot(time,5.))
-    {
       camMotoSpace=0.;
       float motion=time*.1;
       camPos=vec3(3.-motion,1,2.-motion);
@@ -864,6 +840,26 @@ void selectShot()
     }
   else if(get_shot(time,5.))
     {
+      float motion=time*.1;
+      camMotoSpace=0.;
+      camPos=vec3(2,1.5-motion,6.+motion);
+      sheepPos=vec3(1,.5,3.7-motion);
+      panelWarningPos=vec3(3,.5,2.5);
+      camTa=sheepPos+vec3(0,.5,1);
+      warningIsSheep=false;
+      hideMoto=true;
+    }
+  else if(get_shot(time,5.))
+    {
+      float t=time/2.,bump=.02*verticalBump();
+      camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
+      camTa=vec3(.5,1.+.2*t+bump,.25);
+      panelWarningPos=vec3(3.5,.5,-250);
+      camProjectionRatio=1.5;
+      sheepPos=vec3(1e6);
+    }
+  else if(get_shot(time,5.))
+    {
       camMotoSpace=0.;
       hideMoto=true;
       float motion=time*.1,shift=smoothstep(0.,5.,time);
@@ -877,9 +873,9 @@ void selectShot()
     }
   else if(get_shot(time,5.))
     {
-      float shift=smoothstep(0.,5.,time);
+      float shift=time/5.;
       camPos=vec3(4.-shift,.8,0);
-      camTa=vec3(0,1.4,0);
+      camTa=vec3(-10,0,0);
       camProjectionRatio=1.5+shift;
       sheepPos=vec3(0,100,0);
     }
@@ -898,7 +894,7 @@ void selectShot()
       squintEyes=smoothstep(3.5,3.7,time);
       eyeDir.x+=.15-smoothstep(4.,4.2,time)*.1;
     }
-  else if(get_shot(time,5.))
+  else if(get_shot(time,3.))
     {
       float shift=time/10.;
       vec2 noise=valueNoise2(5e2*time)*shift;
@@ -908,14 +904,22 @@ void selectShot()
       camTa=vec3(0,.5+shift,0);
       camProjectionRatio=2.;
     }
-  else if(get_shot(time,2.5))
+  else if(get_shot(time,1.6))
     sheepScaredShot(time);
-  else if(get_shot(time,2.5))
-    motoFaceImpactShot(time+5.);
-  else if(get_shot(time,2.5))
+  else if(get_shot(time,1.6))
+    motoFaceImpactShot(time);
+  else if(get_shot(time,1.6))
+    sheepScaredShot(time+1.);
+  else if(get_shot(time,1.6))
+    motoFaceImpactShot(time+3.);
+  else if(get_shot(time,1.6))
     sheepScaredShot(time+2.5);
-  else if(get_shot(time,2.5))
-    motoFaceImpactShot(time+7.5);
+  else if(get_shot(time,1.))
+    motoFaceImpactShot(time+5.);
+  else if(get_shot(time,1.))
+    sheepScaredShot(time+4.);
+  else if(get_shot(time,2.))
+    motoFaceImpactShot(time+8.);
   else if(get_shot(time,10.))
     {
       globalFade*=smoothstep(1.,4.,time);
