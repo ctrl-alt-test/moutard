@@ -5,6 +5,7 @@ vec2 headRot = vec2(0., -0.4);
 float blink = 0.;
 float eyesSurprise = 0.;
 float squintEyes = 0.;
+float sheepTears = -1.;
 
 float headDist = 0.; // distance to head (for eyes AO)
 
@@ -25,7 +26,6 @@ float sunglasses(vec3 p) {
   // Lenses
   vec3 lensPos = p - vec3(0., -0.25, -0.4);
   lensPos.x = abs(lensPos.x) - 0.4;
-  //float lens = //capsule(lensPos, vec3(0., 0., 0.), vec3(0, 0, 0.), 0.3);
   float lens = length(lensPos * vec3(0.3, 0.4, 1.)) - 0.1;
 
   float sunglasses = min(frame, lens);
@@ -141,21 +141,35 @@ vec2 sheep(vec3 p, bool shiftPos) {
     //eyes
     pp = ph;
     pp.x = abs(ph.x)-.4;
-    float eyes = length(pp*vec3(1.,1.,1.-eyesSurprise)-vec3(0.,0.,-1.)) - .3;
-    eyes = length(pp*vec3(1.)-vec3(0.,0.,-1.)) - .3;
+    float eyes = length(pp*vec3(1.)-vec3(0.,0.,-1.-eyesSurprise)) - .3;
 
     float eyeCap = abs(eyes)-.02;
 
-    float blink = mix(smoothstep(0.95,0.96,blink)*.3 + cos(iTime*10.)*.02, 0.1, squintEyes);
-    eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-blink, -ph.z-1.-eyesSurprise*1.8, .2), .01);
-    eyeCap = smin(eyeCap, head, .02);
-    head = min(head, eyeCap);
+    // eyes = smin(eyes, tears, .05);
+    if (eyesSurprise <= 0.) {
+      float blink = mix(smoothstep(0.95,0.96,blink)*.3 + cos(iTime*10.)*.02, 0.1, squintEyes);
+      eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-blink, -ph.z-1., .2), .01);
+      eyeCap = smin(eyeCap, head, .02);
+      head = min(head, eyeCap);
+    }
 
     // nostrils
     pp.x = abs(ph.x)-.2;
     pp.xz = Rotation(-.45) * pp.xz;
     head = smax(head, -length(pp-vec3(-0.7,-1.2,-2.05)) + .14, .1);
     head = smin(head, Torus2(pp-vec3(-0.7,-1.2,-1.94), vec2(.14,.05)), .05);
+
+    float tears;
+    if (sheepTears < 0.) {
+      tears = INF;
+    } else {
+      pp = ph;
+      pp.x = abs(ph.x)-.25;
+      float shift = sheepTears*.02;
+      tears = length(pp-vec3(0.,-0.15-shift*0.5,-1.1-shift*1.)) - .01 - shift*.1;
+      tears -= pow(noise(pp*10.)*.5+.5, 1.) *.1;
+      tears = smin(tears, head+.01, 0.1);
+    }
 
     // tail
     float tail = capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5.), vec3(0.,2.,4.9), .2);
@@ -169,6 +183,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     dmat.x = smax(dmat.x, -earsClip, .15);
     dmat = MinDist(dmat, vec2(legs, SKIN_ID));
     dmat = MinDist(dmat, vec2(head, SKIN_ID));
+    dmat = MinDist(dmat, vec2(tears, TEARS_ID));
     dmat = MinDist(dmat, vec2(eyes, EYE_ID));
     dmat = MinDist(dmat, vec2(clogs, CLOGS_ID));
     dmat = MinDist(dmat, vec2(ears, SKIN_ID));

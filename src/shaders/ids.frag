@@ -24,6 +24,7 @@ const int CLOGS_ID = 12;
 const int METAL_ID = 13;
 const int BLOOD_ID = 14;
 const int PANEL_ID = 15;
+const int TEARS_ID = 16;
 
 #ifdef DEBUG
 const int DEBUG_ID = 9999;

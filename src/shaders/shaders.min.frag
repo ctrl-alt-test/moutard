@@ -479,7 +479,7 @@ vec2 motoShape(vec3 p)
 vec3 eyeDir=vec3(0,-.2,1),animationSpeed=vec3(1);
 const vec3 animationAmp=vec3(1,.2,.25);
 vec2 headRot=vec2(0,-.4);
-float blink=0.,eyesSurprise=0.,squintEyes=0.,headDist=0.;
+float blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.;
 float sunglasses(vec3 p)
 {
   if(sceneID!=3)
@@ -547,7 +547,7 @@ vec2 sheep(vec3 p,bool shiftPos)
   bodyMove.zy=Rotation(sin(iTime*animationSpeed.y)*.25*animationAmp.y-headRot.y)*bodyMove.zy;
   c=smin(length(bodyMove-vec3(0,-1.3,-1.2))-1.,length(bodyMove-vec3(0))-.5,1.8);
   d=sunglasses(bodyMove);
-  vec3 pp;
+  vec3 pp=bodyMove*vec3(.7,1,.7);
   n=smin(length(bodyMove-vec3(0,.35,-.1))-.55-(cos(bodyMove.z*8.+bodyMove.y*4.5+bodyMove.x*4.)+cos(bodyMove.z*4.+bodyMove.y*6.5+bodyMove.x*8.))*.05,tb,.1);
   pp=bodyMove;
   pp.yz=Rotation(-.6)*pp.yz;
@@ -560,16 +560,28 @@ vec2 sheep(vec3 p,bool shiftPos)
   float earsClip=length(pp)-.16;
   pp=bodyMove;
   pp.x=abs(bodyMove.x)-.4;
-  float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=abs(eyes)-.02,blink=mix(smoothstep(.95,.96,blink)*.3+cos(iTime*10.)*.02,.1,squintEyes);
-  eyeCap=smin(smax(eyeCap,smin(-abs(bodyMove.y+bodyMove.z*.025)+.25-blink,-bodyMove.z-1.-eyesSurprise*1.8,.2),.01),c,.02);
-  c=min(c,eyeCap);
+  float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=abs(eyes)-.02;
+  {
+    float blink=mix(smoothstep(.95,.96,blink)*.3+cos(iTime*10.)*.02,.1,squintEyes);
+    eyeCap=smin(smax(eyeCap,smin(-abs(bodyMove.y+bodyMove.z*.025)+.25-blink,-bodyMove.z-1.,.2),.01),c,.02);
+    c=min(c,eyeCap);
+  }
   pp.x=abs(bodyMove.x)-.2;
   pp.xz=Rotation(-.45)*pp.xz;
   c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),Torus2(pp-vec3(-.7,-1.2,-1.94)),.05);
-  eyeCap=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
-  vec2 dmat=MinDist(MinDist(vec2(tb,9),vec2(eyeCap,9)),vec2(n,9));
+  if(sheepTears<0.)
+    eyeCap=1e6;
+  else
+    {
+      pp=bodyMove;
+      pp.x=abs(bodyMove.x)-.25;
+      float shift=sheepTears*.02;
+      eyeCap=smin(length(pp-vec3(0,-.15-shift*.5,-1.1-shift))-.01-shift*.1-(noise(pp*10.)*.5+.5)*.1,c+.01,.1);
+    }
+  float tail=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
+  vec2 dmat=MinDist(MinDist(vec2(tb,9),vec2(tail,9)),vec2(n,9));
   dmat.x=smax(dmat.x,-earsClip,.15);
-  dmat=MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,10)),vec2(c,10)),vec2(eyes,11)),vec2(b,12)),vec2(ears,10)),vec2(d,0));
+  dmat=MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,10)),vec2(c,10)),vec2(eyeCap,16)),vec2(eyes,11)),vec2(b,12)),vec2(ears,10)),vec2(d,0));
   headDist=c;
   dmat.x*=.15;
   return dmat;
@@ -673,14 +685,14 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
       t=rd.z*eyeDir+rd.x*t+rd.y*b;
       vec2 offset=t.xy/t.z*length(dir.xy)/length(ro-p)*.4;
       dir.xy-=offset*smoothstep(.01,0.,dot(dir,rd));
-      float pupilSize=.1+eyesSurprise*.5,er=length(dir.xy),theta=atan(dir.x,dir.y);
+      float er=length(dir.xy),theta=atan(dir.x,dir.y);
       b=mix(vec3(.5,.3,.1),vec3(0,.8,1),smoothstep(.16,.3,er)*.3+cos(theta*15.)*.04);
-      pupilSize=smoothstep(pupilSize,pupilSize+.02,er);
-      sunDir=mix(b*.3,mix(b*((smoothstep(-.9,1.,noise(vec3(er*10.,theta*30.+cos(er*50.+noise(vec3(theta))*50.),0)))+smoothstep(-.9,1.,noise(vec3(er*10.,theta*40.+cos(er*30.+noise(vec3(theta))*50.)*2.,0))))*.5+.5)*smoothstep(.3,.29,er)*(vec3(1,.8,.7)*pow(max(0.,dot(normalize(vec3(3,1,-1)),dir)),8.)*3e2+.5)*pupilSize+pow(spe,vec3(800))*3,vec3(.8),smoothstep(.29,.3,er)),smoothstep(0.,.05,abs(er-.3)+.01));
+      float pupil=smoothstep(.1,.12,er);
+      sunDir=mix(b*.3,mix(b*((smoothstep(-.9,1.,noise(vec3(er*10.,theta*30.+cos(er*50.+noise(vec3(theta))*50.),0)))+smoothstep(-.9,1.,noise(vec3(er*10.,theta*40.+cos(er*30.+noise(vec3(theta))*50.)*2.,0))))*.5+.5)*smoothstep(.3,.29,er)*(vec3(1,.8,.7)*pow(max(0.,dot(normalize(vec3(3,1,-1)),dir)),8.)*3e2+.5)*pupil+pow(spe,vec3(800))*3,vec3(.8),smoothstep(.29,.3,er)),smoothstep(0.,.05,abs(er-.3)+.01));
       n=mix(normalize(n+(eyeDir+n)*4.),n,smoothstep(.3,.32,er));
       {
         vec3 l1=normalize(vec3(1,1.5,-1)),l2=vec3(-l1.x,l1.y*.5,l1.z);
-        envm=(mix(mix(vec3(.3,.3,0),vec3(.1),smoothstep(-.7,.2,t.y)),vec3(.3,.65,1),smoothstep(0.,1.,t.y))+(specular(t,l1,.1)+specular(t,l2,2.)*.1+specular(t,normalize(l1+vec3(.2,0,0)),.3)+specular(t,normalize(l1+vec3(.2,0,.2)),.5)+specular(t,normalize(l2+vec3(.1,0,.2)),8.)*.5)*vec3(1,.9,.8))*mix(.15,.2,pupilSize)*sqrt(fre)*2.5;
+        envm=(mix(mix(vec3(.3,.3,0),vec3(.1),smoothstep(-.7,.2,t.y)),vec3(.3,.65,1),smoothstep(0.,1.,t.y))+(specular(t,l1,.1)+specular(t,l2,2.)*.1+specular(t,normalize(l1+vec3(.2,0,0)),.3)+specular(t,normalize(l1+vec3(.2,0,.2)),.5)+specular(t,normalize(l2+vec3(.1,0,.2)),8.)*.5)*vec3(1,.9,.8))*mix(.15,.2,pupil)*sqrt(fre)*2.5;
       }
       sceneSDF(p);
       sunDir*=smoothstep(0.,.015,headDist)*.4+.6;
@@ -722,6 +734,8 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
     }
   else if(dmat.y==10)
     sunDir=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,5)+2.)*2.,spe=pow(spe,vec3(4))*fre*.02;
+  else if(dmat.y==16)
+    sunDir=vec3(1,.8,.65),amb*=vec3(1,.85,.85),sss=pow(sss,vec3(.8,1.8,3)+2.)*2.,spe=pow(spe,vec3(8))*fre*fre*10.;
   else
      sunDir=vec3(1,0,1);
   diff=sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi;
@@ -767,8 +781,11 @@ void sheepScaredShot(float t_in_shot)
   headRot=vec2(0,-.1);
   eyeDir=vec3(0,-.1,1);
   vec2 noise=valueNoise2(1e2*t_in_shot)*smoothstep(0.,5.,t_in_shot);
-  headRot.x+=noise.x*.1;
-  headRot.y+=noise.y*.1;
+  if(t_in_shot>2.)
+    sheepTears=t_in_shot;
+  if(t_in_shot>=5.)
+    noise*=.3,sheepTears=t_in_shot-4.,sheepTears*=4.;
+  headRot.xy+=noise.xy*.1;
   camPos=vec3(1,.9,6.-shift);
   camTa=vec3(1,.8,7);
   sheepPos=vec3(1,.5,7);
@@ -883,41 +900,41 @@ void selectShot()
     {
       camMotoSpace=0.;
       hideMoto=true;
-      float motion=time*.1,shift=smoothstep(2.,3.,time),headShift=smoothstep(2.,3.,time);
+      float motion=time*.1,shift=smoothstep(3.5,4.,time),headShift=smoothstep(2.5,3.,time);
       headRot=vec2(0,.4-headShift*.5);
       eyeDir=vec3(0,.1-headShift*.2,1);
       camPos=vec3(1,.9,6.-shift-motion);
       camTa=vec3(1,.8,7.-motion);
       sheepPos=vec3(1,.5,7.-motion);
       camProjectionRatio=1.5+shift*2.;
-      eyesSurprise=0.;
-      squintEyes=smoothstep(3.5,3.7,time);
-      eyeDir.x+=.15-smoothstep(4.,4.2,time)*.1;
+      squintEyes=smoothstep(3.3,3.5,time);
+      eyeDir.x+=.17-smoothstep(4.5,4.7,time)*.17;
     }
   else if(get_shot(time,3.))
     {
       float shift=time/10.;
-      vec2 noise=valueNoise2(5e2*time)*shift;
+      vec2 noise=valueNoise2(5e2*time);
       camPos=vec3(3.-shift*1.2,.5,0);
-      camPos.x+=noise.x*.05;
       camPos.z+=noise.y*.05;
-      camTa=vec3(0,.5+shift,0);
+      shift=smoothstep(.5,0.,time);
+      float shiftUp=smoothstep(2.,3.,time);
+      camTa=vec3(0,.5+shiftUp*.5,shift*.5);
       camProjectionRatio=2.;
     }
   else if(get_shot(time,1.6))
     sheepScaredShot(time);
-  else if(get_shot(time,1.6))
+  else if(get_shot(time,1.4))
     motoFaceImpactShot(time);
-  else if(get_shot(time,1.6))
-    sheepScaredShot(time+1.);
-  else if(get_shot(time,1.6))
+  else if(get_shot(time,1.4))
+    sheepScaredShot(time+1.5),blink=time*2.,headRot+=vec2(sin(time*30.)*.15,-.1+time*.5);
+  else if(get_shot(time,1.4))
     motoFaceImpactShot(time+3.);
   else if(get_shot(time,1.6))
     sheepScaredShot(time+2.5);
   else if(get_shot(time,1.))
     motoFaceImpactShot(time+5.);
-  else if(get_shot(time,1.))
-    sheepScaredShot(time+4.);
+  else if(get_shot(time,1.6))
+    sheepScaredShot(time+5.),camProjectionRatio=5.5;
   else if(get_shot(time,2.))
     motoFaceImpactShot(time+8.);
   else if(get_shot(time,10.))

@@ -255,6 +255,11 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         amb *= vec3(1.,.75,.75);
         sss = pow(sss, vec3(.5,2.5,5.0)+2.)*2.;// * fre;// * pow(fre, 1.);
         spe = pow(spe, vec3(4.))*fre*.02;
+    } else if (dmat.y == TEARS_ID) {
+        albedo = vec3(1., .8, .65);
+        amb *= vec3(1.0, 0.85, 0.85);
+        sss = pow(sss, vec3(0.8, 1.8, 3.0) + 2.) * 2.;
+        spe = pow(spe, vec3(8.0)) * fre * fre * 10.;
     } else {
         albedo = vec3(1., 0., 1.); // debug
     }
