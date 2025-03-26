@@ -152,8 +152,8 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV) {
     vec4 splineUVatTree = ToSplineLocalSpace(id, treeClearance);
     if (abs(splineUVatTree.x) < treeClearance) return d;
 
-    float treeHeight = mix(10., maxTreeHeight, 1.-h1*h1);
-    float treeWidth = treeHeight * mix(0.3, 0.4, h2*h2);
+    float treeHeight = mix(7., maxTreeHeight, h1);
+    float treeWidth = max(3.5, treeHeight * mix(0.3, 0.4, h2*h2));
 
     localP.y -= terrainHeight + 0.5 * treeHeight;
     localP.xz += (vec2(h1, h2) - 0.5) * 1.5; // We cannot move the trees too much due to artifacts.

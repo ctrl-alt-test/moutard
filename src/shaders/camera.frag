@@ -274,35 +274,38 @@ void selectShot() {
         headRot = vec2(0., 0.3);
         sceneID = SCENE_MOUTARD;
         camProjectionRatio = 2. - smoothstep(0., 6., time);
-        animationSpeed = vec3(0.);
         camProjectionRatio = 3. - time/5.;
 
     } else if (get_shot(time, 10.)) {
         // sheep driving + wheelie
-        vec3 shift = mix(vec3(0), vec3(-3, 2, -3), smoothstep(4, 6, time));
+        vec3 shift = mix(vec3(0), vec3(-3, 0, -3), smoothstep(4, 6, time));
 
         camTa = vec3(0., 1., 0) + shift;
-        camPos = vec3(6. - 0.1*time, 0.3, -1.-0.5*time) + shift;
+        camPos = vec3(6. - 0.1*time, 0.4, -1.-0.5*time) + shift;
         wheelie = smoothstep(1., 1.3, time);
-        headRot = vec2(0., 0.5);
+        wheelie += wheelie * sin(time*2.)*.1;
+        headRot = vec2(0., 0.6);
         sceneID = SCENE_MOUTARD;
         camProjectionRatio = 2.;
-        animationSpeed = vec3(0.);
         vec2 noise = valueNoise2(500.*time);
         camTa.xy += noise*.01;
 
         globalFade *= smoothstep(8., 5., time);
 
-    } else if (get_shot(time, 5.)) {
-        camPos = vec3(2.5, 1.5, -4.5);
-        camMotoSpace = 0.;
-        globalFade = 0.;
-        shouldDrawLogo = smoothstep(0., 1., time) * smoothstep(5., 4., time);
+    } else if (get_shot(time, 20.)) {
+        sceneID = SCENE_MOUTARD;
+        camTa = vec3(0., 1., .7);
+        camPos = vec3(4. - 0.1*time, 0.5, -1.-time);
+        headRot = vec2(0., 0.3);
+        camProjectionRatio = 3.;
 
+        shouldDrawLogo = smoothstep(0., 1., time) * smoothstep(10., 9., time);
+        globalFade = float(time < 10.);
     }
 
     if (sceneID == SCENE_MOUTARD) {
         headRot.y += sin(iTime*4.)*.1;
+        animationSpeed = vec3(0.);
     }
 
     float shotStartTime = iTime - time;

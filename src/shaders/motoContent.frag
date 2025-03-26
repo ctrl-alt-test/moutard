@@ -36,9 +36,18 @@ void computeMotoPosition()
     
     if (wheelie > 0.) { // wheelie
         motoPitch += mix(0., 0.5, wheelie);
-        motoPos.y += mix(0., 0.35, wheelie);
+        motoPos.y += mix(0., 0.4, wheelie);
     }
     motoRoll = 20. * motoDirAndTurn.w;
+}
+
+vec3 motoToWorldForCamera(vec3 v)
+{
+    // v.xy *= Rotation(-motoPitch);
+    // v.yz *= Rotation(-motoRoll);
+    v.xz *= Rotation(-motoYaw);
+    v += motoPos;
+    return v;
 }
 
 vec3 motoToWorld(vec3 v, bool isPos)
@@ -167,10 +176,15 @@ vec2 driverShape(vec3 p)
     if (true)
     {
         vec3 pHead = p - vec3(0.39, 0.6, 0.0);
-        float head = max(
-            length(pHead*vec3(1,1,1.2+pHead.y)) - 0.15,
-            -pHead.y-.09-pHead.x
+        float head = smax(
+            smax(
+                length(pHead*vec3(1.2,1.,1.3+pHead.y)) - 0.15,
+                - length(pHead - vec3(0.3, 0, 0)) + 0.16,
+                0.15),
+            -pHead.y-.2-pHead.x,
+            0.2
         );
+        
 
         if (head < d)
         {
@@ -286,7 +300,7 @@ vec2 motoShape(vec3 p)
         mirror = min(mirror,max(length(pMirror.xz)-.003,max(pMirror.y,-pMirror.y-.2)));
         fork = min(fork, mirror);
 
-        d = MinDist(d, vec2(fork, MOTO_ID));
+        d = MinDist(d, vec2(fork, MOTO_EXHAUST_ID));
     }
 
     // Head light and junction to the body
@@ -341,7 +355,7 @@ vec2 motoShape(vec3 p)
             tank = -min(-tank, -tankCut2);
             //tank = -smin(-tank, -tankCut2, 0.01);
         }
-        d = MinDist(d, vec2(tank, MOTO_ID));
+        d = MinDist(d, vec2(tank, MOTO_EXHAUST_ID));
     }
 
     // Motor
@@ -400,7 +414,7 @@ vec2 motoShape(vec3 p)
             exhaust = min(exhaust, Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
             exhaust = min(exhaust, Segment3(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
         }
-        d = MinDist(d, vec2(exhaust, MOTO_ID));
+        d = MinDist(d, vec2(exhaust, MOTO_EXHAUST_ID));
     }
 
     // Seat
@@ -424,7 +438,7 @@ vec2 motoShape(vec3 p)
             float seatBottomCut = Ellipsoid(pSeatBottom, vec3(0.8, 0.4, 0.4));
             seat = -min(-seat, -seatBottomCut);
         }
-        d = MinDist(d, vec2(seat, MOTO_ID));
+        d = MinDist(d, vec2(seat, MOTO_EXHAUST_ID));
     }
 
     return d;

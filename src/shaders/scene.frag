@@ -99,8 +99,8 @@ void main()
     vec3 cameraUp = vec3(0., 1., 0.);
     vec3 cameraPosition = camPos;
     if (camMotoSpace > 0.5) {
-        cameraPosition = motoToWorld(camPos, true);
-        cameraTarget = motoToWorld(camTa, true);
+        cameraPosition = motoToWorldForCamera(camPos);
+        cameraTarget = motoToWorldForCamera(camTa);
         //cameraUp = motoToWorld(cameraUp, false);
     } else {
         // getRoadPositionDirectionAndCurvature(0.7, cameraPosition);
@@ -139,7 +139,9 @@ void main()
 
     // fade in
     fragColor *= globalFade;
-    fragColor.rgb += drawLogo(uv);
+    fragColor.rgb *= drawLogo(uv);
+    // uint n = uint(iTime / 5);
+    // digits7(fragColor, vec4(1.,.0,0,1), uv*20.+vec2(18,-10), iResolution, n);
 
     fragColor /= 1.+pow(length(uv),4.)*0.6;
 
