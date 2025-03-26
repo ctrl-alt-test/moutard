@@ -152,7 +152,7 @@ vec2 driverShape(vec3 p)
         vec3 pLeg = simP;
 
         pLeg -= vec3(0.0, 0.0, 0.13);
-        if (sceneID == SCENE_SLEEPING) {
+        if (sceneID != SCENE_SLEEPING) {
             pLeg.xy *= Rotation(1.55);
             pLeg.yz *= Rotation(-0.45);
         }

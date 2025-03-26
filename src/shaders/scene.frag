@@ -130,6 +130,7 @@ void main()
             * 1.5 * vec3(1., 0., 0.);
     }
 
+    radiance = pow(pow(radiance, vec3(1./2.2)), vec3(1.0,1.05,1.1));
     vec3 i_color = radiance;
 
     // Motion blur

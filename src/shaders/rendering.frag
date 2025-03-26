@@ -116,7 +116,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             float highFreqNoise = fBm(laneUV * vec2(150., 6.), 1, 1., 1.);
             tireTrails = mix(tireTrails, highFreqNoise, 0.1);
             float roughness = mix(0.8, 0.4, tireTrails);
-            vec3 color = vec3(mix(vec3(0.3), vec3(0.6), tireTrails));
+            vec3 color = vec3(mix(vec3(0.2), vec3(0.4), tireTrails));
 
             sss *= 0.;
             albedo = color;// vec3(0.4) * tireTrails;
@@ -124,23 +124,23 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             spe *= mix(0., 0.1, tireTrails);
         } else { // grass
             sss *= 0.4;
-            albedo = vec3(0.15, 0.2, 0.);
+            albedo = vec3(0.05, 0.1, 0.);
             spe *= 0.;
         }
     } else if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
-        albedo = vec3(.1);
-        spe *= 0.1;
+        albedo = vec3(.01);
+        spe *= 0.05;
         sss *= 0.;
     } else if (dmat.y == MOTO_ID) {
-        albedo = vec3(.1);
+        albedo = vec3(.01);
         spe *= pow(spe, vec3(15.))*fre*2.;
         sss *= 0.;
     } else if (dmat.y == MOTO_EXHAUST_ID) {
-        albedo = vec3(.4);
-        spe *= pow(spe, vec3(2.))*fre*1.5;
+        albedo = vec3(.2);
+        spe *= pow(spe, vec3(8.))*fre*1.5;
         sss *= 0.;
     } else if (dmat.y == TREE_ID) {
-        albedo = 2.*vec3(.1,.1,0.05);
+        albedo = 2.*vec3(.05,.1,0.05);
         sss *= 0.5;
         bnc *= 0.;
         spe *= 0.;
@@ -255,7 +255,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         }
     }
     else if (dmat.y == SKIN_ID) {
-        albedo = vec3(1.,.7,.5)*1.;
+        albedo = vec3(1.,.7,.5)*1.2;
         amb *= vec3(1.,.75,.75);
         sss = pow(sss, vec3(.5,2.5,5.0)+2.)*2.;// * fre;// * pow(fre, 1.);
         spe = pow(spe, vec3(4.))*fre*.02;
@@ -270,7 +270,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
 
     // fog
     vec3 radiance = albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi;
-    float fogAmount = 1.0 - exp(-t*0.01);
+    float fogAmount = 1.0 - exp(-t*0.005);
     vec3 col = mix(radiance, fogColor, fogAmount);
 
     return col;
