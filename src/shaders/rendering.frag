@@ -36,7 +36,7 @@ float shadow(vec3 ro, vec3 rd)
 vec3 sky(vec3 V, vec3 fogColor)
 {
     vec3 col = mix(vec3(0.4, 0.5, 0.6), vec3(0.7, 0.7, 0.7), pow(smoothstep(0.15, 1., V.y), 0.4));
-    float cloud = fBm(0.015*time+V.xz/(0.05 + V.y) * 0.5);
+    float cloud = fBm(0.015*iTime+V.xz/(0.05 + V.y) * 0.5);
     cloud = pow(smoothstep(0., 1., cloud+1.), 2.);
     cloud = mix(0.15, 1., cloud);
 

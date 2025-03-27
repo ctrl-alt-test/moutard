@@ -1,13 +1,13 @@
 float verticalBump()
 {
-    return valueNoise2(6.*time).x;
+    return valueNoise2(6.*iTime).x;
 }
 
 void sideShotFront()
 {
     vec2 p = vec2(0.95, 0.5);
-    p.x += mix(-1., 1., valueNoise2(0.5*time).y);
-    p.x += mix(-0.01, 0.01, valueNoise2(600.*time).y);
+    p.x += mix(-1., 1., valueNoise2(0.5*iTime).y);
+    p.x += mix(-0.01, 0.01, valueNoise2(600.*iTime).y);
     p.y += 0.05 * verticalBump();
     camPos = vec3(p, -1.5);
     camTa = vec3(p.x, p.y + 0.1, 0.);

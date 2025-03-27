@@ -27,7 +27,7 @@ void computeMotoPosition()
     vec4 motoDirAndTurn = getRoadPositionDirectionAndCurvature(motoDistanceOnCurve, motoPos);
 
     vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
-    float rightOffset = 0. + 0.5*sin(time);
+    float rightOffset = 0. + 0.5*sin(iTime);
     motoPos.xz += motoRight * rightOffset;
     motoPos.y += roadBumpHeight(abs(rightOffset))+.1;
 
@@ -85,7 +85,7 @@ vec2 driverShape(vec3 p)
     } else if (sceneID == SCENE_MOUTARD) {
         return vec2(1e6, MOTO_DRIVER_ID);
     } else {
-        wind = fBm((p.xy + time) * 12.);
+        wind = fBm((p.xy + iTime) * 12.);
         p = worldToMoto(p, true);
         // Place roughly on the seat
         p -= vec3(-0.35, 0.78, 0.0);

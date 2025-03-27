@@ -9,7 +9,7 @@ vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0);
 bool warningIsSheep=true;
 const vec3 roadWidthInMeters=vec3(3.5,5,8);
 out vec4 fragColor;
-float PIXEL_ANGLE,time;
+float PIXEL_ANGLE;
 const float PI=acos(-1.);
 float hash11(float x)
 {
@@ -248,7 +248,7 @@ float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
   vec4 motoDirAndTurn=getRoadPositionDirectionAndCurvature(motoDistanceOnCurve,motoPos);
-  float rightOffset=.5*sin(time);
+  float rightOffset=.5*sin(iTime);
   motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
   motoYaw=atan(motoDirAndTurn.z,motoDirAndTurn.x);
@@ -287,7 +287,7 @@ vec2 driverShape(vec3 p)
   else if(sceneID==3)
     return vec2(1e6,2);
   else
-     wind=fBm((p.xy+time)*12.),p=worldToMoto(p)-vec3(-.35,.78,0);
+     wind=fBm((p.xy+iTime)*12.),p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2||camShowDriver<.5)
     return vec2(d,2);
@@ -610,11 +610,6 @@ float shadow(vec3 ro,vec3 rd)
     }
   return clamp(res,0.,1.);
 }
-vec3 sky(vec3 V,vec3 fogColor)
-{
-  float cloud=mix(.15,1.,pow(smoothstep(0.,1.,fBm(.015*time+V.xz/(.05+V.y)*.5)+1.),2.));
-  return mix(mix(vec3(.4,.5,.6),vec3(.7),pow(smoothstep(.15,1.,V.y),.4)),fogColor,cloud);
-}
 float trace(vec3 ro,vec3 rd)
 {
   float t=.1;
@@ -645,7 +640,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
   if(t>=5e2)
-    return sky(rd,fogColor);
+    return mix(mix(vec3(.4,.5,.6),vec3(.7),pow(smoothstep(.15,1.,rd.y),.4)),fogColor,mix(.15,1.,pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y)*.5)+1.),2.)));
   if(dmat.y==4)
     {
       float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(p.x));
@@ -741,13 +736,13 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
 }
 float verticalBump()
 {
-  return valueNoise2(6.*time).x;
+  return valueNoise2(6.*iTime).x;
 }
 void sideShotFront()
 {
   vec2 p=vec2(.95,.5);
-  p.x+=mix(-1.,1.,valueNoise2(.5*time).y);
-  p.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
+  p.x+=mix(-1.,1.,valueNoise2(.5*iTime).y);
+  p.x+=mix(-.01,.01,valueNoise2(6e2*iTime).y);
   p.y+=.05*verticalBump();
   camPos=vec3(p,-1.5);
   camTa=vec3(p.x,p.y+.1,0);
@@ -1010,7 +1005,6 @@ float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff
 void main()
 {
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
-  time=iTime;
   selectShot();
   computeMotoPosition();
   vec3 ro,rd,cameraTarget=camTa,cameraPosition=camPos;

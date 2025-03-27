@@ -53,7 +53,6 @@ out vec4 fragColor;
 
 // Semantic constants:
 float PIXEL_ANGLE;
-float time;
 
 #include "common.frag"
 #include "ids.frag"
@@ -81,12 +80,6 @@ void main()
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
-    if (ENABLE_STOCHASTIC_MOTION_BLUR) {
-        time = iTime + hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
-    } else {
-        time = iTime;
-    }
-
     selectShot();
     computeMotoPosition();
 
@@ -108,16 +101,6 @@ void main()
         cameraPosition = camPos;
     }
     setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
-
-    // View moto from front
-    // motoCamera(uv, vec3(1.26, 1.07, 0.05), vec3(-10.,0.,0), ro, rd);
-
-    // First-person view
-    // motoCamera(uv, vec3(0.02, 1.2, 0.05), vec3(10.,0.,0.), ro, rd);
-
-    // Third-person view, near ground
-    // motoCamera(uv, vec3(-2., 0.5, -0.2), vec3(10.,0.,0.), ro, rd);
-
 
     vec3 p;
     vec3 radiance = rayMarchScene(ro, rd, p);
@@ -145,6 +128,4 @@ void main()
     // digits7(fragColor, vec4(1.,.0,0,1), uv*20.+vec2(18,-10), iResolution, n);
 
     fragColor /= 1.+pow(length(uv),4.)*0.6;
-
-    //fragColor = vec4(radiance, 0.);
 }
