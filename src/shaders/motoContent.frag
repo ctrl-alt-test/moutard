@@ -92,7 +92,7 @@ vec2 driverShape(vec3 p)
     }
 
     float d = length(p);
-    if (d > 1.2 || camShowDriver < 0.5)
+    if (d > 1.2)
         return vec2(d, MOTO_DRIVER_ID);
 
     vec3 simP = p;

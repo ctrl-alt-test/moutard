@@ -1,10 +1,5 @@
 #version 150
 
-// #define DEBUG 1
-const bool ENABLE_STOCHASTIC_MOTION_BLUR = false;
-// #define ENABLE_STEP_COUNT
-// #define ENABLE_DAY_MODE
-
 // Constants:
 const int MAX_RAY_MARCH_STEPS = 250;
 const float MAX_RAY_MARCH_DIST = 500.;
@@ -15,7 +10,6 @@ const float BOUNCE_OFFSET = 1e-3;
 const int SPLINE_SIZE = 13;
 const float INF = 1e6;
 #include "shared.h"
-vec2 iResolution = vec2(XRES, YRES);
 
 const float lampHeight = 7.;
 
@@ -29,10 +23,8 @@ const int SCENE_SLEEPING = 2; // of course, he's not dead!
 const int SCENE_MOUTARD = 3;
 int sceneID = 0;
 
-float camFoV;
 float camMotoSpace;
-float camProjectionRatio;
-float camShowDriver;
+float camProjectionRatio = 1.;
 float wheelie = 0.;
 float globalFade = 1.;
 float shouldDrawLogo = 0.;
@@ -42,6 +34,7 @@ vec3 sheepPos = vec3(0.);
 vec3 panelWarningPos = vec3(6., 0., 0.);
 bool warningIsSheep = true;
 
+// TODO: could be inlined
 // x: actual width
 // y: width + transition
 // z: max width
@@ -50,9 +43,6 @@ const vec3 roadWidthInMeters = vec3(3.5, 5.0, 8.0);
 
 // Outputs:
 out vec4 fragColor;
-
-// Semantic constants:
-float PIXEL_ANGLE;
 
 #include "common.frag"
 #include "ids.frag"
@@ -77,6 +67,7 @@ float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float fal
 
 void main()
 {
+    vec2 iResolution = vec2(XRES, YRES);
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 

@@ -68,10 +68,7 @@ bool get_shot(inout float time, float duration) {
 void selectShot() {
     float time = iTime;
 
-    camProjectionRatio = 1.;
     camMotoSpace = 1.;
-    camShowDriver = 1.;
-    camFoV = atan(1. / camProjectionRatio);
     sheepPos = vec3(INF);
     wheelie = 0.;
     blink = max(fract(iTime*.333), fract(iTime*.123+.1));

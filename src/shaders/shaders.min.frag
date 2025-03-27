@@ -1,15 +1,13 @@
 #version 150
 
-vec2 iResolution=vec2(1280,720);
 uniform float iTime;
 uniform sampler2D tex;
 int sceneID=0;
-float camFoV,camMotoSpace,camProjectionRatio,camShowDriver,wheelie=0.,globalFade=1.,shouldDrawLogo=0.;
+float camMotoSpace,camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.;
 vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0);
 bool warningIsSheep=true;
 const vec3 roadWidthInMeters=vec3(3.5,5,8);
 out vec4 fragColor;
-float PIXEL_ANGLE;
 const float PI=acos(-1.);
 float hash11(float x)
 {
@@ -289,7 +287,7 @@ vec2 driverShape(vec3 p)
   else
      wind=fBm((p.xy+iTime)*12.),p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
-  if(d>1.2||camShowDriver<.5)
+  if(d>1.2)
     return vec2(d,2);
   vec3 simP=p;
   simP.z=abs(simP.z);
@@ -792,10 +790,7 @@ bool get_shot(inout float time,float duration)
 void selectShot()
 {
   float time=iTime;
-  camProjectionRatio=1.;
   camMotoSpace=1.;
-  camShowDriver=1.;
-  camFoV=atan(1./camProjectionRatio);
   sheepPos=vec3(1e6);
   wheelie=0.;
   blink=max(fract(iTime*.333),fract(iTime*.123+.1));
@@ -1004,7 +999,8 @@ float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff
 }
 void main()
 {
-  vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
+  vec2 iResolution=vec2(1280,720),texCoord=gl_FragCoord.xy/iResolution.xy;
+  iResolution=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   selectShot();
   computeMotoPosition();
   vec3 ro,rd,cameraTarget=camTa,cameraPosition=camPos;
@@ -1012,14 +1008,14 @@ void main()
     cameraPosition=motoToWorldForCamera(camPos),cameraTarget=motoToWorldForCamera(camTa);
   else
      cameraTarget=camTa,cameraPosition=camPos;
-  setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
+  setupCamera(iResolution,cameraPosition,cameraTarget,ro,rd);
   cameraTarget=rayMarchScene(ro,rd,cameraTarget);
   if(sceneID==1||sceneID==3)
     cameraTarget+=.3*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4)*5.*vec3(1,.9,.8),cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e4)*1.5*vec3(1,0,0);
   cameraTarget=pow(pow(cameraTarget,vec3(1./2.2)),vec3(1,1.05,1.1));
-  fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
+  fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(iResolution+iTime)),hash21(fract(iResolution-iTime)),hash21(fract(iResolution.yx+iTime)))*.04-.02,1);
   fragColor*=globalFade;
-  fragColor.xyz*=drawLogo(uv);
-  fragColor/=1.+pow(length(uv),4.)*.6;
+  fragColor.xyz*=drawLogo(iResolution);
+  fragColor/=1.+pow(length(iResolution),4.)*.6;
 }
 
