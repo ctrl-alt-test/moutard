@@ -3,7 +3,6 @@ vec3 animationSpeed = vec3(1.5);
 const vec3 animationAmp = vec3(1.,.2, .25);
 vec2 headRot = vec2(0., -0.4);
 float blink = 0.;
-float eyesSurprise = 0.;
 float squintEyes = 0.;
 float sheepTears = -1.;
 
@@ -141,16 +140,14 @@ vec2 sheep(vec3 p, bool shiftPos) {
     //eyes
     pp = ph;
     pp.x = abs(ph.x)-.4;
-    float eyes = length(pp*vec3(1.)-vec3(0.,0.,-1.-eyesSurprise)) - .3;
+    float eyes = length(pp*vec3(1.)-vec3(0.,0.,-1.)) - .3;
 
     float eyeCap = abs(eyes)-.02;
 
-    if (eyesSurprise <= 0.) {
-      float blink = mix(smoothstep(0.95,0.96,blink)*.3 + cos(iTime*10.)*.02, 0.1, squintEyes);
-      eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-blink, -ph.z-1., .2), .01);
-      eyeCap = smin(eyeCap, head, .02);
-      head = min(head, eyeCap);
-    }
+    float blink = mix(smoothstep(0.95,0.96,blink)*.3 + cos(iTime*10.)*.02, 0.1, squintEyes);
+    eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-blink, -ph.z-1., .2), .01);
+    eyeCap = smin(eyeCap, head, .02);
+    head = min(head, eyeCap);
 
     // nostrils
     pp.x = abs(ph.x)-.2;

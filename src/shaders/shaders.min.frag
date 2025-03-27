@@ -241,30 +241,28 @@ vec2 treesShape(vec3 p,vec4 splineUV)
   localP.xz-=id;
   return vec2(tree(p,localP,id,splineUV),3);
 }
-vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
-float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
+vec3 motoPos;
+const vec3 headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
+float motoPitch,motoDistanceOnCurve;
 void computeMotoPosition()
 {
   vec4 motoDirAndTurn=getRoadPositionDirectionAndCurvature(motoDistanceOnCurve,motoPos);
   float rightOffset=.5*sin(iTime);
   motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
-  motoYaw=atan(motoDirAndTurn.z,motoDirAndTurn.x);
   motoPitch=atan(motoDirAndTurn.y,length(motoDirAndTurn.zx));
   if(wheelie>0.)
     motoPitch+=mix(0.,.5,wheelie),motoPos.y+=mix(0.,.4,wheelie);
-  motoRoll=20.*motoDirAndTurn.w;
 }
 vec3 motoToWorldForCamera(vec3 v)
 {
-  v.xz*=Rotation(-motoYaw);
+  v.xz*=Rotation(1.57);
   return v+motoPos;
 }
 vec3 motoToWorld(vec3 v,bool isPos)
 {
   v.xy*=Rotation(-motoPitch);
-  v.yz*=Rotation(-motoRoll);
-  v.xz*=Rotation(-motoYaw);
+  v.xz*=Rotation(1.57);
   if(isPos)
     v+=motoPos;
   return v;
@@ -272,8 +270,7 @@ vec3 motoToWorld(vec3 v,bool isPos)
 vec3 worldToMoto(vec3 v)
 {
   v-=motoPos;
-  v.xz*=Rotation(motoYaw);
-  v.yz*=Rotation(motoRoll);
+  v.xz*=Rotation(-1.57);
   v.xy*=Rotation(motoPitch);
   return v;
 }
@@ -554,12 +551,9 @@ vec2 sheep(vec3 p,bool shiftPos)
   float earsClip=length(pp)-.16;
   pp=bodyMove;
   pp.x=abs(bodyMove.x)-.4;
-  float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=abs(eyes)-.02;
-  {
-    float blink=mix(smoothstep(.95,.96,blink)*.3+cos(iTime*10.)*.02,.1,squintEyes);
-    eyeCap=smin(smax(eyeCap,smin(-abs(bodyMove.y+bodyMove.z*.025)+.25-blink,-bodyMove.z-1.,.2),.01),c,.02);
-    c=min(c,eyeCap);
-  }
+  float eyes=length(pp*vec3(1)-vec3(0,0,-1))-.3,eyeCap=abs(eyes)-.02,blink=mix(smoothstep(.95,.96,blink)*.3+cos(iTime*10.)*.02,.1,squintEyes);
+  eyeCap=smin(smax(eyeCap,smin(-abs(bodyMove.y+bodyMove.z*.025)+.25-blink,-bodyMove.z-1.,.2),.01),c,.02);
+  c=min(c,eyeCap);
   pp.x=abs(bodyMove.x)-.2;
   pp.xz=Rotation(-.45)*pp.xz;
   c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),Torus2(pp-vec3(-.7,-1.2,-1.94)),.05);
@@ -572,8 +566,8 @@ vec2 sheep(vec3 p,bool shiftPos)
       float shift=sheepTears*.02;
       eyeCap=smin(length(pp-vec3(0,-.15-shift*.5,-1.1-shift))-.01-shift*.1-(noise(pp*10.)*.5+.5)*.1,c+.01,.1);
     }
-  float tail=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
-  vec2 dmat=MinDist(MinDist(vec2(tb,9),vec2(tail,9)),vec2(n,9));
+  blink=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
+  vec2 dmat=MinDist(MinDist(vec2(tb,9),vec2(blink,9)),vec2(n,9));
   dmat.x=smax(dmat.x,-earsClip,.15);
   dmat=MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,10)),vec2(c,10)),vec2(eyeCap,16)),vec2(eyes,11)),vec2(b,12)),vec2(ears,10)),vec2(d,0));
   headDist=c;

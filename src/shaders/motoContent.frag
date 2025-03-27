@@ -1,9 +1,7 @@
 vec3 motoPos;
-vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
-vec3 breakLightOffsetFromMotoRoot = vec3(-0.8, 0.75, 0.0);
-float motoYaw;
+const vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
+const vec3 breakLightOffsetFromMotoRoot = vec3(-0.8, 0.75, 0.0);
 float motoPitch;
-float motoRoll;
 float motoDistanceOnCurve;
 
 //
@@ -31,21 +29,17 @@ void computeMotoPosition()
     motoPos.xz += motoRight * rightOffset;
     motoPos.y += roadBumpHeight(abs(rightOffset))+.1;
 
-    motoYaw = atan(motoDirAndTurn.z, motoDirAndTurn.x);
     motoPitch = atan(motoDirAndTurn.y, length(motoDirAndTurn.zx));
     
     if (wheelie > 0.) { // wheelie
         motoPitch += mix(0., 0.5, wheelie);
         motoPos.y += mix(0., 0.4, wheelie);
     }
-    motoRoll = 20. * motoDirAndTurn.w;
 }
 
 vec3 motoToWorldForCamera(vec3 v)
 {
-    // v.xy *= Rotation(-motoPitch);
-    // v.yz *= Rotation(-motoRoll);
-    v.xz *= Rotation(-motoYaw);
+    v.xz *= Rotation(1.57);
     v += motoPos;
     return v;
 }
@@ -53,8 +47,7 @@ vec3 motoToWorldForCamera(vec3 v)
 vec3 motoToWorld(vec3 v, bool isPos)
 {
     v.xy *= Rotation(-motoPitch);
-    v.yz *= Rotation(-motoRoll);
-    v.xz *= Rotation(-motoYaw);
+    v.xz *= Rotation(1.57);
     if (isPos)
     {
         v += motoPos;
@@ -68,8 +61,7 @@ vec3 worldToMoto(vec3 v, bool isPos)
     {
         v -= motoPos;
     }
-    v.xz *= Rotation(motoYaw);
-    v.yz *= Rotation(motoRoll);
+    v.xz *= Rotation(-1.57);
     v.xy *= Rotation(motoPitch);
     return v;
 }
