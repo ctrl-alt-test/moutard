@@ -10,11 +10,9 @@ float base(vec2 p, float t) {
   float col = 1.;
   vec2 size = vec2(mix(0., 0.06, t));
   
-  for (int i = 0; i < 4; i++) {
-    for (int j = 0; j < 3; j++) {
-      if (i == 3 && j == 1) continue;
-    
-      col *= rect(p - vec2(float(i), float(j)) * spacing, size, 0.01);
+  for (float i = 0.; i < 4.; i++) {
+    for (float j = 0.; j < 3.; j++) {
+      col *= (i == 3. && j == 1.) ? 1. : rect(p - vec2(i, j) * spacing, size, 0.01);
     }
   }
   

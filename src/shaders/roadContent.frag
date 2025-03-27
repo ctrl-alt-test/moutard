@@ -104,7 +104,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
     // If (even partly) on the road, flatten road
     float height = mix(
-        valueNoise(p.xz*5.)*0.1 + 0.5 * 1. * fBm(p.xz * 2. / 5., 1, 0.6, 0.5),
+        valueNoise(p.xz*5.)*0.1 + 0.5 * fBm(p.xz * 2. / 5.),
         0.,
         isRoad*isRoad);
 
@@ -162,7 +162,7 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV) {
 
     // leaves
     vec2 pNoise = vec2(2.*atan(localP.z, localP.x), localP.y) + id;
-    d += 0.2*fBm(2. * pNoise, 2, 0.7, 0.5) + 0.5;
+    d += 0.2*fBm(2. * pNoise) + 0.5;
 
     return d;
 }

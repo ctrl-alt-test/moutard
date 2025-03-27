@@ -85,7 +85,7 @@ vec2 driverShape(vec3 p)
     } else if (sceneID == SCENE_MOUTARD) {
         return vec2(1e6, MOTO_DRIVER_ID);
     } else {
-        wind = fBm((p.xy + time) * 12., 1, 0.5, 0.5);
+        wind = fBm((p.xy + time) * 12.);
         p = worldToMoto(p, true);
         // Place roughly on the seat
         p -= vec3(-0.35, 0.78, 0.0);
@@ -176,15 +176,7 @@ vec2 driverShape(vec3 p)
     if (true)
     {
         vec3 pHead = p - vec3(0.39, 0.6, 0.0);
-        float head = smax(
-            smax(
-                length(pHead*vec3(1.2,1.,1.3+pHead.y)) - 0.15,
-                - length(pHead - vec3(0.3, 0, 0)) + 0.16,
-                0.15),
-            -pHead.y-.2-pHead.x,
-            0.2
-        );
-        
+        float head = length(pHead*vec3(1.2,1.,1.3-pHead.y)) - 0.15;
 
         if (head < d)
         {

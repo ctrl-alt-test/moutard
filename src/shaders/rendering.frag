@@ -36,9 +36,8 @@ float shadow(vec3 ro, vec3 rd)
 vec3 sky(vec3 V, vec3 fogColor)
 {
     vec3 col = mix(vec3(0.4, 0.5, 0.6), vec3(0.7, 0.7, 0.7), pow(smoothstep(0.15, 1., V.y), 0.4));
-    float cloud = fBm(0.015*time+V.xz/(0.05 + V.y) * 0.5, 5, 0.55, 0.7);
-    cloud = smoothstep(0., 1., cloud+1.);
-    cloud *= cloud;
+    float cloud = fBm(0.015*time+V.xz/(0.05 + V.y) * 0.5);
+    cloud = pow(smoothstep(0., 1., cloud+1.), 2.);
     cloud = mix(0.15, 1., cloud);
 
     return mix(col, fogColor, cloud);
@@ -110,9 +109,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             vec2 laneUV = p.xz / laneWidth;
             float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
-            //float largeScaleNoise = smoothstep(-0.25, 1., fBm(laneUV * vec2(15., 0.1), 2, .7, .4));
-            //tireTrails = mix(tireTrails, largeScaleNoise, 0.2);
-            float highFreqNoise = fBm(laneUV * vec2(50., 5), 1, 1., 1.);
+            float highFreqNoise = fBm(laneUV * vec2(50., 5));
             tireTrails = mix(tireTrails, highFreqNoise, 0.2);
             //tireTrails = highFreqNoise;
             float roughness = mix(0.8, 0.4, tireTrails);

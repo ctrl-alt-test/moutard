@@ -1,4 +1,3 @@
-const bool ENABLE_SMOOTHER_STEP_NOISE = false;
 const float PI = acos(-1.);
 
 // -------------------------------------------------------
@@ -118,14 +117,7 @@ float valueNoise(vec2 p)
     float v11 = hash21(p11);
 
     vec2 fp = p - p00;
-    if (ENABLE_SMOOTHER_STEP_NOISE)
-    {
-        fp = fp*fp*fp* (fp* (fp * 6.0 - 15.0) + 10.0);
-    }
-    else
-    {
-        fp = fp*fp * (3.0 - 2.0 * fp);
-    }
+    fp = fp*fp * (3.0 - 2.0 * fp);
 
     return mix(
         mix(v00, v10, fp.x),
@@ -163,22 +155,9 @@ vec2 valueNoise2(float p)
     return mix(v0, v1, fp);
 }
 
-float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
+float fBm(vec2 p)
 {
-    float v = 0.;
-    float weight = 1.0;
-    float frequency = 1.0;
-    float offset = 0.0;
-
-    for (int i = 0; i < iterations; ++i)
-    {
-        float noise = valueNoise(p * frequency + offset) * 2. - 1.;
-        v += weight * noise;
-        weight *= clamp(weight_param, 0., 1.);
-        frequency *= 1.0 + 2.0 * clamp(frequency_param, 0., 1.);
-        offset += 1.0;
-    }
-    return v;
+    return valueNoise(p)*2.-1.;
 }
 
 // -------------------------------------------------------
