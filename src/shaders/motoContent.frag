@@ -154,7 +154,7 @@ vec2 driverShape(vec3 p)
         pLeg -= vec3(0.0, 0.0, 0.13);
         if (sceneID != SCENE_SLEEPING) {
             pLeg.xy *= Rotation(1.55);
-            pLeg.yz *= Rotation(-0.45);
+            pLeg.yz *= Rotation(-0.4);
         }
         float h2 = Capsule(pLeg, 0.35, 0.09);
         d = smin(d, h2, 0.04);
@@ -167,8 +167,8 @@ vec2 driverShape(vec3 p)
         pLeg.y += 0.45;
         pLeg.xy *= Rotation(1.75);
         pLeg.yz *= Rotation(0.25);
-        float feet = Capsule(pLeg, 0.2, 0.04);
-        d = smin(d, feet, 0.04);
+        float feet = Capsule(pLeg, 0.2, 0.03);
+        d = smin(d, feet, 0.02);
     }
     d += 0.002 * wind;
 

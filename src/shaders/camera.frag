@@ -158,7 +158,7 @@ void selectShot() {
         camProjectionRatio = 1.5;
         sheepPos = vec3(INF);
 
-    } else if (get_shot(time, 5.)) {
+    } else if (get_shot(time, 3.)) {
         // sheep face, looking down
         camMotoSpace = 0.;
         float motion = time*.1;
@@ -174,7 +174,7 @@ void selectShot() {
         camTa = vec3(1., 0.8, 7.);
         sheepPos = vec3(1., 0.5, 7. - shift - motion);
 
-    } else if (get_shot(time, 5.)) {
+    } else if (get_shot(time, 2.)) {
         sceneID = SCENE_MOTO;
         // moto face scary
         float shift = time/5.;
@@ -197,7 +197,7 @@ void selectShot() {
         sheepPos = vec3(1., 0.5, 7. - motion);
         camProjectionRatio = 1.5 + shift*2.;
         squintEyes = smoothstep(3.3, 3.5, time);
-        eyeDir.x += .17-smoothstep(4.5, 4.7, time)*.17;
+        eyeDir.x += .18-smoothstep(4.3, 4.5, time)*.18;
 
     } else if (get_shot(time, 3.)) {
         sceneID = SCENE_MOTO;
@@ -207,7 +207,7 @@ void selectShot() {
         camPos = vec3(3. - shift*1.2, 0.5, 0.);
         camPos.z += noise.y*.05;
         float shiftLeft = smoothstep(0.5, 0., time);
-        float shiftUp = smoothstep(2., 3., time);
+        float shiftUp = smoothstep(2., 2.5, time);
         camTa = vec3(0., 0.5 + shiftUp*.5, shiftLeft*0.5);
         camProjectionRatio = 2.;
 
@@ -227,7 +227,7 @@ void selectShot() {
         motoFaceImpactShot(time+3.);
 
     } else if (get_shot(time, 1.6)) {
-        sheepScaredShot(time+2.5);
+        sheepScaredShot(time+3.4);
 
     } else if (get_shot(time, 1.)) {
         motoFaceImpactShot(time+5.);
@@ -278,12 +278,12 @@ void selectShot() {
 
     } else if (get_shot(time, 10.)) {
         // sheep driving + wheelie
-        vec3 shift = mix(vec3(0), vec3(-3, 0, -3), smoothstep(4, 6, time));
+        vec3 shift = mix(vec3(0), vec3(-3.5, 0, -3.5), smoothstep(4, 6, time));
 
         camTa = vec3(0., 1., 0) + shift;
         camPos = vec3(6. - 0.1*time, 0.4, -1.-0.5*time) + shift;
         wheelie = smoothstep(1., 1.3, time);
-        wheelie += wheelie * sin(time*2.)*.1;
+        wheelie += wheelie * sin(time*2.)*.2;
         headRot = vec2(0., 0.6);
         sceneID = SCENE_MOUTARD;
         camProjectionRatio = 2.;

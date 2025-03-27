@@ -99,50 +99,51 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     
     vec3 albedo = vec3(0.);
     if (t >= MAX_RAY_MARCH_DIST) {
-        return skyColor;
+        albedo = skyColor;
+        albedo = mix(albedo, vec3(length(albedo)), 0.7);
+        albedo = pow(albedo, vec3(2.5));
+        return albedo;
     }
 
     if(dmat.y == GROUND_ID) {
 
-        vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
-        float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
+        float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(p.x));
         if (isRoad > 0.99)
         {
-            vec2 laneUV = splineUV.xz / laneWidth;
-            float tireTrails = 1;// sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
+            vec2 laneUV = p.xz / laneWidth;
+            float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
             //float largeScaleNoise = smoothstep(-0.25, 1., fBm(laneUV * vec2(15., 0.1), 2, .7, .4));
             //tireTrails = mix(tireTrails, largeScaleNoise, 0.2);
-            float highFreqNoise = fBm(laneUV * vec2(150., 6.), 1, 1., 1.);
-            tireTrails = mix(tireTrails, highFreqNoise, 0.1);
+            float highFreqNoise = fBm(laneUV * vec2(50., 5), 1, 1., 1.);
+            tireTrails = mix(tireTrails, highFreqNoise, 0.2);
+            //tireTrails = highFreqNoise;
             float roughness = mix(0.8, 0.4, tireTrails);
-            vec3 color = vec3(mix(vec3(0.2), vec3(0.4), tireTrails));
+            vec3 color = vec3(mix(vec3(0.2), vec3(0.3), tireTrails));
 
             sss *= 0.;
             albedo = color;// vec3(0.4) * tireTrails;
-            // spe *= 0.1;
             spe *= mix(0., 0.1, tireTrails);
         } else { // grass
-            sss *= 0.4;
-            albedo = vec3(0.05, 0.1, 0.);
+            sss *= 0.3;
+            albedo = vec3(0.1, 0.15, 0.1);
             spe *= 0.;
         }
     } else if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
         albedo = vec3(.01);
-        spe *= 0.05;
+        spe *= 0.02;
         sss *= 0.;
     } else if (dmat.y == MOTO_ID) {
         albedo = vec3(.01);
         spe *= pow(spe, vec3(15.))*fre*2.;
         sss *= 0.;
     } else if (dmat.y == MOTO_EXHAUST_ID) {
-        albedo = vec3(.2);
+        albedo = vec3(.1);
         spe *= pow(spe, vec3(8.))*fre*1.5;
         sss *= 0.;
     } else if (dmat.y == TREE_ID) {
-        albedo = 2.*vec3(.05,.1,0.05);
-        sss *= 0.5;
-        bnc *= 0.;
+        albedo = vec3(.1,.25,0.2);
+        sss *= 0.2;
         spe *= 0.;
     } else if (dmat.y == WOOL_ID) {
         albedo = vec3(.4);
@@ -255,9 +256,9 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
         }
     }
     else if (dmat.y == SKIN_ID) {
-        albedo = vec3(1.,.7,.5)*1.2;
+        albedo = vec3(1.,.7,.5)*1.;
         amb *= vec3(1.,.75,.75);
-        sss = pow(sss, vec3(.5,2.5,5.0)+2.)*2.;// * fre;// * pow(fre, 1.);
+        sss = pow(sss, vec3(.5,2.5,4.0)+2.)*3.;
         spe = pow(spe, vec3(4.))*fre*.02;
     } else if (dmat.y == TEARS_ID) {
         albedo = vec3(1., .8, .65);
