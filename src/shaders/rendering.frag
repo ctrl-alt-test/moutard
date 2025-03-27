@@ -35,7 +35,7 @@ float shadow(vec3 ro, vec3 rd)
 
 vec3 sky(vec3 V, vec3 fogColor)
 {
-    vec3 col = mix(vec3(0.2, 0.4, 0.6), vec3(0.7, 0.7, 0.7), pow(smoothstep(0.15, 1., V.y), 0.4));
+    vec3 col = mix(vec3(0.4, 0.5, 0.6), vec3(0.7, 0.7, 0.7), pow(smoothstep(0.15, 1., V.y), 0.4));
     float cloud = fBm(0.015*time+V.xz/(0.05 + V.y) * 0.5, 5, 0.55, 0.7);
     cloud = smoothstep(0., 1., cloud+1.);
     cloud *= cloud;
@@ -78,7 +78,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     // Shade
     // ----------------------------------------------------------------
     vec3 sunDir = normalize(vec3(3.5,3.,-1.));
-    vec3 fogColor = mix(vec3(0.5,0.6,0.7), vec3(0.3,0.4,0.8), min(1., rd.y*4.));
+    vec3 fogColor = mix(vec3(0.5,0.6,0.7), vec3(0.4,0.6,0.8), min(1., rd.y*4.));
     vec3 skyColor = sky(rd, fogColor);
 
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
@@ -99,10 +99,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     
     vec3 albedo = vec3(0.);
     if (t >= MAX_RAY_MARCH_DIST) {
-        albedo = skyColor;
-        albedo = mix(albedo, vec3(length(albedo)), 0.7);
-        albedo = pow(albedo, vec3(2.5));
-        return albedo;
+        return skyColor;
     }
 
     if(dmat.y == GROUND_ID) {
@@ -235,7 +232,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
             if (warningIsSheep) {
                 pp.xy *= 0.9;
                 float dist = 5.;
-                headRot = vec2(0., -0.8);
+                headRot = vec2(0., -0.3);
                 animationSpeed = vec3(0);
                 for (float x = -0.2; x <= 0.2; x += 0.08) {
                     vec3 point = vec3(x, pp.y, pp.x);

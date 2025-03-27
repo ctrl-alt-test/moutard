@@ -30,7 +30,6 @@ void motoFaceImpactShot(float t_in_shot) {
         camPos.xz += noise.xy*.1;
         camTa = vec3(0., 1. + shift*.2, 0.);
         camProjectionRatio = 1.5 + impact*5. + shift;
-        sheepPos = vec3(0., 100., 0.);
 
         globalFade *= 1. - impact;
 }
@@ -73,7 +72,7 @@ void selectShot() {
     camMotoSpace = 1.;
     camShowDriver = 1.;
     camFoV = atan(1. / camProjectionRatio);
-    sheepPos = vec3(0., 1.2, 0.);
+    sheepPos = vec3(INF);
     wheelie = 0.;
     blink = max(fract(iTime*.333), fract(iTime*.123+.1));
 
@@ -99,7 +98,6 @@ void selectShot() {
     } else if (get_shot(time, 5.)) {
         sceneID = SCENE_MOTO;
         viewFromBehind(time);
-        sheepPos = vec3(INF);
 
     } else if (get_shot(time, 5.)) {
         // sheep walking
@@ -115,25 +113,6 @@ void selectShot() {
     } else if (get_shot(time, 5.)) { // moto
         sceneID = SCENE_MOTO;
         sideShotFront();
-
-    } else if (get_shot(time, 5.)) {
-        // sheep still walking
-        float shift = smoothstep(0., 5., time);
-        camMotoSpace = 0.;
-        float motion = time*.1;
-        camPos = vec3(3.-motion, 1., 2. - motion);
-        sheepPos = vec3(1., 0.5, 3. - motion);
-        camTa = sheepPos+vec3(0,0.5,1);
-        headRot = vec2(0., 0.2);
-        eyeDir = vec3(0.,0.1,1.);
-
-    } else if (get_shot(time, 5.)) {
-        sceneID = SCENE_MOTO;
-        // moto still moto-ing
-        float shift = smoothstep(0., 5., time);
-        camPos = vec3(3. - 2.*shift, 0.5, -2.);
-        camTa = vec3(0., 1.5, 1.);
-        panelWarningPos = vec3(3., 0.5, -250.);
 
     } else if (get_shot(time, 5.)) {
         // shot from back, sheep walking + /!\ warning
@@ -156,7 +135,6 @@ void selectShot() {
         camTa = vec3(0.5, 1. + 0.2 * t + bump, 0.25);
         panelWarningPos = vec3(3.5, 0.5, -250.);
         camProjectionRatio = 1.5;
-        sheepPos = vec3(INF);
 
     } else if (get_shot(time, 3.)) {
         // sheep face, looking down
@@ -181,7 +159,6 @@ void selectShot() {
         camPos = vec3(4. - shift, 0.8, 0.);
         camTa = vec3(-10., 0., 0.);
         camProjectionRatio = 1.5 + shift;
-        sheepPos = vec3(0., 100., 0.);
 
     } else if (get_shot(time, 5.)) {
         // sheep face looking up
@@ -197,7 +174,7 @@ void selectShot() {
         sheepPos = vec3(1., 0.5, 7. - motion);
         camProjectionRatio = 1.5 + shift*2.;
         squintEyes = smoothstep(3.3, 3.5, time);
-        eyeDir.x += .18-smoothstep(4.3, 4.5, time)*.18;
+        eyeDir.x += .18-smoothstep(4.3, 4.5, time)*.18-smoothstep(3., 1., time)*.4;
 
     } else if (get_shot(time, 3.)) {
         sceneID = SCENE_MOTO;
@@ -247,7 +224,6 @@ void selectShot() {
 
         // looking at ground
         camMotoSpace = 0.;
-        sheepPos = vec3(0., 100., 0.);
         float motion = time*.5;
         camPos = vec3(2.5, 1.5, -6. + motion);
         camTa = vec3(1., 0., -9. + motion);
@@ -282,7 +258,7 @@ void selectShot() {
 
         camTa = vec3(0., 1., 0) + shift;
         camPos = vec3(6. - 0.1*time, 0.4, -1.-0.5*time) + shift;
-        wheelie = smoothstep(1., 1.3, time);
+        wheelie = smoothstep(2., 2.3, time);
         wheelie += wheelie * sin(time*2.)*.2;
         headRot = vec2(0., 0.6);
         sceneID = SCENE_MOUTARD;
@@ -295,7 +271,7 @@ void selectShot() {
     } else if (get_shot(time, 20.)) {
         sceneID = SCENE_MOUTARD;
         camTa = vec3(0., 1., .7);
-        camPos = vec3(4. - 0.1*time, 0.5, -1.-time);
+        camPos = vec3(4. - 0.1*time, 1., -3.-0.5*time);
         headRot = vec2(0., 0.3);
         camProjectionRatio = 3.;
 

@@ -1,5 +1,5 @@
 vec3 eyeDir = vec3(0.,-0.2,1.);
-vec3 animationSpeed = vec3(1);
+vec3 animationSpeed = vec3(1.5);
 const vec3 animationAmp = vec3(1.,.2, .25);
 vec2 headRot = vec2(0., -0.4);
 float blink = 0.;
@@ -145,7 +145,6 @@ vec2 sheep(vec3 p, bool shiftPos) {
 
     float eyeCap = abs(eyes)-.02;
 
-    // eyes = smin(eyes, tears, .05);
     if (eyesSurprise <= 0.) {
       float blink = mix(smoothstep(0.95,0.96,blink)*.3 + cos(iTime*10.)*.02, 0.1, squintEyes);
       eyeCap = smax(eyeCap, smin(-abs(ph.y+ph.z*(.025))+.25-blink, -ph.z-1., .2), .01);
