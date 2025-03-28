@@ -289,5 +289,5 @@ void selectShot() {
     if (sceneID == SCENE_SHEEP || sceneID == SCENE_SLEEPING) {
         t = 0.;
     }
-    motoDistanceOnCurve = mix(0.3, 0.7, t/20.);
+    motoPos.xz = mix(0.3*roadP2, 0.7*roadP1, t/20.);
 }

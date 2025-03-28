@@ -63,11 +63,11 @@ float specular(vec3 v, vec3 l, float size)
     return (pow(spe, a)*(a+2.) + pow(spe, b)*(b+2.)*2.)*0.008;
 }
 
-vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
+vec3 rayMarchScene(vec3 ro, vec3 rd)
 {
     // Trace : intersection point + normal
-    float t = trace(ro,rd);
-    p = ro + rd * t;
+    float t = trace(ro, rd);
+    vec3 p = ro + rd * t;
 
     vec2 dmat = sceneSDF(p);
     vec2 eps = vec2(0.0001,0.0);
@@ -102,10 +102,8 @@ vec3 rayMarchScene(vec3 ro, vec3 rd, out vec3 p)
     }
 
     if(dmat.y == GROUND_ID) {
-
-        float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(p.x));
-        if (isRoad > 0.99)
-        {
+        if (abs(p.x) < roadWidthInMeters.x) {
+            const float laneWidth = 3.5;
             vec2 laneUV = p.xz / laneWidth;
             float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);

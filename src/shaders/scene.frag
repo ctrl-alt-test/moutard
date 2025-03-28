@@ -104,8 +104,7 @@ void main()
     vec3 rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
     // 
 
-    vec3 p;
-    vec3 radiance = rayMarchScene(ro, rd, p);
+    vec3 radiance = rayMarchScene(ro, rd);
 
     // Bloom around headlight
     if (sceneID == SCENE_MOTO || sceneID == SCENE_MOUTARD) {

@@ -213,12 +213,10 @@ vec2 treesShape(vec3 p,vec4 splineUV)
 }
 vec3 motoPos;
 const vec3 headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
-float motoPitch,motoDistanceOnCurve;
+float motoPitch;
 void computeMotoPosition()
 {
   vec4 motoDirAndTurn=vec4(0,0,-1,0);
-  motoPos.xz=mix(roadP2,roadP1,vec2(motoDistanceOnCurve).x);
-  motoPos.y=0.;
   float rightOffset=.5*sin(iTime);
   motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
@@ -590,10 +588,10 @@ float specular(vec3 v,vec3 l,float size)
   size=3./size;
   return(pow(spe,a)*(a+2.)+pow(spe,size)*(size+2.)*2.)*.008;
 }
-vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
+vec3 rayMarchScene(vec3 ro,vec3 rd)
 {
   float t=trace(ro,rd);
-  p=ro+rd*t;
+  vec3 p=ro+rd*t;
   vec2 dmat=sceneSDF(p),eps=vec2(1e-4,0);
   vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy).x,dmat.x-sceneSDF(p-eps.yxy).x,dmat.x-sceneSDF(p-eps.yyx).x)),sunDir=normalize(vec3(3.5,3,-1)),fogColor=mix(vec3(.5,.6,.7),vec3(.4,.6,.8),min(1.,rd.y*4.));
   float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,shad=shadow(p,sunDir);
@@ -604,21 +602,18 @@ vec3 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   if(t>=5e2)
     return mix(mix(vec3(.4,.5,.6),vec3(.7),pow(smoothstep(.15,1.,rd.y),.4)),fogColor,mix(.15,1.,pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y)*.5)+1.),2.)));
   if(dmat.y==4)
-    {
-      float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(p.x));
-      if(isRoad>.99)
-        {
-          vec2 laneUV=p.xz/3.5;
-          float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
-          tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,5)),.2);
-          vec3 color=vec3(mix(vec3(.2),vec3(.3),tireTrails));
-          sss*=0.;
-          sunDir=color;
-          spe*=mix(0.,.1,tireTrails);
-        }
-      else
-         sss*=.3,sunDir=vec3(.1,.15,.1),spe*=0.;
-    }
+    if(abs(p.x)<roadWidthInMeters.x)
+      {
+        vec2 laneUV=p.xz/3.5;
+        float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
+        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,5)),.2);
+        vec3 color=vec3(mix(vec3(.2),vec3(.3),tireTrails));
+        sss*=0.;
+        sunDir=color;
+        spe*=mix(0.,.1,tireTrails);
+      }
+    else
+       sss*=.3,sunDir=vec3(.1,.15,.1),spe*=0.;
   else if(dmat.y==2||dmat.y==1)
     sunDir=vec3(.01),spe*=.02,sss*=0.;
   else if(dmat.y==0)
@@ -922,7 +917,7 @@ void selectShot()
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
     time=0.;
-  motoDistanceOnCurve=mix(.3,.7,time/20.);
+  motoPos.xz=mix(.3*roadP2,.7*roadP1,time/20.);
 }
 float rect(vec2 p,vec2 size)
 {
@@ -979,7 +974,7 @@ void main()
   cameraUp=normalize(cross(cameraRight,cameraTarget));
   iResolution*=mix(1.,length(iResolution),.1);
   cameraRight=normalize(cameraTarget*camProjectionRatio+iResolution.x*cameraRight+iResolution.y*cameraUp);
-  cameraTarget=rayMarchScene(cameraPosition,cameraRight,cameraTarget);
+  cameraTarget=rayMarchScene(cameraPosition,cameraRight);
   if(sceneID==1||sceneID==3)
     cameraTarget+=.3*bloom(cameraPosition,cameraRight,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4)*5.*vec3(1,.9,.8),cameraTarget+=bloom(cameraPosition,cameraRight,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e4)*1.5*vec3(1,0,0);
   cameraTarget=pow(pow(cameraTarget,vec3(1./2.2)),vec3(1,1.05,1.1));

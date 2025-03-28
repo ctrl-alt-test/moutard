@@ -2,7 +2,6 @@ vec3 motoPos;
 const vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 const vec3 breakLightOffsetFromMotoRoot = vec3(-0.8, 0.75, 0.0);
 float motoPitch;
-float motoDistanceOnCurve;
 
 //
 // Moto position functions
@@ -22,9 +21,8 @@ float motoDistanceOnCurve;
 
 void computeMotoPosition()
 {
+    // TODO: to be simplified
     vec4 motoDirAndTurn = vec4(0, 0, -1, 0);
-    motoPos.xz = GetPositionOnSpline(vec2(motoDistanceOnCurve));
-    motoPos.y = 0.;
 
     vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
     float rightOffset = 0. + 0.5*sin(iTime);
@@ -77,7 +75,7 @@ vec2 driverShape(vec3 p)
         p.yz *= Rotation(1.5);
         p.xz *= Rotation(0.4);
     } else if (sceneID == SCENE_MOUTARD) {
-        return vec2(1e6, MOTO_DRIVER_ID);
+        return vec2(INF, MOTO_DRIVER_ID);
     } else {
         wind = fBm((p.xy + iTime) * 12.);
         p = worldToMoto(p, true);
@@ -183,7 +181,7 @@ vec2 driverShape(vec3 p)
 
 vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius, vec3 innerPart)
 {
-    vec2 d = vec2(1e6, MOTO_WHEEL_ID);
+    vec2 d = vec2(INF, MOTO_WHEEL_ID);
     float wheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
 
     if (wheel < 0.25)
@@ -216,7 +214,7 @@ vec2 motoShape(vec3 p)
     if (boundingSphere > 2.0)
         return vec2(boundingSphere - 1.5, MOTO_ID);
 
-    vec2 d = vec2(1e6, MOTO_ID);
+    vec2 d = vec2(INF, MOTO_ID);
 
 #ifdef DEBUG
     // Show moto coordinates:

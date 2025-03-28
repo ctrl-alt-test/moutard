@@ -23,22 +23,6 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth) {
     return vec4(d, 0., t, 1.);
 }
 
-//
-// 2D position on a given Bezier curve of the spline.
-// - x in [0, 1] of that curve.
-// - y the index of the curve in the spline.
-//
-// If you have a splineUV, call:
-// position = GetPositionOnSpline(splineUV.yw, directionAndCurvature)
-//
-// If you don't, get the pair with GetTAndIndex(t)
-//
-vec2 GetPositionOnSpline(vec2 spline_t_and_index)
-{
-    return mix(roadP2, roadP1, spline_t_and_index.x);
-}
-
-const float laneWidth = 3.5;
 const float warningHeight = 3.;
 
 vec2 panelWarning(vec3 p) {
@@ -93,9 +77,6 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
     if (isRoad > 0.0)
     {
-        // Get the point on the center line of the spline
-        vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw);
-
         height += roadBumpHeight(splineUV.x) + pow(valueNoise(mod(p.xz*50, 100)), .01) * .1;
     }
 
