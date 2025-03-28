@@ -153,7 +153,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     pp.x = abs(ph.x)-.2;
     pp.xz = Rotation(-.45) * pp.xz;
     head = smax(head, -length(pp-vec3(-0.7,-1.2,-2.05)) + .14, .1);
-    head = smin(head, Torus2(pp-vec3(-0.7,-1.2,-1.94), vec2(.14,.05)), .05);
+    head = smin(head, Torus(pp.xzy-vec3(-0.7,-1.94,-1.2), vec2(.14,.05)), .05);
 
     float tears;
     if (sheepTears < 0.) {

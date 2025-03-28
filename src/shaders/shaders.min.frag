@@ -55,12 +55,6 @@ float smin(float d1,float d2,float k)
   float h=clamp(.5+.5*(d2-d1)/k,0.,1.);
   return mix(d2,d1,h)-k*h*(1.-h);
 }
-float capsule(vec3 p,vec3 a)
-{
-  p-=a;
-  a=vec3(0,2,4.9)-a;
-  return length(p-a*clamp(dot(p,a)/dot(a,a),0.,1.))-.2;
-}
 float cappedCone(vec3 p,float h,float r1,float r2)
 {
   vec2 q=vec2(length(p.xz),p.y),k1=vec2(r2,h),k2=vec2(r2-r1,2.*h),ca=vec2(q.x-min(q.x,q.y<0.?
@@ -94,6 +88,12 @@ float Segment3(vec3 p,vec3 a,vec3 b,out float h)
   h=clamp(dot(p,a)/dot(a,a),0.,1.);
   return length(p-a*h);
 }
+float capsule(vec3 p,vec3 a)
+{
+  p-=a;
+  a=vec3(0,2,4.9)-a;
+  return length(p-a*clamp(dot(p,a)/dot(a,a),0.,1.))-.2;
+}
 float Capsule(vec3 p,float h,float r)
 {
   p.y+=clamp(-p.y,0.,h);
@@ -102,11 +102,6 @@ float Capsule(vec3 p,float h,float r)
 float Torus(vec3 p,vec2 t)
 {
   return length(vec2(length(p.xz)-t.x,p.y))-t.y;
-}
-float Torus2(vec3 p)
-{
-  vec2 t=vec2(.14,.05);
-  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
 }
 mat2 Rotation(float angle)
 {
@@ -498,7 +493,7 @@ vec2 sheep(vec3 p,bool shiftPos)
   c=min(c,eyeCap);
   pp.x=abs(bodyMove.x)-.2;
   pp.xz=Rotation(-.45)*pp.xz;
-  c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),Torus2(pp-vec3(-.7,-1.2,-1.94)),.05);
+  c=smin(smax(c,-length(pp-vec3(-.7,-1.2,-2.05))+.14,.1),Torus(pp.xzy-vec3(-.7,-1.94,-1.2),vec2(.14,.05)),.05);
   if(sheepTears<0.)
     eyeCap=1e6;
   else
@@ -666,22 +661,6 @@ float verticalBump()
 {
   return valueNoise2(6.*iTime).x;
 }
-void sideShotFront()
-{
-  vec2 p=vec2(.95,.5);
-  p.x+=mix(-1.,1.,valueNoise2(.5*iTime).y);
-  p.x+=mix(-.01,.01,valueNoise2(6e2*iTime).y);
-  p.y+=.05*verticalBump();
-  camPos=vec3(p,-1.5);
-  camTa=vec3(p.x,p.y+.1,0);
-  camProjectionRatio=1.2;
-}
-void viewFromBehind(float t_in_shot)
-{
-  camTa=vec3(1,1,0);
-  camPos=vec3(-2.-2.5*t_in_shot,.5+.2*t_in_shot,sin(t_in_shot));
-  camProjectionRatio=1.;
-}
 void motoFaceImpactShot(float t_in_shot)
 {
   sceneID=1;
@@ -738,7 +717,7 @@ void selectShot()
       eyeDir=vec3(0,.1-motion*.2,1);
     }
   else if(get_shot(time,5.))
-    sceneID=1,viewFromBehind(time);
+    sceneID=1,camTa=vec3(1,1,0),camPos=vec3(-2.-2.5*time,.5+.2*time,sin(time)),camProjectionRatio=1.;
   else if(get_shot(time,5.))
     {
       camMotoSpace=0.;
@@ -751,7 +730,16 @@ void selectShot()
       eyeDir=vec3(0,.1,1);
     }
   else if(get_shot(time,5.))
-    sceneID=1,sideShotFront();
+    {
+      sceneID=1;
+      vec2 p=vec2(.95,.5);
+      p.x+=mix(-1.,1.,valueNoise2(.5*iTime).y);
+      p.x+=mix(-.01,.01,valueNoise2(6e2*iTime).y);
+      p.y+=.05*verticalBump();
+      camPos=vec3(p,-1.5);
+      camTa=vec3(p.x,p.y+.1,0);
+      camProjectionRatio=1.2;
+    }
   else if(get_shot(time,5.))
     {
       float shift=smoothstep(3.,3.3,time)*.5,motion=time*.1;

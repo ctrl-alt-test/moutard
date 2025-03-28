@@ -1,100 +1,6 @@
 const float PI = acos(-1.);
 
 // -------------------------------------------------------
-// Palette function
-// Code by IQ
-// See: https://iquilezles.org/articles/palettes/
-
-vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d)
-{
-    return a + b * cos(2. * PI * (c * t + d));
-}
-
-//
-// Debug palette to show the number of steps
-//
-#ifdef ENABLE_STEP_COUNT
-vec3 stepsToColor(int steps)
-{
-    vec3 colorCodedCount = vec3(0.);
-
-    vec3 colorCodes[] = vec3[](
-        vec3(0.),
-        vec3(0., 0., 1.),
-        vec3(0., 1., 1.),
-        vec3(0., 1., 0.),
-        vec3(1., 1., 0.),
-        vec3(1., 0., 0.),
-        vec3(1., 0.4, 1.)
-    );
-    if (steps <= 10)
-    {
-        colorCodedCount = mix(colorCodes[0], colorCodes[1], clamp(float(steps) / 10, 0., 1.));
-    }
-    else if (steps <= 50)
-    {
-        colorCodedCount = mix(colorCodes[1], colorCodes[2], clamp(float(steps - 10) / 40, 0., 1.));
-    }
-    else if (steps <= 100)
-    {
-        colorCodedCount = mix(colorCodes[2], colorCodes[3], clamp(float(steps - 50) / 50, 0., 1.));
-    }
-    else if (steps <= 150)
-    {
-        colorCodedCount = mix(colorCodes[2], colorCodes[3], clamp(float(steps - 100) / 50, 0., 1.));
-    }
-    else if (steps <= 200)
-    {
-        colorCodedCount = mix(colorCodes[3], colorCodes[4], clamp(float(steps - 150) / 50, 0., 1.));
-    }
-    else if (steps <= 250)
-    {
-        colorCodedCount = mix(colorCodes[4], colorCodes[5], clamp(float(steps - 200) / 50, 0., 1.));
-    }
-    else
-    {
-        colorCodedCount = mix(colorCodes[5], colorCodes[6], clamp(float(steps - 250) / 50, 0., 1.));
-    }
-
-    return colorCodedCount;
-}
-#endif
-
-
-// -------------------------------------------------------
-// Shading functions
-
-float invV1(float NdotV, float sqrAlpha)
-{
-    return NdotV + sqrt(sqrAlpha + (1.0 - sqrAlpha) * NdotV * NdotV);
-}
-
-vec3 cookTorrance(
-    vec3 f0,
-	float roughness,
-	vec3 NcrossH,
-	float VdotH,
-    float NdotL,
-    float NdotV)
-{
-	float alpha = roughness * roughness;
-    float sqrAlpha = alpha * alpha;
-
-    // Normal distribution term D:
-	float distribution = dot(NcrossH, NcrossH) * (1. - sqrAlpha) + sqrAlpha;
-	float D = sqrAlpha / (PI * distribution * distribution);
-
-    // Visibility term V:
-    float V = 1.0 / (invV1(NdotV, sqrAlpha) * invV1(NdotL, sqrAlpha));
-
-    // Fresnel term F:
-	float x = 1. - VdotH;
-	vec3 F = x + f0 * (1. - x*x*x*x*x);
-
-	return F * D * V;
-}
-
-// -------------------------------------------------------
 // Noise functions
 
 // TODO: try to reduce the number of hash functions?
@@ -163,28 +69,13 @@ float fBm(vec2 p)
 // -------------------------------------------------------
 // SDF functions
 
-float smin( float d1, float d2, float k )
+float smin(float d1, float d2, float k)
 {
     float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
     return mix( d2, d1, h ) - k*h*(1.0-h);
 }
 
-/*
-float smin(float a, float b, float k)
-{
-    k /= 1.0 - sqrt(0.5);
-    return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
-}
-*/
-
-// merge with other capsule function?
-float capsule( vec3 p, vec3 a, vec3 b, float r )
-{
-  vec3 pa = p - a, ba = b - a;
-  return length( pa - ba*clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 ) ) - r;
-}
-
-float cappedCone( vec3 p, float h, float r1, float r2 )
+float cappedCone(vec3 p, float h, float r1, float r2)
 {
   vec2 q = vec2( length(p.xz), p.y );
   vec2 k1 = vec2(r2,h);
@@ -195,17 +86,11 @@ float cappedCone( vec3 p, float h, float r1, float r2 )
   return s*sqrt( min(dot(ca,ca),dot(cb,cb)) );
 }
 
-float smax( float a, float b, float k )
+float smax(float a, float b, float k)
 {
     k *= 1.4;
     float h = max(k-abs(a-b),0.0);
     return max(a, b) + h*h*h/(6.0*k*k);
-}
-
-float Box2(vec2 p, vec2 size, float corner)
-{
-   p = abs(p) - size + corner;
-   return length(max(p, 0.)) + min(max(p.x, p.y), 0.) - corner;
 }
 
 float Box3(vec3 p, vec3 size, float corner)
@@ -229,6 +114,13 @@ float Segment3(vec3 p, vec3 a, vec3 b, out float h)
 	return length(ap - ab * h);
 }
 
+// merge with other capsule function?
+float capsule(vec3 p, vec3 a, vec3 b, float r)
+{
+  vec3 pa = p - a, ba = b - a;
+  return length( pa - ba*clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 ) ) - r;
+}
+
 float Capsule(vec3 p, float h, float r)
 {
     p.y += clamp(-p.y, 0., h);
@@ -238,12 +130,6 @@ float Capsule(vec3 p, float h, float r)
 float Torus(vec3 p, vec2 t)
 {
     return length(vec2(length(p.xz) - t.x,p.y)) - t.y;
-}
-
-// TODO: merge with previous function
-float Torus2(vec3 p, vec2 t)
-{
-  return length(vec2(length(p.xy)-t.x,p.z))-t.y;
 }
 
 mat2 Rotation(float angle)
@@ -269,12 +155,6 @@ float UnevenCapsule2d( vec2 p, float r1, float r2, float h )
     if( k < 0.0 ) return length(p) - r1;
     if( k > a*h ) return length(p-vec2(0.0,h)) - r2;
     return dot(p, vec2(a,b) ) - r1;
-}
-
-// Returns 1.0 if the two vector are clockwise sorted, -1.0 otherwise
-float GetWinding(vec2 a, vec2 b)
-{
-    return 2.0 * step(a.x * b.y, a.y * b.x) - 1.0;
 }
 
 // -------------------------------------------------------

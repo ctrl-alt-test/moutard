@@ -3,24 +3,6 @@ float verticalBump()
     return valueNoise2(6.*iTime).x;
 }
 
-void sideShotFront()
-{
-    vec2 p = vec2(0.95, 0.5);
-    p.x += mix(-1., 1., valueNoise2(0.5*iTime).y);
-    p.x += mix(-0.01, 0.01, valueNoise2(600.*iTime).y);
-    p.y += 0.05 * verticalBump();
-    camPos = vec3(p, -1.5);
-    camTa = vec3(p.x, p.y + 0.1, 0.);
-    camProjectionRatio = 1.2;
-}
-
-void viewFromBehind(float t_in_shot)
-{
-    camTa = vec3(1., 1., 0.);
-    camPos = vec3(-2. - 2.5*t_in_shot, .5+0.2*t_in_shot, sin(t_in_shot));
-    camProjectionRatio = 1.;
-}
-
 void motoFaceImpactShot(float t_in_shot) {
         sceneID = SCENE_MOTO;
         float shift = t_in_shot/10.;
@@ -94,7 +76,9 @@ void selectShot() {
 
     } else if (get_shot(time, 5.)) {
         sceneID = SCENE_MOTO;
-        viewFromBehind(time);
+        camTa = vec3(1., 1., 0.);
+        camPos = vec3(-2. - 2.5*time, .5+0.2*time, sin(time));
+        camProjectionRatio = 1.;
 
     } else if (get_shot(time, 5.)) {
         // sheep walking
@@ -109,7 +93,13 @@ void selectShot() {
 
     } else if (get_shot(time, 5.)) { // moto
         sceneID = SCENE_MOTO;
-        sideShotFront();
+        vec2 p = vec2(0.95, 0.5);
+        p.x += mix(-1., 1., valueNoise2(0.5*iTime).y);
+        p.x += mix(-0.01, 0.01, valueNoise2(600.*iTime).y);
+        p.y += 0.05 * verticalBump();
+        camPos = vec3(p, -1.5);
+        camTa = vec3(p.x, p.y + 0.1, 0.);
+        camProjectionRatio = 1.2;
 
     } else if (get_shot(time, 5.)) {
         // shot from back, sheep walking + /!\ warning
