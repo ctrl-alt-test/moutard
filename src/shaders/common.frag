@@ -286,22 +286,3 @@ vec2 MinDist(vec2 d1, vec2 d2)
 {
     return d1.x < d2.x ? d1 : d2;
 }
-
-// -------------------------------------------------------
-// Camera functions
-
-void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, out vec3 ro, out vec3 rd)
-{
-    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
-    if (abs(dot(cameraForward, cameraUp)) > 0.99)
-    {
-        cameraUp = vec3(1., 0., 0.);
-    }
-    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
-    cameraUp = normalize(cross(cameraRight, cameraForward));
-
-    // meh. FIXME
-    uv *= mix(1., length(uv), 0.1);
-    ro = cameraPosition;
-    rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
-}

@@ -135,18 +135,6 @@ vec2 MinDist(vec2 d1,vec2 d2)
     d1:
     d2;
 }
-void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out vec3 rd)
-{
-  vec3 cameraUp=vec3(0,1,0);
-  cameraTarget=normalize(cameraTarget-cameraPosition);
-  if(abs(dot(cameraTarget,cameraUp))>.99)
-    cameraUp=vec3(1,0,0);
-  vec3 cameraRight=normalize(cross(cameraTarget,cameraUp));
-  cameraUp=normalize(cross(cameraRight,cameraTarget));
-  uv*=mix(1.,length(uv),.1);
-  ro=cameraPosition;
-  rd=normalize(cameraTarget*camProjectionRatio+uv.x*cameraRight+uv.y*cameraUp);
-}
 float distanceToSegment(vec2 p)
 {
   vec2 B=roadP2,A=roadP1,AB=B-A;
@@ -979,19 +967,23 @@ void main()
   iResolution=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   selectShot();
   computeMotoPosition();
-  vec3 ro,rd,cameraTarget=camTa,cameraPosition=camPos;
+  vec3 cameraTarget=camTa,cameraUp=vec3(0,1,0),cameraPosition=camPos;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorldForCamera(camPos),cameraTarget=motoToWorldForCamera(camTa);
   else
      cameraTarget=camTa,cameraPosition=camPos;
-  setupCamera(iResolution,cameraPosition,cameraTarget,ro,rd);
-  cameraTarget=rayMarchScene(ro,rd,cameraTarget);
+  cameraTarget=normalize(cameraTarget-cameraPosition);
+  if(abs(dot(cameraTarget,cameraUp))>.99)
+    cameraUp=vec3(1,0,0);
+  vec3 cameraRight=normalize(cross(cameraTarget,cameraUp));
+  cameraUp=normalize(cross(cameraRight,cameraTarget));
+  iResolution*=mix(1.,length(iResolution),.1);
+  cameraRight=normalize(cameraTarget*camProjectionRatio+iResolution.x*cameraRight+iResolution.y*cameraUp);
+  cameraTarget=rayMarchScene(cameraPosition,cameraRight,cameraTarget);
   if(sceneID==1||sceneID==3)
-    cameraTarget+=.3*bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4)*5.*vec3(1,.9,.8),cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e4)*1.5*vec3(1,0,0);
+    cameraTarget+=.3*bloom(cameraPosition,cameraRight,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4)*5.*vec3(1,.9,.8),cameraTarget+=bloom(cameraPosition,cameraRight,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e4)*1.5*vec3(1,0,0);
   cameraTarget=pow(pow(cameraTarget,vec3(1./2.2)),vec3(1,1.05,1.1));
-  fragColor=vec4(mix(cameraTarget,texture(tex,texCoord).xyz,.3)+vec3(hash21(fract(iResolution+iTime)),hash21(fract(iResolution-iTime)),hash21(fract(iResolution.yx+iTime)))*.04-.02,1);
-  fragColor*=globalFade;
-  fragColor.xyz*=drawLogo(iResolution);
+  fragColor.xyz=cameraTarget*globalFade*drawLogo(iResolution);
   fragColor/=1.+pow(length(iResolution),4.)*.6;
 }
 

@@ -77,8 +77,6 @@ void main()
     // Compute moto position
 
     // camPos and camTa are passed by the vertex shader
-    vec3 ro;
-    vec3 rd;
     vec3 cameraTarget = camTa;
     vec3 cameraUp = vec3(0., 1., 0.);
     vec3 cameraPosition = camPos;
@@ -90,7 +88,21 @@ void main()
         cameraTarget = camTa;
         cameraPosition = camPos;
     }
-    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
+
+    // Setup camera
+    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
+    vec3 ro = cameraPosition;
+    if (abs(dot(cameraForward, cameraUp)) > 0.99)
+    {
+        cameraUp = vec3(1., 0., 0.);
+    }
+    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
+    cameraUp = normalize(cross(cameraRight, cameraForward));
+
+    // meh. FIXME
+    uv *= mix(1., length(uv), 0.1);
+    vec3 rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
+    // 
 
     vec3 p;
     vec3 radiance = rayMarchScene(ro, rd, p);
@@ -104,16 +116,11 @@ void main()
     }
 
     radiance = pow(pow(radiance, vec3(1./2.2)), vec3(1.0,1.05,1.1));
-    vec3 i_color = radiance;
 
-    // Motion blur
-    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.3)
-        +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
-    , 1.);
+    // fade in + logo
+    fragColor.rgb = radiance * globalFade * drawLogo(uv);
 
-    // fade in
-    fragColor *= globalFade;
-    fragColor.rgb *= drawLogo(uv);
+    // debug
     // uint n = uint(iTime / 5);
     // digits7(fragColor, vec4(1.,.0,0,1), uv*20.+vec2(18,-10), iResolution, n);
 
