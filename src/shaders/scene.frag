@@ -87,7 +87,6 @@ void main()
         cameraTarget = motoToWorldForCamera(camTa);
         //cameraUp = motoToWorld(cameraUp, false);
     } else {
-        // getRoadPositionDirectionAndCurvature(0.7, cameraPosition);
         cameraTarget = camTa;
         cameraPosition = camPos;
     }

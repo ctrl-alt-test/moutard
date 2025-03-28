@@ -22,7 +22,9 @@ float motoDistanceOnCurve;
 
 void computeMotoPosition()
 {
-    vec4 motoDirAndTurn = getRoadPositionDirectionAndCurvature(motoDistanceOnCurve, motoPos);
+    vec4 motoDirAndTurn = vec4(0, 0, -1, 0);
+    motoPos.xz = GetPositionOnSpline(vec2(motoDistanceOnCurve));
+    motoPos.y = 0.;
 
     vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
     float rightOffset = 0. + 0.5*sin(iTime);

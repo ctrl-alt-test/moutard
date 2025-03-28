@@ -162,11 +162,6 @@ vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
 {
   return vec4(distanceToSegment(p),0,tOnSegment(p),1);
 }
-vec2 GetPositionOnSpline(vec2 spline_t_and_index,out vec3 directionAndCurvature)
-{
-  directionAndCurvature=normalize(vec3(0,-1,0));
-  return mix(roadP2,roadP1,spline_t_and_index.x);
-}
 vec2 panelWarning(vec3 p)
 {
   p-=panelWarningPos;
@@ -195,24 +190,11 @@ float roadBumpHeight(float d)
   d=clamp(abs(d/roadWidthInMeters.x),0.,1.);
   return.2*(1.-d*d*d);
 }
-vec4 getRoadPositionDirectionAndCurvature(float t,out vec3 position)
-{
-  vec4 directionAndCurvature;
-  position.xz=GetPositionOnSpline(vec2(t),directionAndCurvature.xzw);
-  position.y=0.;
-  directionAndCurvature.y=0.;
-  directionAndCurvature.xyz=normalize(directionAndCurvature.xyz);
-  return directionAndCurvature;
-}
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
   float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x)),height=mix(valueNoise(p.xz*5.)*.1+.5*fBm(p.xz*2./5.),0.,isRoad*isRoad);
   if(isRoad>0.)
-    {
-      vec3 directionAndCurvature;
-      vec2 positionOnSpline=GetPositionOnSpline(splineUV.yw,directionAndCurvature);
-      height+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*50,100)),.01)*.1;
-    }
+    height+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*50,100)),.01)*.1;
   return vec2(p.y-height,4);
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV)
@@ -246,7 +228,9 @@ const vec3 headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoR
 float motoPitch,motoDistanceOnCurve;
 void computeMotoPosition()
 {
-  vec4 motoDirAndTurn=getRoadPositionDirectionAndCurvature(motoDistanceOnCurve,motoPos);
+  vec4 motoDirAndTurn=vec4(0,0,-1,0);
+  motoPos.xz=mix(roadP2,roadP1,vec2(motoDistanceOnCurve).x);
+  motoPos.y=0.;
   float rightOffset=.5*sin(iTime);
   motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
@@ -578,9 +562,7 @@ vec2 sceneSDF(vec3 p)
 {
   vec4 splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z);
   vec2 d=motoShape(p);
-  d=MinDist(d,driverShape(p));
-  d=MinDist(d,terrainShape(p,splineUV));
-  d=MinDist(MinDist(MinDist(d,treesShape(p,splineUV)),blood(p)),panelWarning(p));
+  d=MinDist(MinDist(MinDist(MinDist(MinDist(d,driverShape(p)),terrainShape(p,splineUV)),treesShape(p,splineUV)),blood(p)),panelWarning(p));
   return MinDist(d,sheep(p,true));
 }
 float fastAO(vec3 pos,vec3 nor,float maxDist,float falloff)

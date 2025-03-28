@@ -33,9 +33,8 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth) {
 //
 // If you don't, get the pair with GetTAndIndex(t)
 //
-vec2 GetPositionOnSpline(vec2 spline_t_and_index, out vec3 directionAndCurvature)
+vec2 GetPositionOnSpline(vec2 spline_t_and_index)
 {
-    directionAndCurvature = normalize(vec3(0., -1., 0.));
     return mix(roadP2, roadP1, spline_t_and_index.x);
 }
 
@@ -81,22 +80,6 @@ float roadBumpHeight(float d)
     return 0.2 * (1. - x * x * x);
 }
 
-//
-// Returns the 3D direction and curvature as a 4D return value, and the
-// 3D position as an out argument, on the road spline at t in [0, 1].
-//
-vec4 getRoadPositionDirectionAndCurvature(float t, out vec3 position)
-{
-    // return vec4(0, 0, 0, 0.3);
-    vec4 directionAndCurvature;
-    position.xz = GetPositionOnSpline(vec2(t), directionAndCurvature.xzw);
-    position.y = 0.;
-    directionAndCurvature.y = 0.;
-
-    directionAndCurvature.xyz = normalize(directionAndCurvature.xyz);
-    return directionAndCurvature;
-}
-
 vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     // Compute the road presence
@@ -111,8 +94,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     if (isRoad > 0.0)
     {
         // Get the point on the center line of the spline
-        vec3 directionAndCurvature;
-        vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw, directionAndCurvature);
+        vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw);
 
         height += roadBumpHeight(splineUV.x) + pow(valueNoise(mod(p.xz*50, 100)), .01) * .1;
     }
