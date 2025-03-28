@@ -18,23 +18,16 @@ float motoPitch;
 //   (o)\ |/ (o)
 // -------+--------> X
 //
+// This ascii art is no longer useful, but it's fun to keep it around.
 
 void computeMotoPosition()
 {
-    // TODO: to be simplified
-    vec4 motoDirAndTurn = vec4(0, 0, -1, 0);
-
-    vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
-    float rightOffset = 0. + 0.5*sin(iTime);
-    motoPos.xz += motoRight * rightOffset;
-    motoPos.y += roadBumpHeight(abs(rightOffset))+.1;
-
-    motoPitch = atan(motoDirAndTurn.y, length(motoDirAndTurn.zx));
+    motoPos.xz += 0.5*sin(iTime);
+    motoPos.y += 0.3;
+    motoPitch = atan(0., 1.);
     
-    if (wheelie > 0.) { // wheelie
-        motoPitch += mix(0., 0.5, wheelie);
-        motoPos.y += mix(0., 0.4, wheelie);
-    }
+    motoPitch += 0.5 * wheelie;
+    motoPos.y += 0.4 * wheelie;
 }
 
 vec3 motoToWorldForCamera(vec3 v)

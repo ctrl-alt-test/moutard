@@ -1,17 +1,16 @@
 vec2 sceneSDF(vec3 p)
 {
-    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
     vec2 d = motoShape(p);
     d = MinDist(d, driverShape(p));
-    d = MinDist(d, terrainShape(p, splineUV));
-    d = MinDist(d, treesShape(p, splineUV));
+    d = MinDist(d, terrainShape(p));
+    d = MinDist(d, treesShape(p));
     d = MinDist(d, blood(p));
     d = MinDist(d, panelWarning(p));
     d = MinDist(d, sheep(p, true));
     return d;
 }
 
-float fastAO( in vec3 pos, in vec3 nor, float maxDist, float falloff ) {
+float fastAO(in vec3 pos, in vec3 nor, float maxDist, float falloff) {
     float occ1 = .5*maxDist - sceneSDF(pos + nor*maxDist *.5).x;
     float occ2 = .95*(maxDist - sceneSDF(pos + nor*maxDist).x);
     return clamp(1. - falloff*1.5*(occ1 + occ2), 0., 1.);
@@ -102,8 +101,8 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
     }
 
     if(dmat.y == GROUND_ID) {
-        if (abs(p.x) < roadWidthInMeters.x) {
-            const float laneWidth = 3.5;
+        const float laneWidth = 3.5;
+        if (abs(p.x) < laneWidth) {
             vec2 laneUV = p.xz / laneWidth;
             float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);

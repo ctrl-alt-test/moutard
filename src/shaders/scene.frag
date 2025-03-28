@@ -34,13 +34,6 @@ vec3 sheepPos = vec3(0.);
 vec3 panelWarningPos = vec3(6., 0., 0.);
 bool warningIsSheep = true;
 
-// TODO: could be inlined
-// x: actual width
-// y: width + transition
-// z: max width
-const vec3 roadWidthInMeters = vec3(3.5, 5.0, 8.0);
-
-
 // Outputs:
 out vec4 fragColor;
 

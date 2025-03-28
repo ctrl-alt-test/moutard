@@ -289,5 +289,7 @@ void selectShot() {
     if (sceneID == SCENE_SHEEP || sceneID == SCENE_SLEEPING) {
         t = 0.;
     }
-    motoPos.xz = mix(0.3*roadP2, 0.7*roadP1, t/20.);
+
+    // TODO: could be simplified
+    motoPos.xz = vec2(0, mix(300., -700., t/20.));
 }

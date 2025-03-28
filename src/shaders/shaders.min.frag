@@ -6,7 +6,6 @@ int sceneID=0;
 float camMotoSpace,camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.;
 vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0);
 bool warningIsSheep=true;
-const vec3 roadWidthInMeters=vec3(3.5,5,8);
 out vec4 fragColor;
 const float PI=acos(-1.);
 float hash11(float x)
@@ -135,21 +134,6 @@ vec2 MinDist(vec2 d1,vec2 d2)
     d1:
     d2;
 }
-float distanceToSegment(vec2 p)
-{
-  vec2 B=roadP2,A=roadP1,AB=B-A;
-  return length(p-mix(A,B,clamp(dot(p-A,AB)/dot(AB,AB),0.,1.)));
-}
-float tOnSegment(vec2 p)
-{
-  vec2 A=roadP1,AB=roadP2-A;
-  return clamp(dot(p-A,AB)/dot(AB,AB),0.,1.);
-}
-const vec2 roadP1=vec2(0,-1)*1e3,roadP2=vec2(0,1)*1e3;
-vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
-{
-  return vec4(distanceToSegment(p),0,tOnSegment(p),1);
-}
 vec2 panelWarning(vec3 p)
 {
   p-=panelWarningPos;
@@ -173,56 +157,44 @@ vec2 blood(vec3 p)
     d-=pow((noise(p*.9)*.5+noise(p*1.6)*.3+noise(p*2.7)*.1)*.5+.5,3.)*.45,vec2(d,14):
     vec2(d,4);
 }
-float roadBumpHeight(float d)
+vec2 terrainShape(vec3 p)
 {
-  d=clamp(abs(d/roadWidthInMeters.x),0.,1.);
-  return.2*(1.-d*d*d);
-}
-vec2 terrainShape(vec3 p,vec4 splineUV)
-{
-  float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x)),height=mix(valueNoise(p.xz*5.)*.1+.5*fBm(p.xz*2./5.),0.,isRoad*isRoad);
+  float isRoad=1.-smoothstep(3.5,5.,abs(p.x)),height=mix(valueNoise(p.xz*5.)*.1+.5*fBm(p.xz*2./5.),0.,isRoad*isRoad);
   if(isRoad>0.)
-    height+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*50,100)),.01)*.1;
+    {
+      float x=clamp(abs(p.x/3.5),0.,1.);
+      height+=.2*(1.-x*x*x)+pow(valueNoise(mod(p.xz*50,100)),.01)*.1;
+    }
   return vec2(p.y-height,4);
 }
-float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV)
+float tree(vec3 localP,vec2 id)
 {
-  float h1=hash21(id),h2=hash11(h1);
-  if(globalP.y+1.-20.>0.)
-    return 1e6;
-  float d=3.5;
-  if(abs(splineUV.x)<roadWidthInMeters.x)
+  float h1=hash21(id),h2=hash11(h1),d=3.5;
+  if(abs(id.x)<10.)
     return d;
-  float treeClearance=roadWidthInMeters.y+5.;
-  if(abs(ToSplineLocalSpace(id,treeClearance).x)<treeClearance)
-    return d;
-  treeClearance=mix(7.,20.,h1);
-  float treeWidth=max(3.5,treeClearance*mix(.3,.4,h2*h2));
-  localP.y-=-1.+.5*treeClearance;
+  float treeHeight=mix(7.,20.,h1),treeWidth=max(3.5,treeHeight*mix(.3,.4,h2*h2));
+  localP.y-=-1.+.5*treeHeight;
   localP.xz+=(vec2(h1,h2)-.5)*1.5;
-  d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeClearance,treeWidth)));
+  d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeHeight,treeWidth)));
   id+=vec2(2.*atan(localP.z,localP.x),localP.y);
   return d+.2*fBm(2.*id)+.5;
 }
-vec2 treesShape(vec3 p,vec4 splineUV)
+vec2 treesShape(vec3 p)
 {
   vec2 id=round(p.xz/10.)*10.;
-  vec3 localP=p;
-  localP.xz-=id;
-  return vec2(tree(p,localP,id,splineUV),3);
+  p.xz-=id;
+  return vec2(tree(p,id),3);
 }
 vec3 motoPos;
 const vec3 headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 float motoPitch;
 void computeMotoPosition()
 {
-  vec4 motoDirAndTurn=vec4(0,0,-1,0);
-  float rightOffset=.5*sin(iTime);
-  motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
-  motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
-  motoPitch=atan(motoDirAndTurn.y,length(motoDirAndTurn.zx));
-  if(wheelie>0.)
-    motoPitch+=mix(0.,.5,wheelie),motoPos.y+=mix(0.,.4,wheelie);
+  motoPos.xz+=.5*sin(iTime);
+  motoPos.y+=.3;
+  motoPitch=atan(0.,1.);
+  motoPitch+=.5*wheelie;
+  motoPos.y+=.4*wheelie;
 }
 vec3 motoToWorldForCamera(vec3 v)
 {
@@ -546,9 +518,8 @@ vec2 sheep(vec3 p,bool shiftPos)
 }
 vec2 sceneSDF(vec3 p)
 {
-  vec4 splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z);
   vec2 d=motoShape(p);
-  d=MinDist(MinDist(MinDist(MinDist(MinDist(d,driverShape(p)),terrainShape(p,splineUV)),treesShape(p,splineUV)),blood(p)),panelWarning(p));
+  d=MinDist(MinDist(MinDist(MinDist(MinDist(d,driverShape(p)),terrainShape(p)),treesShape(p)),blood(p)),panelWarning(p));
   return MinDist(d,sheep(p,true));
 }
 float fastAO(vec3 pos,vec3 nor,float maxDist,float falloff)
@@ -602,7 +573,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   if(t>=5e2)
     return mix(mix(vec3(.4,.5,.6),vec3(.7),pow(smoothstep(.15,1.,rd.y),.4)),fogColor,mix(.15,1.,pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y)*.5)+1.),2.)));
   if(dmat.y==4)
-    if(abs(p.x)<roadWidthInMeters.x)
+    if(abs(p.x)<3.5)
       {
         vec2 laneUV=p.xz/3.5;
         float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
@@ -917,7 +888,7 @@ void selectShot()
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
     time=0.;
-  motoPos.xz=mix(.3*roadP2,.7*roadP1,time/20.);
+  motoPos.xz=vec2(0,mix(3e2,-7e2,time/20.));
 }
 float rect(vec2 p,vec2 size)
 {

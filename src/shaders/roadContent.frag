@@ -1,28 +1,3 @@
-// Function to compute the closest distance to a line segment
-float distanceToSegment(vec2 A, vec2 B, vec2 p) {
-    vec2 AB = B - A;
-    float t = clamp(dot(p - A, AB) / dot(AB, AB), 0.0, 1.0);
-    vec2 closest = mix(A, B, t);
-    return length(p - closest);
-}
-
-// Interpolation for t on a line segment (returns a parameter t along the segment)
-float tOnSegment(vec2 A, vec2 B, vec2 p) {
-    vec2 AB = B - A;
-    return clamp(dot(p - A, AB) / dot(AB, AB), 0.0, 1.0);
-}
-
-const float roadScale = 1000.;
-const vec2 roadP1 = vec2(0., -1.) * roadScale;
-const vec2 roadP2 = vec2(0, 1.) * roadScale;
-
-// Compute a simple signed distance approximation for a road
-vec4 ToSplineLocalSpace(vec2 p, float splineWidth) {
-    float d = distanceToSegment(roadP1, roadP2, p);
-    float t = tOnSegment(roadP1, roadP2, p);
-    return vec4(d, 0., t, 1.);
-}
-
 const float warningHeight = 3.;
 
 vec2 panelWarning(vec3 p) {
@@ -58,16 +33,10 @@ vec2 blood(vec3 p) {
     return vec2(d, GROUND_ID);
 }
 
-float roadBumpHeight(float d)
-{
-    float x = clamp(abs(d / roadWidthInMeters.x), 0., 1.);
-    return 0.2 * (1. - x * x * x);
-}
-
-vec2 terrainShape(vec3 p, vec4 splineUV)
+vec2 terrainShape(vec3 p)
 {
     // Compute the road presence
-    float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
+    float isRoad = 1.0 - smoothstep(3.5, 5., abs(p.x));
 
     // If (even partly) on the road, flatten road
     float height = mix(
@@ -77,45 +46,27 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
     if (isRoad > 0.0)
     {
-        height += roadBumpHeight(splineUV.x) + pow(valueNoise(mod(p.xz*50, 100)), .01) * .1;
+        float x = clamp(abs(p.x / 3.5), 0., 1.);
+        float roadBumpHeight = 0.2 * (1. - x * x * x);
+        height += roadBumpHeight + pow(valueNoise(mod(p.xz*50, 100)), .01) * .1;
     }
 
     return vec2(p.y - height, GROUND_ID);
 }
 
 const float treeSpace = 10.;
-const float maxTreeHeight = 20.;
 
-float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV) {
+float tree(vec3 localP, vec2 id) {
     float h1 = hash21(id);
     float h2 = hash11(h1);
     float terrainHeight = -1.;
 
-    float verticalClearance = globalP.y - terrainHeight - maxTreeHeight;
-    if (verticalClearance > 0.)
-    {
-        // The conservative value to return is verticalClearance, but
-        // doing so we run out of steps and have artifacts in the sky.
-        // So instead we assume we're not going to hit any tree closer
-        // than what the scene SDF is.
-        return INF;
-    }
-
     float d = treeSpace * 0.5 * 0.7;
 
-    // Opportunity for early out: there should be no tree part on the road.
-    if (abs(splineUV.x) < roadWidthInMeters.x) return d;
+    // No trees on road.
+    if (abs(id.x) < 10.) return d;
 
-    // Clear trees too close to the road.
-    //
-    // The splineUV is relative to the current position, but we have to
-    // check the distance of the road from the position of the potential
-    // tree.
-    float treeClearance = roadWidthInMeters.y + treeSpace * 0.5;
-    vec4 splineUVatTree = ToSplineLocalSpace(id, treeClearance);
-    if (abs(splineUVatTree.x) < treeClearance) return d;
-
-    float treeHeight = mix(7., maxTreeHeight, h1);
+    float treeHeight = mix(7., 20., h1);
     float treeWidth = max(3.5, treeHeight * mix(0.3, 0.4, h2*h2));
 
     localP.y -= terrainHeight + 0.5 * treeHeight;
@@ -130,12 +81,12 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV) {
     return d;
 }
 
-vec2 treesShape(vec3 p, vec4 splineUV)
+vec2 treesShape(vec3 p)
 {
     // iq - repeated_ONLY_SYMMETRIC_SDFS (https://iquilezles.org/articles/sdfrepetition/)
     //vec3 lim = vec3(1e8,0,1e8);
     vec2 id = round(p.xz / treeSpace) * treeSpace;
     vec3 localP = p;
     localP.xz -= id;
-    return vec2(tree(p, localP, id, splineUV), TREE_ID);
+    return vec2(tree(localP, id), TREE_ID);
 }
