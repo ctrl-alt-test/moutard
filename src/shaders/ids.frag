@@ -14,16 +14,12 @@ const int MOTO_EXHAUST_ID = 2;
 const int TREE_ID = 3;
 
 const int GROUND_ID = 4;
-const int ROAD_UTILITY_ID = 5;
-const int ROAD_WALL_ID = 6;
-const int ROAD_REFLECTOR_ID = 7;
-const int ROAD_LIGHT_ID = 8;
 
-const int WOOL_ID = 9;
-const int SKIN_ID = 10;
-const int EYE_ID = 11;
-const int CLOGS_ID = 12;
-const int METAL_ID = 13;
-const int BLOOD_ID = 14;
-const int PANEL_ID = 15;
-const int TEARS_ID = 16;
+const int WOOL_ID = 5;
+const int SKIN_ID = 6;
+const int EYE_ID = 7;
+const int CLOGS_ID = 8;
+const int METAL_ID = 9;
+const int BLOOD_ID = 10;
+const int PANEL_ID = 11;
+const int TEARS_ID = 12;

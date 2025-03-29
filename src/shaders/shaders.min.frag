@@ -139,8 +139,8 @@ vec2 panelWarning(vec3 p)
   float tube=Box3(p-vec3(0,2,-5.1),vec3(.11,2,.08),0.);
   p.y=abs(p.y-3.65)-.3;
   tube=min(tube,Box3(p-vec3(0,0,-5.05),vec3(.35,.1,.05),0.));
-  vec2 dmat=vec2(tube,13);
-  return MinDist(dmat,vec2(pan,15));
+  vec2 dmat=vec2(tube,9);
+  return MinDist(dmat,vec2(pan,11));
 }
 vec2 blood(vec3 p)
 {
@@ -149,7 +149,7 @@ vec2 blood(vec3 p)
   p-=vec3(0,1.2,-2.5);
   float d=p.y+smoothstep(1.5,8.,length(p.xz))+1.;
   return d<.4?
-    d-=pow((noise(p*.9)*.5+noise(p*1.6)*.3+noise(p*2.7)*.1)*.5+.5,3.)*.45,vec2(d,14):
+    d-=pow((noise(p*.9)*.5+noise(p*1.6)*.3+noise(p*2.7)*.1)*.5+.5,3.)*.45,vec2(d,10):
     vec2(d,4);
 }
 vec2 terrainShape(vec3 p)
@@ -440,7 +440,7 @@ vec2 sheep(vec3 p,bool shiftPos)
   vec3 bodyMove=vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0)*.025*animationAmp.x;
   tb=length(p*vec3(1,1,.825)-vec3(0,1.5,2.55)-bodyMove)-2.;
   if(tb>=3.)
-    return vec2(tb*.15,9);
+    return vec2(tb*.15,5);
   float n=pow(noise((p-bodyMove+vec3(.05,0,.5))*2.)*.5+.5,.75)*2.-1.;
   tb=tb+.05-n*.2;
   n=mod(iTime*animationSpeed.x,2.);
@@ -504,9 +504,9 @@ vec2 sheep(vec3 p,bool shiftPos)
       eyeCap=smin(length(pp-vec3(0,-.15-shift*.5,-1.1-shift))-.01-shift*.1-(noise(pp*10.)*.5+.5)*.1,c+.01,.1);
     }
   blink=smin(tb,capsule(p-vec3(0,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5))-(cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02,.1);
-  vec2 dmat=MinDist(MinDist(vec2(tb,9),vec2(blink,9)),vec2(n,9));
+  vec2 dmat=MinDist(MinDist(vec2(tb,5),vec2(blink,5)),vec2(n,5));
   dmat.x=smax(dmat.x,-earsClip,.15);
-  dmat=MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,10)),vec2(c,10)),vec2(eyeCap,16)),vec2(eyes,11)),vec2(b,12)),vec2(ears,10)),vec2(d,0));
+  dmat=MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(dmat,vec2(a,6)),vec2(c,6)),vec2(eyeCap,12)),vec2(eyes,7)),vec2(b,8)),vec2(ears,6)),vec2(d,0));
   headDist=c;
   dmat.x*=.15;
   return dmat;
@@ -560,14 +560,22 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   vec3 p=ro+rd*t;
   vec2 dmat=sceneSDF(p),eps=vec2(1e-4,0);
   vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy).x,dmat.x-sceneSDF(p-eps.yxy).x,dmat.x-sceneSDF(p-eps.yyx).x)),sunDir=normalize(vec3(3.5,3,-1)),fogColor=mix(vec3(.5,.6,.7),vec3(.4,.6,.8),min(1.,rd.y*4.));
-  float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,shad=shadow(p,sunDir);
+  float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,material=dmat.y,shad=shadow(p,sunDir);
   shad=mix(.4,1.,shad);
   float fre=1.+dot(rd,n);
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
   if(t>=5e2)
     return mix(mix(vec3(.4,.5,.6),vec3(.7),pow(smoothstep(.15,1.,rd.y),.4)),fogColor,mix(.15,1.,pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y)*.5)+1.),2.)));
-  if(dmat.y==4)
+  if(material--==0.)
+    sunDir=vec3(.01),spe*=pow(spe,vec3(15))*fre*2.,sss*=0.;
+  else if(material--==0.)
+    sunDir=vec3(.01),spe*=.02,sss*=0.;
+  else if(material--==0.)
+    sunDir=vec3(.1),spe*=pow(spe,vec3(8))*fre*1.5,sss*=0.;
+  else if(material--==0.)
+    sunDir=vec3(.1,.25,.2),sss*=.2,spe*=0.;
+  else if(material--==0.)
     if(abs(p.x)<3.5)
       {
         vec2 laneUV=p.xz/3.5;
@@ -580,19 +588,11 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       }
     else
        sss*=.3,sunDir=vec3(.1,.15,.1),spe*=0.;
-  else if(dmat.y==1)
-    sunDir=vec3(.01),spe*=.02,sss*=0.;
-  else if(dmat.y==0)
-    sunDir=vec3(.01),spe*=pow(spe,vec3(15))*fre*2.,sss*=0.;
-  else if(dmat.y==2)
-    sunDir=vec3(.1),spe*=pow(spe,vec3(8))*fre*1.5,sss*=0.;
-  else if(dmat.y==3)
-    sunDir=vec3(.1,.25,.2),sss*=.2,spe*=0.;
-  else if(dmat.y==9)
+  else if(material--==0.)
     sunDir=vec3(.4),sss*=fre*.5+.5,emi=vec3(.35),spe=pow(spe,vec3(4))*fre*.25;
-  else if(dmat.y==12)
-    sunDir=vec3(.025),sss*=0.,spe=pow(spe,vec3(15))*fre*10.;
-  else if(dmat.y==11)
+  else if(material--==0.)
+    sunDir=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,4)+2.)*3.,spe=pow(spe,vec3(4))*fre*.02;
+  else if(material--==0.)
     {
       sss*=.5;
       vec3 dir=normalize(eyeDir+(noise(vec3(iTime,iTime*.5,iTime*1.5))*2.-1.)*.01),t=cross(dir,vec3(0,1,0)),b=cross(dir,t);
@@ -614,11 +614,13 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       sunDir*=smoothstep(0.,.015,headDist)*.4+.6;
       spe*=0.;
     }
-  else if(dmat.y==13)
+  else if(material--==0.)
+    sunDir=vec3(.025),sss*=0.,spe=pow(spe,vec3(15))*fre*10.;
+  else if(material--==0.)
     sunDir=vec3(.85,.95,1),sss*=0.,spe=pow(spe,vec3(8))*fre*2.;
-  else if(dmat.y==14)
+  else if(material--==0.)
     sunDir=vec3(1,.01,.01)*.3,diff*=vec3(3),amb*=vec3(2)*fre*fre,sss*=0.,spe=vec3(1,.3,.3)*pow(spe,vec3(500))*5.;
-  else if(dmat.y==15)
+  else if(material--==0.)
     {
       vec3 p=p-panelWarningPos;
       sss*=0.;
@@ -648,9 +650,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       else
          sunDir=vec3(.85,.95,1);
     }
-  else if(dmat.y==10)
-    sunDir=vec3(1,.7,.5),amb*=vec3(1,.75,.75),sss=pow(sss,vec3(.5,2.5,4)+2.)*3.,spe=pow(spe,vec3(4))*fre*.02;
-  else if(dmat.y==16)
+  else if(material--==0.)
     sunDir=vec3(1,.8,.65),amb*=vec3(1,.85,.85),sss=pow(sss,vec3(.8,1.8,3)+2.)*2.,spe=pow(spe,vec3(8))*fre*fre*10.;
   else
      sunDir=vec3(1,0,1);

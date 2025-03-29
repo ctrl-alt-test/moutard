@@ -80,6 +80,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
     vec3 skyColor = sky(rd, fogColor);
 
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
+    float material = dmat.y;
     
     float shad = shadow(p, sunDir);
     shad = mix(0.4, 1., shad);
@@ -100,7 +101,23 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         return skyColor;
     }
 
-    if(dmat.y == GROUND_ID) {
+    if (material-- == 0.) { // MOTO_ID
+        albedo = vec3(.01);
+        spe *= pow(spe, vec3(15.))*fre*2.;
+        sss *= 0.;
+    } else if (material-- == 0.) { // MOTO_WHEEL_ID
+        albedo = vec3(.01);
+        spe *= 0.02;
+        sss *= 0.;
+    } else if (material-- == 0.) { // MOTO_EXHAUST_ID
+        albedo = vec3(.1);
+        spe *= pow(spe, vec3(8.))*fre*1.5;
+        sss *= 0.;
+    } else if (material-- == 0.) { // TREE_ID
+        albedo = vec3(.1,.25,0.2);
+        sss *= 0.2;
+        spe *= 0.;
+    } else if(material-- == 0.) { // GROUND_ID
         const float laneWidth = 3.5;
         if (abs(p.x) < laneWidth) {
             vec2 laneUV = p.xz / laneWidth;
@@ -120,32 +137,17 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
             albedo = vec3(0.1, 0.15, 0.1);
             spe *= 0.;
         }
-    } else if (dmat.y == MOTO_DRIVER_ID) {
-        albedo = vec3(.01);
-        spe *= 0.02;
-        sss *= 0.;
-    } else if (dmat.y == MOTO_ID) {
-        albedo = vec3(.01);
-        spe *= pow(spe, vec3(15.))*fre*2.;
-        sss *= 0.;
-    } else if (dmat.y == MOTO_EXHAUST_ID) {
-        albedo = vec3(.1);
-        spe *= pow(spe, vec3(8.))*fre*1.5;
-        sss *= 0.;
-    } else if (dmat.y == TREE_ID) {
-        albedo = vec3(.1,.25,0.2);
-        sss *= 0.2;
-        spe *= 0.;
-    } else if (dmat.y == WOOL_ID) {
+    } else if (material-- == 0.) { // WOOL_ID
         albedo = vec3(.4);
         sss *= fre*.5+.5;
         emi = vec3(.35);
         spe = pow(spe, vec3(4.))*fre*.25;
-    } else if (dmat.y == CLOGS_ID) {
-        albedo = vec3(.025);
-        sss *= 0.;
-        spe = pow(spe, vec3(15.))*fre*10.;
-    } else if (dmat.y == EYE_ID) {
+    } else if (material-- == 0.) { // SKIN_ID
+        albedo = vec3(1.,.7,.5)*1.;
+        amb *= vec3(1.,.75,.75);
+        sss = pow(sss, vec3(.5,2.5,4.0)+2.)*3.;
+        spe = pow(spe, vec3(4.))*fre*.02;
+    } else if (material-- == 0.) { // EYE_ID
         sss *= .5;
         vec3 dir = normalize(eyeDir + (noise(vec3(iTime,iTime*.5,iTime*1.5))*2.-1.)*.01);
         
@@ -202,18 +204,21 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         sceneSDF(p);
         albedo *= smoothstep(0.,0.015, headDist)*.4+.6;
         spe *= 0.;
-    } else if(dmat.y == METAL_ID) { // for the road signs
+    } else if (material-- == 0.) { // CLOGS_ID
+        albedo = vec3(.025);
+        sss *= 0.;
+        spe = pow(spe, vec3(15.))*fre*10.;
+    } else if(material-- == 0.) { // METAL_ID - for the road signs
         albedo = vec3(.85,.95,1.);
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*2.;
-    }  else if(dmat.y == BLOOD_ID) {
+    }  else if(material-- == 0.) { // BLOOD_ID
         albedo = vec3(1.,.01,.01)*.3;
         diff *= vec3(3.);
         amb *= vec3(2.)*fre*fre;
         sss *= 0.;
         spe = vec3(1.,.3,.3) * pow(spe, vec3(500.))*5.;
-    }
-    else if (dmat.y == PANEL_ID) {
+    } else if (material-- == 0.) { // PANEL_ID
        vec3 p = p - panelWarningPos;
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*20.;
@@ -245,13 +250,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         } else {
             albedo = vec3(.85,.95,1.);
         }
-    }
-    else if (dmat.y == SKIN_ID) {
-        albedo = vec3(1.,.7,.5)*1.;
-        amb *= vec3(1.,.75,.75);
-        sss = pow(sss, vec3(.5,2.5,4.0)+2.)*3.;
-        spe = pow(spe, vec3(4.))*fre*.02;
-    } else if (dmat.y == TEARS_ID) {
+    } else if (material-- == 0.) { // TEARS_ID
         albedo = vec3(1., .8, .65);
         amb *= vec3(1.0, 0.85, 0.85);
         sss = pow(sss, vec3(0.8, 1.8, 3.0) + 2.) * 2.;
