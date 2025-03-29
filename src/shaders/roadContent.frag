@@ -19,7 +19,7 @@ vec2 panelWarning(vec3 p) {
 }
 
 vec2 blood(vec3 p) {
-    if (sceneID != SCENE_SLEEPING) {
+    if (sceneID != SCENE_BLOOD) {
         return vec2(INF, GROUND_ID);
     }
     p -= vec3(0, 1.2, -2.5);
@@ -64,7 +64,7 @@ float tree(vec3 localP, vec2 id) {
     float d = treeSpace * 0.5 * 0.7;
 
     // No trees on road.
-    if (abs(id.x) < 10.) return d;
+    if (abs(id.x) < 14.) return d;
 
     float treeHeight = mix(7., 20., h1);
     float treeWidth = max(3.5, treeHeight * mix(0.3, 0.4, h2*h2));

@@ -19,7 +19,7 @@ uniform sampler2D tex;
 
 const int SCENE_SHEEP = 0;
 const int SCENE_MOTO = 1;
-const int SCENE_SLEEPING = 2; // of course, he's not dead!
+const int SCENE_BLOOD = 2; // of course, he's not dead!
 const int SCENE_MOUTARD = 3;
 int sceneID = 0;
 

@@ -6,7 +6,7 @@ float verticalBump()
 void motoFaceImpactShot(float t_in_shot) {
         sceneID = SCENE_MOTO;
         float shift = t_in_shot/10.;
-        float impact = smoothstep(9.8,10., t_in_shot);
+        float impact = smoothstep(9.7,10., t_in_shot);
         vec2 noise = valueNoise2(500.*t_in_shot)*shift;
         camPos = vec3(3. - impact - shift*1.2, 0.5, 0.);
         camPos.xz += noise.xy*.1;
@@ -108,7 +108,7 @@ void selectShot() {
         camMotoSpace = 0.;
         camPos = vec3(2.5, 1., 6.);
         sheepPos = vec3(1., 0.5, 5. - motion);
-        panelWarningPos = vec3(3.5, 0.5, 2.5);
+        panelWarningPos = vec3(4., 0., 2.5);
         camTa = mix(vec3(1,1,5), vec3(1., 1.5, 1), shift*2.);
         warningIsSheep = false;
         headRot = vec2(0., 0.5);
@@ -120,7 +120,7 @@ void selectShot() {
         float bump = 0.02 * verticalBump();
         camPos = vec3(-0.2 - 0.6 * t, 0.88 + 0.35*t + bump, 0.42);
         camTa = vec3(0.5, 1. + 0.2 * t + bump, 0.25);
-        panelWarningPos = vec3(3.5, 0.5, -50.);
+        panelWarningPos = vec3(4, 0., -40.);
         camProjectionRatio = 1.5;
 
     } else if (get_shot(time, 3.)) {
@@ -206,8 +206,8 @@ void selectShot() {
         // boom!
 
     } else if (get_shot(time, 10.)) {
-        globalFade *= smoothstep(1., 4., time);
-        globalFade *= smoothstep(9., 7., time);
+        globalFade *= smoothstep(1., 4., time)
+            	* smoothstep(9., 7., time);
 
         // looking at ground
         camMotoSpace = 0.;
@@ -215,7 +215,7 @@ void selectShot() {
         camPos = vec3(2.5, 1.5, -6. + motion);
         camTa = vec3(1., 0., -9. + motion);
 
-        sceneID = SCENE_SLEEPING;
+        sceneID = SCENE_BLOOD;
 
     } else if (get_shot(time, 5.)) {
         globalFade *= smoothstep(0., 1., time);
@@ -267,7 +267,7 @@ void selectShot() {
     }
 
     if (sceneID == SCENE_MOUTARD) {
-        headRot.y += sin(iTime*4.)*.1;
+        headRot.y += abs(sin(iTime*4.)*.1);
         animationSpeed = vec3(0.);
     }
 
@@ -276,7 +276,7 @@ void selectShot() {
     // Use mix to skip the beginning/end of the road.
     float t = mod(shotStartTime, 14.)
         + (iTime - shotStartTime);
-    if (sceneID == SCENE_SHEEP || sceneID == SCENE_SLEEPING) {
+    if (sceneID == SCENE_SHEEP || sceneID == SCENE_BLOOD) {
         t = 0.;
     }
 

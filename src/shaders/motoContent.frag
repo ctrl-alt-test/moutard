@@ -27,7 +27,7 @@ void computeMotoPosition()
     motoPitch = atan(0., 1.);
     
     motoPitch += 0.5 * wheelie;
-    motoPos.y += 0.4 * wheelie;
+    motoPos.y += 0.42 * wheelie;
 }
 
 vec3 motoToWorldForCamera(vec3 v)
@@ -61,20 +61,15 @@ vec3 worldToMoto(vec3 v, bool isPos)
 
 vec2 driverShape(vec3 p)
 {
-    float wind = 0.;
 
-    if (sceneID == SCENE_SLEEPING) {
-        p -= vec3(0.4, 0.5, -2.5);
-        p.yz *= Rotation(1.5);
-        p.xz *= Rotation(0.4);
-    } else if (sceneID == SCENE_MOUTARD) {
+    if (sceneID >= SCENE_BLOOD) {
         return vec2(INF, MOTO_DRIVER_ID);
-    } else {
-        wind = fBm((p.xy + iTime) * 12.);
-        p = worldToMoto(p, true);
-        // Place roughly on the seat
-        p -= vec3(-0.35, 0.78, 0.0);
     }
+    
+    float wind = fBm((p.xy + iTime) * 12.);
+    p = worldToMoto(p, true);
+    // Place roughly on the seat
+    p -= vec3(-0.35, 0.78, 0.0);
 
     float d = length(p);
     if (d > 1.2)
@@ -137,10 +132,8 @@ vec2 driverShape(vec3 p)
         vec3 pLeg = simP;
 
         pLeg -= vec3(0.0, 0.0, 0.13);
-        if (sceneID != SCENE_SLEEPING) {
-            pLeg.xy *= Rotation(1.55);
-            pLeg.yz *= Rotation(-0.4);
-        }
+        pLeg.xy *= Rotation(1.55);
+        pLeg.yz *= Rotation(-0.4);
         float h2 = Capsule(pLeg, 0.35, 0.09);
         d = smin(d, h2, 0.04);
 
@@ -156,8 +149,8 @@ vec2 driverShape(vec3 p)
         d = smin(d, feet, 0.02);
     }
     d += 0.002 * wind;
-
     // head
+
     if (true)
     {
         vec3 pHead = p - vec3(0.39, 0.6, 0.0);

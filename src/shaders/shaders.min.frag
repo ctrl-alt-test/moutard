@@ -165,7 +165,7 @@ vec2 terrainShape(vec3 p)
 float tree(vec3 localP,vec2 id)
 {
   float h1=hash21(id),h2=hash11(h1),d=3.5;
-  if(abs(id.x)<10.)
+  if(abs(id.x)<14.)
     return d;
   float treeHeight=mix(7.,20.,h1),treeWidth=max(3.5,treeHeight*mix(.3,.4,h2*h2));
   localP.y-=-1.+.5*treeHeight;
@@ -189,7 +189,7 @@ void computeMotoPosition()
   motoPos.y+=.3;
   motoPitch=atan(0.,1.);
   motoPitch+=.5*wheelie;
-  motoPos.y+=.4*wheelie;
+  motoPos.y+=.42*wheelie;
 }
 vec3 motoToWorldForCamera(vec3 v)
 {
@@ -213,13 +213,10 @@ vec3 worldToMoto(vec3 v)
 }
 vec2 driverShape(vec3 p)
 {
-  float wind=0.;
-  if(sceneID==2)
-    p-=vec3(.4,.5,-2.5),p.yz*=Rotation(1.5),p.xz*=Rotation(.4);
-  else if(sceneID==3)
+  if(sceneID>=2)
     return vec2(1e6,1);
-  else
-     wind=fBm((p.xy+iTime)*12.),p=worldToMoto(p)-vec3(-.35,.78,0);
+  float wind=fBm((p.xy+iTime)*12.);
+  p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2)
     return vec2(d,1);
@@ -262,8 +259,8 @@ vec2 driverShape(vec3 p)
   d+=.005*wind;
   {
     vec3 pLeg=simP-vec3(0,0,.13);
-    if(sceneID!=2)
-      pLeg.xy*=Rotation(1.55),pLeg.yz*=Rotation(-.4);
+    pLeg.xy*=Rotation(1.55);
+    pLeg.yz*=Rotation(-.4);
     float h2=Capsule(pLeg,.35,.09);
     d=smin(d,h2,.04);
     pLeg.y+=.4;
@@ -664,7 +661,7 @@ float verticalBump()
 void motoFaceImpactShot(float t_in_shot)
 {
   sceneID=1;
-  float shift=t_in_shot/10.,impact=smoothstep(9.8,10.,t_in_shot);
+  float shift=t_in_shot/10.,impact=smoothstep(9.7,10.,t_in_shot);
   camPos=vec3(3.-impact-shift*1.2,.5,0);
   camPos.xz+=(valueNoise2(5e2*t_in_shot)*shift).xy*.1;
   camTa=vec3(0,1.+shift*.2,0);
@@ -746,7 +743,7 @@ void selectShot()
       camMotoSpace=0.;
       camPos=vec3(2.5,1,6);
       sheepPos=vec3(1,.5,5.-motion);
-      panelWarningPos=vec3(3.5,.5,2.5);
+      panelWarningPos=vec3(4,0,2.5);
       camTa=mix(vec3(1,1,5),vec3(1,1.5,1),shift*2.);
       warningIsSheep=false;
       headRot=vec2(0,.5);
@@ -757,7 +754,7 @@ void selectShot()
       float t=time/2.,bump=.02*verticalBump();
       camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
       camTa=vec3(.5,1.+.2*t+bump,.25);
-      panelWarningPos=vec3(3.5,.5,-50);
+      panelWarningPos=vec3(4,0,-40);
       camProjectionRatio=1.5;
     }
   else if(get_shot(time,3.))
@@ -823,8 +820,7 @@ void selectShot()
     motoFaceImpactShot(time+8.);
   else if(get_shot(time,10.))
     {
-      globalFade*=smoothstep(1.,4.,time);
-      globalFade*=smoothstep(9.,7.,time);
+      globalFade*=smoothstep(1.,4.,time)*smoothstep(9.,7.,time);
       camMotoSpace=0.;
       float motion=time*.5;
       camPos=vec3(2.5,1.5,-6.+motion);
@@ -871,7 +867,7 @@ void selectShot()
   else if(get_shot(time,20.))
     sceneID=3,camTa=vec3(0,1,.7),camPos=vec3(4.-.1*time,1,-3.-.5*time),headRot=vec2(0,.3),camProjectionRatio=3.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(15.,9.,time),globalFade=float(time<15.);
   if(sceneID==3)
-    headRot.y+=sin(iTime*4.)*.1,animationSpeed=vec3(0);
+    headRot.y+=abs(sin(iTime*4.)*.1),animationSpeed=vec3(0);
   time=iTime-time;
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
