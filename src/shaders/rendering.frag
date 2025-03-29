@@ -104,9 +104,9 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         const float laneWidth = 3.5;
         if (abs(p.x) < laneWidth) {
             vec2 laneUV = p.xz / laneWidth;
-            float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
+            float tireTrails = sin((laneUV.x+0.2) * 2.5 * PI) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
-            float highFreqNoise = fBm(laneUV * vec2(50., 5));
+            float highFreqNoise = fBm(laneUV * vec2(50., 3));
             tireTrails = mix(tireTrails, highFreqNoise, 0.2);
             //tireTrails = highFreqNoise;
             float roughness = mix(0.8, 0.4, tireTrails);
@@ -120,7 +120,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
             albedo = vec3(0.1, 0.15, 0.1);
             spe *= 0.;
         }
-    } else if (dmat.y == MOTO_DRIVER_ID || dmat.y == MOTO_WHEEL_ID) {
+    } else if (dmat.y == MOTO_DRIVER_ID) {
         albedo = vec3(.01);
         spe *= 0.02;
         sss *= 0.;

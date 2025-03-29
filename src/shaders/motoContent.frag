@@ -209,13 +209,6 @@ vec2 motoShape(vec3 p)
 
     vec2 d = vec2(INF, MOTO_ID);
 
-#ifdef DEBUG
-    // Show moto coordinates:
-    d = MinDist(d, vec2(Box3(p, vec3(1.00, 0.01, 0.01), 0.001), DEBUG_ID));
-    d = MinDist(d, vec2(Box3(p, vec3(0.01, 1.00, 0.01), 0.001), DEBUG_ID));
-    d = MinDist(d, vec2(Box3(p, vec3(0.01, 0.01, 1.00), 0.001), DEBUG_ID));
-#endif
-
     float h;
     float cyl;
 

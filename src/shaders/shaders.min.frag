@@ -217,12 +217,12 @@ vec2 driverShape(vec3 p)
   if(sceneID==2)
     p-=vec3(.4,.5,-2.5),p.yz*=Rotation(1.5),p.xz*=Rotation(.4);
   else if(sceneID==3)
-    return vec2(1e6,2);
+    return vec2(1e6,1);
   else
      wind=fBm((p.xy+iTime)*12.),p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2)
-    return vec2(d,2);
+    return vec2(d,1);
   vec3 simP=p;
   simP.z=abs(simP.z);
   if(d<.8)
@@ -283,7 +283,7 @@ vec2 driverShape(vec3 p)
     if(head<d)
       return vec2(head,0);
   }
-  return vec2(d,2);
+  return vec2(d,1);
 }
 vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3 innerPart)
 {
@@ -325,7 +325,7 @@ vec2 motoShape(vec3 p)
     pFork.yz*=Rotation(1);
     handle=min(handle,max(length(pFork.xz)-.003,max(pFork.y,-pFork.y-.2)));
     fork=min(fork,handle);
-    d=MinDist(d,vec2(fork,17));
+    d=MinDist(d,vec2(fork,2));
   }
   {
     vec3 pHead=p-headLightOffsetFromMotoRoot;
@@ -352,7 +352,7 @@ vec2 motoShape(vec3 p)
         float tankCut=Ellipsoid(pTankR+vec3(0,.13,0),vec3(.5,.35,.22));
         tank=-min(min(-tank,-tankCut),-Ellipsoid(pTank-vec3(0,.3,0),vec3(.6,.35,.4)));
       }
-    d=MinDist(d,vec2(tank,17));
+    d=MinDist(d,vec2(tank,2));
   }
   {
     vec3 pMotor=p-vec3(-.08,.44,0),pMotorSkewd=pMotor;
@@ -383,7 +383,7 @@ vec2 motoShape(vec3 p)
     float exhaust=Segment3(pExhaust,vec3(.24,.25,0),vec3(-.7,.3,.05),boundingSphere);
     if(exhaust<.6)
       exhaust=-min(-exhaust+mix(.04,.08,mix(boundingSphere,smoothstep(.5,.7,boundingSphere),.5)),p.x-.7*p.y+.9),exhaust=min(exhaust,Segment3(pExhaust,vec3(.24,.25,0),vec3(.32,.55,-.02),boundingSphere)-.04),exhaust=min(exhaust,Segment3(pExhaust,vec3(.22,.32,-.02),vec3(-.4,.37,.02),boundingSphere)-.04);
-    d=MinDist(d,vec2(exhaust,17));
+    d=MinDist(d,vec2(exhaust,2));
   }
   {
     vec3 pSeat=p-vec3(-.44,.44,0);
@@ -400,7 +400,7 @@ vec2 motoShape(vec3 p)
         seatSaddleCut=Ellipsoid(pSaddle,vec3(.8,.4,.4));
         seat=-min(-seat,-seatSaddleCut);
       }
-    d=MinDist(d,vec2(seat,17));
+    d=MinDist(d,vec2(seat,2));
   }
   return d;
 }
@@ -571,8 +571,8 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
     if(abs(p.x)<3.5)
       {
         vec2 laneUV=p.xz/3.5;
-        float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
-        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,5)),.2);
+        float tireTrails=sin((laneUV.x+.2)*2.5*PI)*.5+.5;
+        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,3)),.2);
         vec3 color=vec3(mix(vec3(.2),vec3(.3),tireTrails));
         sss*=0.;
         sunDir=color;
@@ -580,11 +580,11 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       }
     else
        sss*=.3,sunDir=vec3(.1,.15,.1),spe*=0.;
-  else if(dmat.y==2||dmat.y==1)
+  else if(dmat.y==1)
     sunDir=vec3(.01),spe*=.02,sss*=0.;
   else if(dmat.y==0)
     sunDir=vec3(.01),spe*=pow(spe,vec3(15))*fre*2.,sss*=0.;
-  else if(dmat.y==17)
+  else if(dmat.y==2)
     sunDir=vec3(.1),spe*=pow(spe,vec3(8))*fre*1.5,sss*=0.;
   else if(dmat.y==3)
     sunDir=vec3(.1,.25,.2),sss*=.2,spe*=0.;
@@ -732,17 +732,17 @@ void selectShot()
   else if(get_shot(time,5.))
     {
       sceneID=1;
-      vec2 p=vec2(.95,.5);
+      vec2 p=vec2(.95,.65);
       p.x+=mix(-1.,1.,valueNoise2(.5*iTime).y);
       p.x+=mix(-.01,.01,valueNoise2(6e2*iTime).y);
       p.y+=.05*verticalBump();
       camPos=vec3(p,-1.5);
-      camTa=vec3(p.x,p.y+.1,0);
+      camTa=vec3(p.x,p.y-.05,0);
       camProjectionRatio=1.2;
     }
   else if(get_shot(time,5.))
     {
-      float shift=smoothstep(3.,3.3,time)*.5,motion=time*.1;
+      float shift=smoothstep(3.5,3.8,time)*.5,motion=time*.1;
       camMotoSpace=0.;
       camPos=vec3(2.5,1,6);
       sheepPos=vec3(1,.5,5.-motion);
@@ -757,7 +757,7 @@ void selectShot()
       float t=time/2.,bump=.02*verticalBump();
       camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
       camTa=vec3(.5,1.+.2*t+bump,.25);
-      panelWarningPos=vec3(3.5,.5,-250);
+      panelWarningPos=vec3(3.5,.5,-50);
       camProjectionRatio=1.5;
     }
   else if(get_shot(time,3.))
@@ -856,20 +856,20 @@ void selectShot()
     }
   else if(get_shot(time,10.))
     {
-      vec3 shift=mix(vec3(0),vec3(-3.5,0,-3.5),smoothstep(4,6,time));
+      vec3 shift=mix(vec3(0),vec3(-3.5,0,-3.5),smoothstep(6,8,time));
       camTa=vec3(0,1,0)+shift;
-      camPos=vec3(6.-.1*time,.4,-1.-.5*time)+shift;
-      wheelie=smoothstep(2.,2.3,time);
+      camPos=vec3(6.-.1*time,.4,-1.-.4*time)+shift;
+      wheelie=smoothstep(3.,3.3,time);
       wheelie+=wheelie*sin(time*2.)*.2;
       headRot=vec2(0,.6);
       sceneID=3;
       camProjectionRatio=2.;
       vec2 noise=valueNoise2(5e2*time);
       camTa.xy+=noise*.01;
-      globalFade*=smoothstep(8.,5.,time);
+      globalFade*=smoothstep(10.,7.,time);
     }
   else if(get_shot(time,20.))
-    sceneID=3,camTa=vec3(0,1,.7),camPos=vec3(4.-.1*time,1,-3.-.5*time),headRot=vec2(0,.3),camProjectionRatio=3.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(10.,9.,time),globalFade=float(time<10.);
+    sceneID=3,camTa=vec3(0,1,.7),camPos=vec3(4.-.1*time,1,-3.-.5*time),headRot=vec2(0,.3),camProjectionRatio=3.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(15.,9.,time),globalFade=float(time<15.);
   if(sceneID==3)
     headRot.y+=sin(iTime*4.)*.1,animationSpeed=vec3(0);
   time=iTime-time;
