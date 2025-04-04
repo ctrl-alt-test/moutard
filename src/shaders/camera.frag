@@ -12,7 +12,6 @@ void motoFaceImpactShot(float t_in_shot) {
 }
 
 void sheepScaredShot(float t_in_shot) {
-    camMotoSpace = 0.;
     animationSpeed *= 0.;
 
     float shift = t_in_shot / 5.;
@@ -45,19 +44,12 @@ bool get_shot(inout float time, float duration) {
 void selectShot() {
     float time = iTime;
     float verticalBump = valueNoise2(6.*iTime).x;
-
-    camMotoSpace = 1.;
-    sheepPos = vec3(INF);
-    wheelie = 0.;
     blink = max(fract(iTime*.333), fract(iTime*.123+.1));
-
-    float seedOffset = 0.;
 
     if (get_shot(time, 10.)) {
         globalFade *= smoothstep(0., 7., time);
 
         // intro shot, sheep face
-        camMotoSpace = 0.;
         float motion = time*.1;
         float vshift = smoothstep(6., 0., time);
         camPos = vec3(1., 0.9 + vshift*.5, 6. - motion);
@@ -78,7 +70,6 @@ void selectShot() {
 
     } else if (get_shot(time, 5.)) {
         // sheep walking
-        camMotoSpace = 0.;
         float motion = time*.1;
         camPos = vec3(2.5, 0.5, 3. - motion);
         sheepPos = vec3(1., 0.5, 5. - motion);
@@ -101,7 +92,6 @@ void selectShot() {
         // shot from back, sheep walking + /!\ warning
         float shift = smoothstep(3.5, 3.8, time)*.5;
         float motion = time*.1;
-        camMotoSpace = 0.;
         camPos = vec3(2.5, 1., 6.);
         sheepPos = vec3(1., 0.5, 5. - motion);
         panelWarningPos = vec3(4., 0., 2.5);
@@ -121,7 +111,6 @@ void selectShot() {
 
     } else if (get_shot(time, 3.)) {
         // sheep face, looking down
-        camMotoSpace = 0.;
         float motion = time*.1;
 
         float shift = smoothstep(0., 5., time);
@@ -145,7 +134,6 @@ void selectShot() {
 
     } else if (get_shot(time, 5.)) {
         // sheep face looking up
-        camMotoSpace = 0.;
 
         float motion = time*.1;
         float shift = smoothstep(3.5, 4., time);
@@ -206,7 +194,6 @@ void selectShot() {
             	* smoothstep(9., 7., time);
 
         // looking at ground
-        camMotoSpace = 0.;
         float motion = time*.5;
         camPos = vec3(2.5, 1.5, -6. + motion);
         camTa = vec3(1., 0., -9. + motion);
@@ -276,7 +263,7 @@ void selectShot() {
         t = 0.;
     }
 
-    motoPos = vec2(0, 300. - 50.*t, 0.3 + 0.42 * wheelie);
+    motoPos = vec3(0, 0.3 + 0.42 * wheelie, 300. - 50.*t);
     motoPos.xz += 0.5*sin(iTime);
     motoPitch = 0.5 * wheelie;
 }

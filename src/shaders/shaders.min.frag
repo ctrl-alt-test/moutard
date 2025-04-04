@@ -3,8 +3,8 @@
 uniform float iTime;
 uniform sampler2D tex;
 int sceneID=0,roadSignType=0;
-float camMotoSpace,camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,motoPitch;
-vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
+float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,motoPitch;
+vec3 camPos,camTa,sheepPos=vec3(1e6),panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 out vec4 fragColor;
 float hash11(float x)
 {
@@ -409,10 +409,10 @@ vec2 sheep(vec3 p,bool shiftPos)
   if(shiftPos)
     if(sceneID==3)
       {
-        p=p-motoPos-vec3(0,1.2,-.3);
+        p-=motoPos+vec3(0,1.2,-.3);
         p.yz*=Rotation(.5);
         if(wheelie>0.)
-          p.yz*=Rotation(wheelie*.4),p.y-=mix(0.,.35,wheelie),p.z-=mix(0.,.2,wheelie);
+          p.yz*=Rotation(wheelie*.4),p.yz-=vec2(.35,.2)*wheelie;
       }
     else
        p-=sheepPos;
@@ -650,7 +650,6 @@ void motoFaceImpactShot(float t_in_shot)
 }
 void sheepScaredShot(float t_in_shot)
 {
-  camMotoSpace=0.;
   animationSpeed*=0.;
   float shift=t_in_shot/5.;
   headRot=vec2(0,-.1);
@@ -676,14 +675,10 @@ bool get_shot(inout float time,float duration)
 void selectShot()
 {
   float time=iTime,verticalBump=valueNoise2(6.*iTime).x;
-  camMotoSpace=1.;
-  sheepPos=vec3(1e6);
-  wheelie=0.;
   blink=max(fract(iTime*.333),fract(iTime*.123+.1));
   if(get_shot(time,10.))
     {
       globalFade*=smoothstep(0.,7.,time);
-      camMotoSpace=0.;
       float motion=time*.1,vshift=smoothstep(6.,0.,time);
       camPos=vec3(1,.9+vshift*.5,6.-motion);
       camTa=vec3(1,.8+vshift,7.-motion);
@@ -697,7 +692,6 @@ void selectShot()
     sceneID=1,camTa=vec3(1,1,0),camPos=vec3(-2.-2.5*time,.5+.2*time,sin(time)),camProjectionRatio=1.;
   else if(get_shot(time,5.))
     {
-      camMotoSpace=0.;
       float motion=time*.1;
       camPos=vec3(2.5,.5,3.-motion);
       sheepPos=vec3(1,.5,5.-motion);
@@ -720,7 +714,6 @@ void selectShot()
   else if(get_shot(time,5.))
     {
       float shift=smoothstep(3.5,3.8,time)*.5,motion=time*.1;
-      camMotoSpace=0.;
       camPos=vec3(2.5,1,6);
       sheepPos=vec3(1,.5,5.-motion);
       panelWarningPos=vec3(4,0,2.5);
@@ -739,7 +732,6 @@ void selectShot()
     }
   else if(get_shot(time,3.))
     {
-      camMotoSpace=0.;
       float motion=time*.1,shift=smoothstep(0.,5.,time);
       headRot=vec2(0,.5);
       eyeDir=vec3(0,.3,1);
@@ -759,7 +751,6 @@ void selectShot()
     }
   else if(get_shot(time,5.))
     {
-      camMotoSpace=0.;
       float motion=time*.1,shift=smoothstep(3.5,4.,time),headShift=smoothstep(2.5,3.,time);
       headRot=vec2(0,.4-headShift*.5);
       eyeDir=vec3(0,.1-headShift*.2,1);
@@ -801,7 +792,6 @@ void selectShot()
   else if(get_shot(time,10.))
     {
       globalFade*=smoothstep(1.,4.,time)*smoothstep(9.,7.,time);
-      camMotoSpace=0.;
       float motion=time*.5;
       camPos=vec3(2.5,1.5,-6.+motion);
       camTa=vec3(1,0,-9.+motion);
@@ -852,7 +842,7 @@ void selectShot()
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
     time=0.;
-  motoPos=vec2(0,3e2-50.*time,.3+.42*wheelie);
+  motoPos=vec3(0,.3+.42*wheelie,3e2-50.*time);
   motoPos.xz+=.5*sin(iTime);
   motoPitch=.5*wheelie;
 }
@@ -873,10 +863,8 @@ float base(vec2 p,float t)
 }
 float holes(vec2 p,float t)
 {
-  float col=1.;
   vec2 size=vec2(mix(0.,.0255,t));
-  col=col*rect(p-vec2(.25,2)*.15,size)*rect(p-vec2(.75,1.75)*.15,size)*rect(p-vec2(1.25,1.75)*.15,size)*rect(p-vec2(2.25,1.75)*.15,size)*rect(p-vec2(3.25,2.25)*.15,size)*rect(p-vec2(0,.75)*.15,size)*rect(p-vec2(1.25)*.15,size)*rect(p-vec2(1.75,.75)*.15,size)*rect(p-vec2(2.25,.75)*.15,size)*rect(p-vec2(-.25)*.15,size)*rect(p-vec2(.25,-.25)*.15,size)*rect(p-vec2(1.25,.19)*.15,size)*rect(p-vec2(1.25,-.19)*.15,size)*rect(p-vec2(1.75,-.19)*.15,size)*rect(p-vec2(2.25,.19)*.15,size)*rect(p-vec2(2.75,-.25)*.15,size)*rect(p-vec2(3.25,-.25)*.15,size);
-  return 1.-col;
+  return rect(p-vec2(.25,2)*.15,size)*rect(p-vec2(.75,1.75)*.15,size)*rect(p-vec2(1.25,1.75)*.15,size)*rect(p-vec2(2.25,1.75)*.15,size)*rect(p-vec2(3.25,2.25)*.15,size)*rect(p-vec2(0,.75)*.15,size)*rect(p-vec2(1.25)*.15,size)*rect(p-vec2(1.75,.75)*.15,size)*rect(p-vec2(2.25,.75)*.15,size)*rect(p-vec2(-.25)*.15,size)*rect(p-vec2(.25,-.25)*.15,size)*rect(p-vec2(1.25,.19)*.15,size)*rect(p-vec2(1.25,-.19)*.15,size)*rect(p-vec2(1.75,-.19)*.15,size)*rect(p-vec2(2.25,.19)*.15,size)*rect(p-vec2(2.75,-.25)*.15,size)*rect(p-vec2(3.25,-.25)*.15,size);
 }
 vec3 drawLogo(vec2 uv)
 {
@@ -884,7 +872,7 @@ vec3 drawLogo(vec2 uv)
     return vec3(1);
   uv=uv*.6+vec2(.25,.15);
   float t=shouldDrawLogo;
-  return vec3(1.-clamp(base(uv,clamp(t*2.,0.,1.))+holes(uv,clamp(t*2.-1.,0.,1.)),0.,1.));
+  return vec3(2.-clamp(base(uv,clamp(t*2.,0.,1.))-holes(uv,clamp(t*2.-1.,0.,1.)),0.,1.));
 }
 float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff)
 {
@@ -899,7 +887,7 @@ void main()
   iResolution=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   selectShot();
   vec3 cameraTarget=camTa,cameraUp=vec3(0,1,0),cameraPosition=camPos;
-  if(camMotoSpace>.5)
+  if(sceneID==3||sceneID==1)
     cameraPosition=motoToWorldForCamera(camPos),cameraTarget=motoToWorldForCamera(camTa);
   else
      cameraTarget=camTa,cameraPosition=camPos;

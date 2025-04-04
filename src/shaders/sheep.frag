@@ -36,14 +36,12 @@ vec2 sheep(vec3 p, bool shiftPos) {
 
     if (shiftPos) {
       if (sceneID == SCENE_MOUTARD) { // sheep on moto
-        p -= motoPos;
-        p -= vec3(0., 1.2, -0.3);
+        p -= motoPos + vec3(0., 1.2, -0.3);
         p.yz *= Rotation(0.5);
 
         if (wheelie > 0.) { // wheelie
           p.yz *= Rotation(wheelie * 0.4);
-          p.y -= mix(0., 0.35, wheelie);
-          p.z -= mix(0., 0.2, wheelie);
+          p.yz -= vec2(0.35, 0.2) * wheelie;
         }
       } else {
         p -= sheepPos;

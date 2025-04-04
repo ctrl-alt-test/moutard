@@ -54,7 +54,7 @@ float holes(vec2 p, float t) {
   col *= rect(p - vec2(3.-h, -v) * spacing, size, r);
   col *= rect(p - vec2(3.+h, -v) * spacing, size, r);
 
-  return 1. - col;
+  return col;
 }
 
 vec3 drawLogo(vec2 uv) {
@@ -65,7 +65,7 @@ vec3 drawLogo(vec2 uv) {
   float t = shouldDrawLogo;
   float t1 = clamp(t*2., 0., 1.);
   float t2 = clamp(t*2.-1., 0., 1.);
-  vec3 col = vec3(1. - clamp(base(uv, t1) + holes(uv, t2), 0., 1.));
+  vec3 col = vec3(2. - clamp(base(uv, t1) - holes(uv, t2), 0., 1.));
   return col;
 }
 

@@ -23,7 +23,6 @@ const int SCENE_BLOOD = 2;
 const int SCENE_MOUTARD = 3;
 int sceneID = 0;
 int roadSignType = 0; // road sign: 1 is exclamation mark; 0 is sheep.
-float camMotoSpace;
 float camProjectionRatio = 1.;
 float wheelie = 0.;
 float globalFade = 1.;
@@ -31,7 +30,7 @@ float shouldDrawLogo = 0.;
 float motoPitch;
 vec3 camPos;
 vec3 camTa;
-vec3 sheepPos = vec3(0.);
+vec3 sheepPos = vec3(INF);
 vec3 panelWarningPos = vec3(6., 0., 0.);
 vec3 motoPos;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
@@ -70,13 +69,11 @@ void main()
 
     selectShot();
 
-    // Compute moto position
-
     // camPos and camTa are passed by the vertex shader
     vec3 cameraTarget = camTa;
     vec3 cameraUp = vec3(0., 1., 0.);
     vec3 cameraPosition = camPos;
-    if (camMotoSpace > 0.5) {
+    if (sceneID == SCENE_MOUTARD || sceneID == SCENE_MOTO) {
         cameraPosition = motoToWorldForCamera(camPos);
         cameraTarget = motoToWorldForCamera(camTa);
         //cameraUp = motoToWorld(cameraUp, false);
