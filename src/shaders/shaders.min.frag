@@ -178,14 +178,6 @@ vec2 treesShape(vec3 p)
   p.xz-=id;
   return vec2(tree(p,id),3);
 }
-void computeMotoPosition()
-{
-  motoPos.xz+=.5*sin(iTime);
-  motoPos.y+=.3;
-  motoPitch=atan(0.,1.);
-  motoPitch+=.5*wheelie;
-  motoPos.y+=.42*wheelie;
-}
 vec3 motoToWorldForCamera(vec3 v)
 {
   v.xz*=Rotation(1.57);
@@ -646,10 +638,6 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   diff=sunDir*(amb+diff*.5+bnc*2.+sss*2.)+envm+spe*shad+emi;
   return mix(diff,fogColor,1.-exp(-t*.005));
 }
-float verticalBump()
-{
-  return valueNoise2(6.*iTime).x;
-}
 void motoFaceImpactShot(float t_in_shot)
 {
   sceneID=1;
@@ -687,7 +675,7 @@ bool get_shot(inout float time,float duration)
 }
 void selectShot()
 {
-  float time=iTime;
+  float time=iTime,verticalBump=valueNoise2(6.*iTime).x;
   camMotoSpace=1.;
   sheepPos=vec3(1e6);
   wheelie=0.;
@@ -724,7 +712,7 @@ void selectShot()
       vec2 p=vec2(.95,.65);
       p.x+=mix(-1.,1.,valueNoise2(.5*iTime).y);
       p.x+=mix(-.01,.01,valueNoise2(6e2*iTime).y);
-      p.y+=.05*verticalBump();
+      p.y+=.05*verticalBump;
       camPos=vec3(p,-1.5);
       camTa=vec3(p.x,p.y-.05,0);
       camProjectionRatio=1.2;
@@ -743,7 +731,7 @@ void selectShot()
   else if(get_shot(time,5.))
     {
       sceneID=1;
-      float t=time/2.,bump=.02*verticalBump();
+      float t=time/2.,bump=.02*verticalBump;
       camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
       camTa=vec3(.5,1.+.2*t+bump,.25);
       panelWarningPos=vec3(4,0,-40);
@@ -825,7 +813,7 @@ void selectShot()
       vec2 p=vec2(.95,.5);
       p.x+=mix(-1.,1.,valueNoise2(.5*time).y);
       p.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
-      p.y+=.05*verticalBump();
+      p.y+=.05*verticalBump;
       camPos=vec3(p,-1.5);
       camTa=vec3(p.x,p.y-.4,0);
       camProjectionRatio=1.2;
@@ -836,7 +824,7 @@ void selectShot()
       float trans=smoothstep(3.,0.,time);
       camTa=vec3(3,1.-trans*.8,0);
       camPos=vec3(5.-.1*time,1,0);
-      camPos.y+=.02*verticalBump();
+      camPos.y+=.02*verticalBump;
       headRot=vec2(0,.3);
       sceneID=3;
       camProjectionRatio=2.-smoothstep(0.,6.,time);
@@ -864,7 +852,9 @@ void selectShot()
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
     time=0.;
-  motoPos.xz=vec2(0,mix(3e2,-7e2,time/20.));
+  motoPos=vec2(0,3e2-50.*time,.3+.42*wheelie);
+  motoPos.xz+=.5*sin(iTime);
+  motoPitch=.5*wheelie;
 }
 float rect(vec2 p,vec2 size)
 {
@@ -908,7 +898,6 @@ void main()
   vec2 iResolution=vec2(1280,720),texCoord=gl_FragCoord.xy/iResolution.xy;
   iResolution=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   selectShot();
-  computeMotoPosition();
   vec3 cameraTarget=camTa,cameraUp=vec3(0,1,0),cameraPosition=camPos;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorldForCamera(camPos),cameraTarget=motoToWorldForCamera(camTa);

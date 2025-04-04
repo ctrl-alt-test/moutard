@@ -1,8 +1,3 @@
-float verticalBump()
-{
-    return valueNoise2(6.*iTime).x;
-}
-
 void motoFaceImpactShot(float t_in_shot) {
         sceneID = SCENE_MOTO;
         float shift = t_in_shot/10.;
@@ -49,6 +44,7 @@ bool get_shot(inout float time, float duration) {
 
 void selectShot() {
     float time = iTime;
+    float verticalBump = valueNoise2(6.*iTime).x;
 
     camMotoSpace = 1.;
     sheepPos = vec3(INF);
@@ -96,7 +92,7 @@ void selectShot() {
         vec2 p = vec2(0.95, 0.65);
         p.x += mix(-1., 1., valueNoise2(0.5*iTime).y);
         p.x += mix(-0.01, 0.01, valueNoise2(600.*iTime).y);
-        p.y += 0.05 * verticalBump();
+        p.y += 0.05 * verticalBump;
         camPos = vec3(p, -1.5);
         camTa = vec3(p.x, p.y - 0.05, 0.);
         camProjectionRatio = 1.2;
@@ -117,7 +113,7 @@ void selectShot() {
         sceneID = SCENE_MOTO;
         // moto + sheep sign
         float t = time / 2.;
-        float bump = 0.02 * verticalBump();
+        float bump = 0.02 * verticalBump;
         camPos = vec3(-0.2 - 0.6 * t, 0.88 + 0.35*t + bump, 0.42);
         camTa = vec3(0.5, 1. + 0.2 * t + bump, 0.25);
         panelWarningPos = vec3(4, 0., -40.);
@@ -222,7 +218,7 @@ void selectShot() {
         vec2 p = vec2(0.95, 0.5);
         p.x += mix(-1., 1., valueNoise2(0.5*time).y);
         p.x += mix(-0.01, 0.01, valueNoise2(600.*time).y);
-        p.y += 0.05 * verticalBump();
+        p.y += 0.05 * verticalBump;
         camPos = vec3(p, -1.5);
         camTa = vec3(p.x, p.y - 0.4, 0.);
         camProjectionRatio = 1.2;
@@ -233,7 +229,7 @@ void selectShot() {
         float trans = smoothstep(3., 0., time);
         camTa = vec3(3., 1. - trans*.8, 0.);
         camPos = vec3(5. - 0.1*time, 1., 0.);
-        camPos.y += 0.02 * verticalBump();
+        camPos.y += 0.02 * verticalBump;
         headRot = vec2(0., 0.3);
         sceneID = SCENE_MOUTARD;
         camProjectionRatio = 2. - smoothstep(0., 6., time);
@@ -280,6 +276,7 @@ void selectShot() {
         t = 0.;
     }
 
-    // TODO: could be simplified
-    motoPos.xz = vec2(0, mix(300., -700., t/20.));
+    motoPos = vec2(0, 300. - 50.*t, 0.3 + 0.42 * wheelie);
+    motoPos.xz += 0.5*sin(iTime);
+    motoPitch = 0.5 * wheelie;
 }

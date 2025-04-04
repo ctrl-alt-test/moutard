@@ -2,29 +2,6 @@
 // Moto position functions
 //
 
-// Moto local space:
-// - The moto is aligned with the X axis.
-// - The anchor point is on the ground, roughly at the center (engine).
-//        Y
-//        ^
-//        |
-//        |_o<)
-//    _--<| /\_  ==>
-//   (o)\ |/ (o)
-// -------+--------> X
-//
-// This ascii art is no longer useful, but it's fun to keep it around.
-
-void computeMotoPosition()
-{
-    motoPos.xz += 0.5*sin(iTime);
-    motoPos.y += 0.3;
-    motoPitch = atan(0., 1.);
-    
-    motoPitch += 0.5 * wheelie;
-    motoPos.y += 0.42 * wheelie;
-}
-
 vec3 motoToWorldForCamera(vec3 v)
 {
     v.xz *= Rotation(1.57);

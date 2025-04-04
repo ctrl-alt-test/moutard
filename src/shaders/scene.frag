@@ -69,7 +69,6 @@ void main()
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
     selectShot();
-    computeMotoPosition();
 
     // Compute moto position
 
