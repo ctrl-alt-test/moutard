@@ -110,7 +110,7 @@ void selectShot() {
         sheepPos = vec3(1., 0.5, 5. - motion);
         panelWarningPos = vec3(4., 0., 2.5);
         camTa = mix(vec3(1,1,5), vec3(1., 1.5, 1), shift*2.);
-        warningIsSheep = false;
+        roadSignType = 1;
         headRot = vec2(0., 0.5);
 
     } else if (get_shot(time, 5.)) {

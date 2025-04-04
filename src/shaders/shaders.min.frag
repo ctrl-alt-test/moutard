@@ -2,10 +2,9 @@
 
 uniform float iTime;
 uniform sampler2D tex;
-int sceneID=0;
-float camMotoSpace,camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.;
-vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0);
-bool warningIsSheep=true;
+int sceneID=0,roadSignType=0;
+float camMotoSpace,camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,motoPitch;
+vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 out vec4 fragColor;
 const float PI=acos(-1.);
 float hash11(float x)
@@ -180,9 +179,6 @@ vec2 treesShape(vec3 p)
   p.xz-=id;
   return vec2(tree(p,id),3);
 }
-vec3 motoPos;
-const vec3 headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
-float motoPitch;
 void computeMotoPosition()
 {
   motoPos.xz+=.5*sin(iTime);
@@ -626,7 +622,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
         {
           vec3 pp=p-vec3(-.3,2.75,0);
           float symbol;
-          if(warningIsSheep)
+          if(roadSignType==0)
             {
               pp.xy*=.9;
               float dist=5.;
@@ -745,7 +741,7 @@ void selectShot()
       sheepPos=vec3(1,.5,5.-motion);
       panelWarningPos=vec3(4,0,2.5);
       camTa=mix(vec3(1,1,5),vec3(1,1.5,1),shift*2.);
-      warningIsSheep=false;
+      roadSignType=1;
       headRot=vec2(0,.5);
     }
   else if(get_shot(time,5.))

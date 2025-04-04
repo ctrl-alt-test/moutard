@@ -19,23 +19,28 @@ uniform sampler2D tex;
 
 const int SCENE_SHEEP = 0;
 const int SCENE_MOTO = 1;
-const int SCENE_BLOOD = 2; // of course, he's not dead!
+const int SCENE_BLOOD = 2;
 const int SCENE_MOUTARD = 3;
 int sceneID = 0;
-
+int roadSignType = 0; // road sign: 1 is exclamation mark; 0 is sheep.
 float camMotoSpace;
 float camProjectionRatio = 1.;
 float wheelie = 0.;
 float globalFade = 1.;
 float shouldDrawLogo = 0.;
+float motoPitch;
 vec3 camPos;
 vec3 camTa;
 vec3 sheepPos = vec3(0.);
 vec3 panelWarningPos = vec3(6., 0., 0.);
-bool warningIsSheep = true;
+vec3 motoPos;
+vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
+vec3 breakLightOffsetFromMotoRoot = vec3(-0.8, 0.75, 0.0);
+
 
 // Outputs:
 out vec4 fragColor;
+const float PI = acos(-1.);
 
 #include "common.frag"
 #include "ids.frag"
