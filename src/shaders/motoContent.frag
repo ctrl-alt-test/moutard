@@ -304,13 +304,13 @@ vec2 motoShape(vec3 p)
         if (tank < 0.1)
         {
             // Sides cut
-            float tankCut = Ellipsoid(pTankR + vec3(0.0, 0.13, 0.0), vec3(0.5, 0.35, 0.22));
-            tank = -min(-tank, -tankCut);
+            float i_tankCut = Ellipsoid(pTankR + vec3(0.0, 0.13, 0.0), vec3(0.5, 0.35, 0.22));
+            tank = -min(-tank, -i_tankCut);
             //tank = -smin(-tank, -tankCut, 0.025);
 
             // Bottom cut
-            float tankCut2 = Ellipsoid(pTank - vec3(0.0, 0.3, 0.0), vec3(0.6, 0.35, 0.4));
-            tank = -min(-tank, -tankCut2);
+            float i_tankCut2 = Ellipsoid(pTank - vec3(0.0, 0.3, 0.0), vec3(0.6, 0.35, 0.4));
+            tank = -min(-tank, -i_tankCut2);
             //tank = -smin(-tank, -tankCut2, 0.01);
         }
         d = MinDist(d, vec2(tank, MOTO_EXHAUST_ID));

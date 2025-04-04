@@ -40,7 +40,6 @@ vec3 breakLightOffsetFromMotoRoot = vec3(-0.8, 0.75, 0.0);
 
 // Outputs:
 out vec4 fragColor;
-const float PI = acos(-1.);
 
 #include "common.frag"
 #include "ids.frag"

@@ -6,7 +6,6 @@ int sceneID=0,roadSignType=0;
 float camMotoSpace,camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,motoPitch;
 vec3 camPos,camTa,sheepPos=vec3(0),panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 out vec4 fragColor;
-const float PI=acos(-1.);
 float hash11(float x)
 {
   return fract(sin(x)*43758.5453);
@@ -341,10 +340,7 @@ vec2 motoShape(vec3 p)
     pTankR.x+=.05;
     float tank=Ellipsoid(pTankR,vec3(.35,.2,.42));
     if(tank<.1)
-      {
-        float tankCut=Ellipsoid(pTankR+vec3(0,.13,0),vec3(.5,.35,.22));
-        tank=-min(min(-tank,-tankCut),-Ellipsoid(pTank-vec3(0,.3,0),vec3(.6,.35,.4)));
-      }
+      tank=-min(min(-tank,-Ellipsoid(pTankR+vec3(0,.13,0),vec3(.5,.35,.22))),-Ellipsoid(pTank-vec3(0,.3,0),vec3(.6,.35,.4)));
     d=MinDist(d,vec2(tank,2));
   }
   {
@@ -429,8 +425,8 @@ vec2 sheep(vec3 p,bool shiftPos)
     else
        p-=sheepPos;
   p/=.15;
-  float tb=iTime*animationSpeed.x;
-  vec3 bodyMove=vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0)*.025*animationAmp.x;
+  float tb=iTime*animationSpeed.x*3.14;
+  vec3 bodyMove=vec3(cos(tb),cos(tb*2.)*.1,0)*.025*animationAmp.x;
   tb=length(p*vec3(1,1,.825)-vec3(0,1.5,2.55)-bodyMove)-2.;
   if(tb>=3.)
     return vec2(tb*.15,5);
@@ -572,7 +568,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
     if(abs(p.x)<3.5)
       {
         vec2 laneUV=p.xz/3.5;
-        float tireTrails=sin((laneUV.x+.2)*2.5*PI)*.5+.5;
+        float tireTrails=sin((laneUV.x+.2)*7.85)*.5+.5;
         tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,3)),.2);
         vec3 color=vec3(mix(vec3(.2),vec3(.3),tireTrails));
         sss*=0.;

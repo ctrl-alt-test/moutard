@@ -55,8 +55,8 @@ vec2 sheep(vec3 p, bool shiftPos) {
     time = smoothstep(0., 1., abs(time * 2. - 1.));
    
     // Body
-    float tb = iTime*animationSpeed.x;
-    vec3 bodyMove = vec3(cos(tb*PI),cos(tb*PI*2.)*.1,0.)*.025*animationAmp.x;
+    float tb = iTime*animationSpeed.x*3.14;
+    vec3 bodyMove = vec3(cos(tb),cos(tb*2.)*.1,0.)*.025*animationAmp.x;
     float body = length(p*vec3(1.,1.,.825)-vec3(0.,1.5,2.55)-bodyMove)-2.;
     
     if (body >= 3.) {

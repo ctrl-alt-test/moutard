@@ -121,7 +121,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         const float laneWidth = 3.5;
         if (abs(p.x) < laneWidth) {
             vec2 laneUV = p.xz / laneWidth;
-            float tireTrails = sin((laneUV.x+0.2) * 2.5 * PI) * 0.5 + 0.5;
+            float tireTrails = sin((laneUV.x+0.2) * 7.85) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
             float highFreqNoise = fBm(laneUV * vec2(50., 3));
             tireTrails = mix(tireTrails, highFreqNoise, 0.2);
