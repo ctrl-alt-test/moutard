@@ -60,12 +60,10 @@ float holes(vec2 p, float t) {
 vec3 drawLogo(vec2 uv) {
   if (shouldDrawLogo <= 0.) return vec3(1.);
 
-  uv *= 0.6;
-  uv += vec2(0.25, 0.15);
-  float t = shouldDrawLogo;
-  float t1 = clamp(t*2., 0., 1.);
-  float t2 = clamp(t*2.-1., 0., 1.);
-  vec3 col = vec3(2. - clamp(base(uv, t1) - holes(uv, t2), 0., 1.));
+  uv = uv*0.6 + vec2(0.25, 0.15);
+  float t1 = min(shouldDrawLogo*2., 1.);
+  float t2 = min(shouldDrawLogo*2.-1., 1.);
+  vec3 col = vec3(holes(uv, t2) - base(uv, t1));
   return col;
 }
 

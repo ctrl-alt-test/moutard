@@ -22,7 +22,6 @@ const int SCENE_MOTO = 1;
 const int SCENE_BLOOD = 2;
 const int SCENE_MOUTARD = 3;
 int sceneID = 0;
-int roadSignType = 0; // road sign: 1 is exclamation mark; 0 is sheep.
 float camProjectionRatio = 1.;
 float wheelie = 0.;
 float globalFade = 1.;

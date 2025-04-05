@@ -228,7 +228,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
             pp -= vec3(-0.3,warningHeight - 0.25,0.);
 
             float symbol;
-            if (roadSignType==0) {
+            if (sceneID==SCENE_MOTO) {
                 pp.xy *= 0.9;
                 float dist = 5.;
                 headRot = vec2(0., -0.3);
