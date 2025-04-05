@@ -184,21 +184,20 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         
         // fake envmap reflection
         n = mix(normalize(n + (eyeDir + n)*4.), n, smoothstep(i_irisSize,i_irisSize+0.02, er));
-        {
-            vec3 v = reflect(rd, n);
-            vec3 l1 = normalize(vec3(1., 1.5, -1.));
-            vec3 l2 = vec3(-l1.x, l1.y*.5, l1.z);
-            float spot =
-                + specular(v, l1, .1)
-                + specular(v, l2, 2.) * .1
-                + specular(v, normalize(l1 + vec3(0.2, 0., 0.)), .3)
-                + specular(v, normalize(l1 + vec3(0.2, 0., 0.2)), .5)
-                + specular(v, normalize(l2 + vec3(0.1, 0., 0.2)), 8.) * .5;
-    
-            envm = (mix(
-                mix(vec3(.3,.3,0.), vec3(.1), smoothstep(-.7, .2, v.y)),
-                vec3(0.3, 0.65, 1.), smoothstep(-.0, 1., v.y)) + spot * vec3(1., 0.9, .8)) * mix(.15, .2, pupil) *sqrt(fre)*2.5;
-        }
+
+        v = reflect(rd, n);
+        vec3 l1 = normalize(vec3(1., 1.5, -1.));
+        vec3 l2 = vec3(-l1.x, l1.y*.5, l1.z);
+        float spot =
+            + specular(v, l1, .1)
+            + specular(v, l2, 2.) * .1
+            + specular(v, normalize(l1 + vec3(0.2, 0., 0.)), .3)
+            + specular(v, normalize(l1 + vec3(0.2, 0., 0.2)), .5)
+            + specular(v, normalize(l2 + vec3(0.1, 0., 0.2)), 8.) * .5;
+
+        envm = (mix(
+            mix(vec3(.3,.3,0.), vec3(.1), smoothstep(-.7, .2, v.y)),
+            vec3(0.3, 0.65, 1.), smoothstep(-.0, 1., v.y)) + spot * vec3(1., 0.9, .8)) * mix(.15, .2, pupil) *sqrt(fre)*2.5;
         
         // shadow on the edges of the eyes
         sceneSDF(p);

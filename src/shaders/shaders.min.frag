@@ -233,44 +233,36 @@ vec2 driverShape(vec3 p)
       pBody.xy*=Rotation(-.7);
       d=min(d,length(vec2(max(abs(pBody.y)-.07,0),abs(length(pBody.xz)-.05)))-.04);
     }
-  {
-    vec3 pArm=simP-vec3(.23,.45,.18);
-    pArm.yz*=Rotation(-.6);
-    pArm.xy*=Rotation(.2);
-    float arms=Capsule(pArm,.29,.06);
-    d=smin(d,arms,.02);
-    pArm.y+=.32;
-    pArm.xy*=Rotation(1.5);
-    arms=Capsule(pArm,.28,.04);
-    d=smin(d,arms,.02);
-  }
-  d+=.005*wind;
-  {
-    vec3 pLeg=simP-vec3(0,0,.13);
-    pLeg.xy*=Rotation(1.55);
-    pLeg.yz*=Rotation(-.4);
-    float h2=Capsule(pLeg,.35,.09);
-    d=smin(d,h2,.04);
-    pLeg.y+=.4;
-    pLeg.xy*=Rotation(-1.5);
-    h2=Capsule(pLeg,.4,.06);
-    d=smin(d,h2,.04);
-    pLeg.y+=.45;
-    pLeg.xy*=Rotation(1.75);
-    pLeg.yz*=Rotation(.25);
-    h2=Capsule(pLeg,.2,.03);
-    d=smin(d,h2,.02);
-  }
-  d+=.002*wind;
-  {
-    vec3 pHead=p-vec3(.39,.6,0);
-    float head=length(pHead*vec3(1.2,1,1.3-pHead.y))-.15;
-    if(head<d)
-      return vec2(head,0);
-  }
-  return vec2(d,1);
+  vec3 pArm=simP-vec3(.23,.45,.18);
+  pArm.yz*=Rotation(-.6);
+  pArm.xy*=Rotation(.2);
+  float arms=Capsule(pArm,.29,.06);
+  d=smin(d,arms,.02);
+  pArm.y+=.32;
+  pArm.xy*=Rotation(1.5);
+  arms=Capsule(pArm,.28,.04);
+  d=smin(d,arms,.02)+.005*wind;
+  pArm=simP-vec3(0,0,.13);
+  pArm.xy*=Rotation(1.55);
+  pArm.yz*=Rotation(-.4);
+  arms=Capsule(pArm,.35,.09);
+  d=smin(d,arms,.04);
+  pArm.y+=.4;
+  pArm.xy*=Rotation(-1.5);
+  arms=Capsule(pArm,.4,.06);
+  d=smin(d,arms,.04);
+  pArm.y+=.45;
+  pArm.xy*=Rotation(1.75);
+  pArm.yz*=Rotation(.25);
+  arms=Capsule(pArm,.2,.03);
+  d=smin(d,arms,.02)+.002*wind;
+  pArm=p-vec3(.39,.6,0);
+  arms=length(pArm*vec3(1.2,1,1.3-pArm.y))-.15;
+  return arms<d?
+    vec2(arms,0):
+    vec2(d,1);
 }
-vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3 innerPart)
+vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,vec3 innerPart)
 {
   wheelRadius=Torus(p.yzx,vec2(wheelRadius,tireRadius));
   if(wheelRadius<.25)
@@ -278,7 +270,7 @@ vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3
       p.z=abs(p.z);
       float h;
       h=Segment3(p,vec3(0),vec3(0,0,1),h);
-      wheelRadius=min(min(-smin(-wheelRadius,h-innerRadius,.04),-min(min(min(.15-h,h-.08),p.z-.04),-p.z+.05)),Ellipsoid(p,innerPart));
+      wheelRadius=min(min(-smin(-wheelRadius,h-.22,.04),-min(min(min(.15-h,h-.08),p.z-.04),-p.z+.05)),Ellipsoid(p,innerPart));
     }
   return vec2(wheelRadius,1);
 }
@@ -290,101 +282,91 @@ vec2 motoShape(vec3 p)
     return vec2(boundingSphere-1.5,0);
   vec2 d=vec2(1e6,0);
   vec3 frontWheelPos=vec3(.9,.33,0);
-  d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,.22,vec3(.02,.02,.12)));
-  d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,.18,vec3(.2,.2,.01)));
-  {
-    vec3 pFork=p,pForkTop=vec3(-.48,.66,0),pForkAngle=pForkTop+vec3(-.14,.04,.05);
-    pFork.z=abs(pFork.z);
-    pFork-=frontWheelPos+vec3(0,0,.12);
-    float fork=Segment3(pFork,pForkTop,vec3(0),boundingSphere)-.025;
-    fork=min(fork,Segment3(pFork,pForkTop,pForkAngle,boundingSphere)-.0175);
-    float handle=Segment3(pFork,pForkAngle,pForkAngle+vec3(-.08,-.07,.3),boundingSphere);
-    fork=min(fork,handle-mix(.035,.02,smoothstep(.25,.4,boundingSphere)));
-    pFork=pFork-pForkAngle-vec3(0,.1,.15);
-    pFork.xz*=Rotation(.2);
-    pFork.xy*=Rotation(-.2);
-    handle=pFork.x-.02;
-    pFork.xz*=Rotation(.25);
-    handle=-min(handle,-Ellipsoid(pFork,vec3(.04,.05,.08)));
-    pFork.x-=.05;
-    pFork.yz*=Rotation(1);
-    handle=min(handle,max(length(pFork.xz)-.003,max(pFork.y,-pFork.y-.2)));
-    fork=min(fork,handle);
-    d=MinDist(d,vec2(fork,2));
-  }
-  {
-    vec3 pHead=p-headLightOffsetFromMotoRoot;
-    float headBlock=Ellipsoid(pHead,vec3(.15,.2,.15));
-    if(headBlock<.2)
-      {
-        vec3 pHeadTopBottom=pHead;
-        pHeadTopBottom.xy*=Rotation(-.15);
-        headBlock=-min(min(min(-headBlock,-Ellipsoid(pHeadTopBottom-vec3(-.2,-.05,0),vec3(.35,.16,.25))),-Ellipsoid(pHead-vec3(-.2,-.08,0),vec3(.35,.25,.13))),-Ellipsoid(pHead-vec3(-.1,-.05,0),vec3(.2,.2,.3)));
-        pHead.xy*=Rotation(-.4);
-        headBlock=-min(-headBlock,-Ellipsoid(pHead-vec3(.1,0,0),vec3(.2,.3,.4)));
-      }
-    d=MinDist(d,vec2(headBlock,0));
-    headBlock=Box3(p-vec3(.4,.82,0),vec3(.04,.1,.08),.02);
-    d=MinDist(d,vec2(headBlock,0));
-  }
-  {
-    vec3 pTank=p-vec3(.1,.74,0),pTankR=pTank;
-    pTankR.xy*=Rotation(.45);
-    pTankR.x+=.05;
-    float tank=Ellipsoid(pTankR,vec3(.35,.2,.42));
-    if(tank<.1)
-      tank=-min(min(-tank,-Ellipsoid(pTankR+vec3(0,.13,0),vec3(.5,.35,.22))),-Ellipsoid(pTank-vec3(0,.3,0),vec3(.6,.35,.4)));
-    d=MinDist(d,vec2(tank,2));
-  }
-  {
-    vec3 pMotor=p-vec3(-.08,.44,0),pMotorSkewd=pMotor;
-    pMotorSkewd.x*=1.-pMotorSkewd.y*.4;
-    pMotorSkewd.x+=pMotorSkewd.y*.1;
-    float motorBlock=Box3(pMotorSkewd,vec3(.44,.29,.11),.02);
-    if(motorBlock<.5)
-      {
-        vec3 pMotor1=pMotor-vec3(.27,.12,0),pMotor2=pMotor-vec3(0,.12,0);
-        pMotor1.xy*=Rotation(-.35);
-        pMotor2.xy*=Rotation(.35);
-        motorBlock=min(min(motorBlock,Box3(pMotor1,vec3(.1,.12,.2),.04)),Box3(pMotor2,vec3(.1,.12,.2),.04));
-        pMotor1=pMotor-vec3(-.15,-.12,-.125);
-        pMotor1.xy*=Rotation(-.15);
-        float gearBox=Segment3(pMotor1,vec3(.2,0,0),vec3(-.15,0,0),boundingSphere);
-        gearBox-=mix(.08,.15,boundingSphere);
-        pMotor1.x+=.13;
-        float gearBoxCut=min(-pMotor1.z-.05,Box3(pMotor1,vec3(.16,.08,.1),.04));
-        gearBox=-min(-gearBox,-gearBoxCut);
-        motorBlock=min(motorBlock,gearBox);
-        gearBoxCut=Segment3(pMotor-vec3(.24,-.13,0),vec3(0,0,.4),vec3(0,0,-.4),boundingSphere)-.02;
-        motorBlock=min(motorBlock,gearBoxCut);
-      }
-    d=MinDist(d,vec2(motorBlock,0));
-  }
-  {
-    vec3 pExhaust=p-vec3(0,0,.2);
-    float exhaust=Segment3(pExhaust,vec3(.24,.25,0),vec3(-.7,.3,.05),boundingSphere);
-    if(exhaust<.6)
-      exhaust=-min(-exhaust+mix(.04,.08,mix(boundingSphere,smoothstep(.5,.7,boundingSphere),.5)),p.x-.7*p.y+.9),exhaust=min(exhaust,Segment3(pExhaust,vec3(.24,.25,0),vec3(.32,.55,-.02),boundingSphere)-.04),exhaust=min(exhaust,Segment3(pExhaust,vec3(.22,.32,-.02),vec3(-.4,.37,.02),boundingSphere)-.04);
-    d=MinDist(d,vec2(exhaust,2));
-  }
-  {
-    vec3 pSeat=p-vec3(-.44,.44,0);
-    float seat=Ellipsoid(pSeat,vec3(.8,.4,.2)),seatRearCut=length(p+vec3(1.05,-.1,0))-.7;
-    seat=max(seat,-seatRearCut);
-    if(seat<.2)
-      {
-        vec3 pSaddle=pSeat-vec3(.35,.57,0);
-        pSaddle.xy*=Rotation(.4);
-        float seatSaddleCut=Ellipsoid(pSaddle,vec3(.5,.15,.6));
-        seat=-smin(min(-seat,seatSaddleCut),seatSaddleCut,.08);
-        pSaddle=pSeat+vec3(0,-.55,0);
-        pSaddle.xy*=Rotation(.5);
-        seatSaddleCut=Ellipsoid(pSaddle,vec3(.8,.4,.4));
-        seat=-min(-seat,-seatSaddleCut);
-      }
-    d=MinDist(d,vec2(seat,2));
-  }
-  return d;
+  d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,vec3(.02,.02,.12)));
+  d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,vec3(.2,.2,.01)));
+  vec3 pFork=p,pForkTop=vec3(-.48,.66,0),pForkAngle=pForkTop+vec3(-.14,.04,.05);
+  pFork.z=abs(pFork.z);
+  pFork-=frontWheelPos+vec3(0,0,.12);
+  float fork=Segment3(pFork,pForkTop,vec3(0),boundingSphere)-.025;
+  fork=min(fork,Segment3(pFork,pForkTop,pForkAngle,boundingSphere)-.0175);
+  float handle=Segment3(pFork,pForkAngle,pForkAngle+vec3(-.08,-.07,.3),boundingSphere);
+  fork=min(fork,handle-mix(.035,.02,smoothstep(.25,.4,boundingSphere)));
+  pFork=pFork-pForkAngle-vec3(0,.1,.15);
+  pFork.xz*=Rotation(.2);
+  pFork.xy*=Rotation(-.2);
+  handle=pFork.x-.02;
+  pFork.xz*=Rotation(.25);
+  handle=-min(handle,-Ellipsoid(pFork,vec3(.04,.05,.08)));
+  pFork.x-=.05;
+  pFork.yz*=Rotation(1);
+  handle=min(handle,max(length(pFork.xz)-.003,max(pFork.y,-pFork.y-.2)));
+  fork=min(fork,handle);
+  d=MinDist(d,vec2(fork,2));
+  pFork=p-headLightOffsetFromMotoRoot;
+  handle=Ellipsoid(pFork,vec3(.15,.2,.15));
+  if(handle<.2)
+    {
+      vec3 pHeadTopBottom=pFork;
+      pHeadTopBottom.xy*=Rotation(-.15);
+      handle=-min(min(min(-handle,-Ellipsoid(pHeadTopBottom-vec3(-.2,-.05,0),vec3(.35,.16,.25))),-Ellipsoid(pFork-vec3(-.2,-.08,0),vec3(.35,.25,.13))),-Ellipsoid(pFork-vec3(-.1,-.05,0),vec3(.2,.2,.3)));
+      pFork.xy*=Rotation(-.4);
+      handle=-min(-handle,-Ellipsoid(pFork-vec3(.1,0,0),vec3(.2,.3,.4)));
+    }
+  d=MinDist(d,vec2(handle,0));
+  handle=Box3(p-vec3(.4,.82,0),vec3(.04,.1,.08),.02);
+  d=MinDist(d,vec2(handle,0));
+  pFork=p-vec3(.1,.74,0);
+  pForkTop=pFork;
+  pForkTop.xy*=Rotation(.45);
+  pForkTop.x+=.05;
+  handle=Ellipsoid(pForkTop,vec3(.35,.2,.42));
+  if(handle<.1)
+    handle=-min(min(-handle,-Ellipsoid(pForkTop+vec3(0,.13,0),vec3(.5,.35,.22))),-Ellipsoid(pFork-vec3(0,.3,0),vec3(.6,.35,.4)));
+  d=MinDist(d,vec2(handle,2));
+  pFork=p-vec3(-.08,.44,0);
+  pForkTop=pFork;
+  pForkTop.x*=1.-pForkTop.y*.4;
+  pForkTop.x+=pForkTop.y*.1;
+  handle=Box3(pForkTop,vec3(.44,.29,.11),.02);
+  if(handle<.5)
+    {
+      vec3 pMotor1=pFork-vec3(.27,.12,0),pMotor2=pFork-vec3(0,.12,0);
+      pMotor1.xy*=Rotation(-.35);
+      pMotor2.xy*=Rotation(.35);
+      handle=min(min(handle,Box3(pMotor1,vec3(.1,.12,.2),.04)),Box3(pMotor2,vec3(.1,.12,.2),.04));
+      pMotor1=pFork-vec3(-.15,-.12,-.125);
+      pMotor1.xy*=Rotation(-.15);
+      float gearBox=Segment3(pMotor1,vec3(.2,0,0),vec3(-.15,0,0),boundingSphere);
+      gearBox-=mix(.08,.15,boundingSphere);
+      pMotor1.x+=.13;
+      float gearBoxCut=min(-pMotor1.z-.05,Box3(pMotor1,vec3(.16,.08,.1),.04));
+      gearBox=-min(-gearBox,-gearBoxCut);
+      handle=min(handle,gearBox);
+      gearBoxCut=Segment3(pFork-vec3(.24,-.13,0),vec3(0,0,.4),vec3(0,0,-.4),boundingSphere)-.02;
+      handle=min(handle,gearBoxCut);
+    }
+  d=MinDist(d,vec2(handle,0));
+  pFork=p-vec3(0,0,.2);
+  handle=Segment3(pFork,vec3(.24,.25,0),vec3(-.7,.3,.05),boundingSphere);
+  if(handle<.6)
+    handle=-min(-handle+mix(.04,.08,mix(boundingSphere,smoothstep(.5,.7,boundingSphere),.5)),p.x-.7*p.y+.9),handle=min(handle,Segment3(pFork,vec3(.24,.25,0),vec3(.32,.55,-.02),boundingSphere)-.04),handle=min(handle,Segment3(pFork,vec3(.22,.32,-.02),vec3(-.4,.37,.02),boundingSphere)-.04);
+  d=MinDist(d,vec2(handle,2));
+  pFork=p-vec3(-.44,.44,0);
+  handle=Ellipsoid(pFork,vec3(.8,.4,.2));
+  fork=length(p+vec3(1.05,-.1,0))-.7;
+  handle=max(handle,-fork);
+  if(handle<.2)
+    {
+      vec3 pSaddle=pFork-vec3(.35,.57,0);
+      pSaddle.xy*=Rotation(.4);
+      float seatSaddleCut=Ellipsoid(pSaddle,vec3(.5,.15,.6));
+      handle=-smin(min(-handle,seatSaddleCut),seatSaddleCut,.08);
+      pSaddle=pFork+vec3(0,-.55,0);
+      pSaddle.xy*=Rotation(.5);
+      seatSaddleCut=Ellipsoid(pSaddle,vec3(.8,.4,.4));
+      handle=-min(-handle,-seatSaddleCut);
+    }
+  return MinDist(d,vec2(handle,2));
 }
 float sunglasses(vec3 p)
 {
@@ -584,10 +566,11 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       float pupil=smoothstep(.1,.12,er);
       sunDir=mix(b*.3,mix(b*((smoothstep(-.9,1.,noise(vec3(er*10.,theta*30.+cos(er*50.+noise(vec3(theta))*50.),0)))+smoothstep(-.9,1.,noise(vec3(er*10.,theta*40.+cos(er*30.+noise(vec3(theta))*50.)*2.,0))))*.5+.5)*smoothstep(.3,.29,er)*(vec3(1,.8,.7)*pow(max(0.,dot(normalize(vec3(3,1,-1)),dir)),8.)*3e2+.5)*pupil+pow(spe,vec3(800))*3,vec3(.8),smoothstep(.29,.3,er)),smoothstep(0.,.05,abs(er-.3)+.01));
       n=mix(normalize(n+(eyeDir+n)*4.),n,smoothstep(.3,.32,er));
-      {
-        vec3 l1=normalize(vec3(1,1.5,-1)),l2=vec3(-l1.x,l1.y*.5,l1.z);
-        envm=(mix(mix(vec3(.3,.3,0),vec3(.1),smoothstep(-.7,.2,t.y)),vec3(.3,.65,1),smoothstep(0.,1.,t.y))+(specular(t,l1,.1)+specular(t,l2,2.)*.1+specular(t,normalize(l1+vec3(.2,0,0)),.3)+specular(t,normalize(l1+vec3(.2,0,.2)),.5)+specular(t,normalize(l2+vec3(.1,0,.2)),8.)*.5)*vec3(1,.9,.8))*mix(.15,.2,pupil)*sqrt(fre)*2.5;
-      }
+      t=reflect(rd,n);
+      dir=normalize(vec3(1,1.5,-1));
+      b=vec3(-dir.x,dir.y*.5,dir.z);
+      er=specular(t,dir,.1)+specular(t,b,2.)*.1+specular(t,normalize(dir+vec3(.2,0,0)),.3)+specular(t,normalize(dir+vec3(.2,0,.2)),.5)+specular(t,normalize(b+vec3(.1,0,.2)),8.)*.5;
+      envm=(mix(mix(vec3(.3,.3,0),vec3(.1),smoothstep(-.7,.2,t.y)),vec3(.3,.65,1),smoothstep(0.,1.,t.y))+er*vec3(1,.9,.8))*mix(.15,.2,pupil)*sqrt(fre)*2.5;
       sceneSDF(p);
       sunDir*=smoothstep(0.,.015,headDist)*.4+.6;
       spe*=0.;
