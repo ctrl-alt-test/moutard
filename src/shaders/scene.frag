@@ -22,11 +22,20 @@ const int SCENE_MOTO = 1;
 const int SCENE_BLOOD = 2;
 const int SCENE_MOUTARD = 3;
 int sceneID = 0;
+
 float camProjectionRatio = 1.;
 float wheelie = 0.;
 float globalFade = 1.;
 float shouldDrawLogo = 0.;
-float motoPitch;
+float blink = 0.;
+float squintEyes = 0.;
+float sheepTears = -1.;
+float headDist = 0.; // distance to head (for eyes AO)
+
+vec2 headRot = vec2(0., -0.4);
+
+vec3 eyeDir = vec3(0.,-0.2,1.);
+vec3 animationSpeed = vec3(1.5);
 vec3 camPos;
 vec3 camTa;
 vec3 sheepPos = vec3(INF);
@@ -75,10 +84,6 @@ void main()
     if (sceneID == SCENE_MOUTARD || sceneID == SCENE_MOTO) {
         cameraPosition = motoToWorldForCamera(camPos);
         cameraTarget = motoToWorldForCamera(camTa);
-        //cameraUp = motoToWorld(cameraUp, false);
-    } else {
-        cameraTarget = camTa;
-        cameraPosition = camPos;
     }
 
     // Setup camera

@@ -214,8 +214,7 @@ void selectShot() {
 
         camTa = vec3(0., 1., 0) + shift;
         camPos = vec3(6. - 0.1*time, 0.4, -1.-0.4*time) + shift;
-        wheelie = smoothstep(3., 3.3, time);
-        wheelie += wheelie * sin(time*2.)*.2;
+        wheelie = smoothstep(3., 3.3, time)*(1+sin(time*2.)*.2);
         headRot = vec2(0., 0.6);
         camProjectionRatio = 2.;
         camTa.xy += valueNoise2(500.*time)*.01;
@@ -249,5 +248,4 @@ void selectShot() {
 
     motoPos = vec3(0, 0.3 + 0.42 * wheelie, 300. - 50.*t);
     motoPos.xz += 0.5*sin(iTime);
-    motoPitch = 0.5 * wheelie;
 }

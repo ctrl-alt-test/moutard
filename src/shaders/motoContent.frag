@@ -11,7 +11,7 @@ vec3 motoToWorldForCamera(vec3 v)
 
 vec3 motoToWorld(vec3 v, bool isPos)
 {
-    v.xy *= Rotation(-motoPitch);
+    v.xy *= Rotation(-0.5 * wheelie);
     v.xz *= Rotation(1.57);
     if (isPos)
     {
@@ -27,7 +27,7 @@ vec3 worldToMoto(vec3 v, bool isPos)
         v -= motoPos;
     }
     v.xz *= Rotation(-1.57);
-    v.xy *= Rotation(motoPitch);
+    v.xy *= Rotation(0.5 * wheelie);
     return v;
 }
 

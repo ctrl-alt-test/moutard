@@ -1,12 +1,6 @@
-vec3 eyeDir = vec3(0.,-0.2,1.);
-vec3 animationSpeed = vec3(1.5);
-const vec3 animationAmp = vec3(1.,.2, .25);
-vec2 headRot = vec2(0., -0.4);
-float blink = 0.;
-float squintEyes = 0.;
-float sheepTears = -1.;
-
-float headDist = 0.; // distance to head (for eyes AO)
+const float animationAmpX = 1.;
+const float animationAmpY = .2;
+const float animationAmpZ = .25;
 
 float sunglasses(vec3 p) {
   if (sceneID != SCENE_MOUTARD) {
@@ -54,7 +48,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
    
     // Body
     float tb = iTime*animationSpeed.x*3.14;
-    vec3 bodyMove = vec3(cos(tb),cos(tb*2.)*.1,0.)*.025*animationAmp.x;
+    vec3 bodyMove = vec3(cos(tb),cos(tb*2.)*.1,0.)*.025*animationAmpX;
     float body = length(p*vec3(1.,1.,.825)-vec3(0.,1.5,2.55)-bodyMove)-2.;
     
     if (body >= 3.) {
@@ -75,7 +69,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     vec4 legsRot = vec4(b * (1.-b), d * (1.-d), a * (1.-a), c * (1.-c));
       
     vec4 legsPos = t*.5 - vec4(b, d, a, c);
-    legsPos *= animationAmp.x;
+    legsPos *= animationAmpX;
     
     vec3 pl = p;
     pl.x -= .8;
@@ -107,8 +101,8 @@ vec2 sheep(vec3 p, bool shiftPos) {
 
     // Head
     vec3 ph = p + vec3(0., -2., -1.2);
-    ph.xz = Rotation((time*animationSpeed.y - 0.5)*0.25*animationAmp.y+headRot.x) * ph.xz;
-    ph.zy = Rotation(sin(iTime*animationSpeed.y)*0.25*animationAmp.y-headRot.y) * ph.zy;
+    ph.xz = Rotation((time*animationSpeed.y - 0.5)*0.25*animationAmpY+headRot.x) * ph.xz;
+    ph.zy = Rotation(sin(iTime*animationSpeed.y)*0.25*animationAmpY-headRot.y) * ph.zy;
 
     float head = length(ph-vec3(0.,-1.3,-1.2)) - 1.;
     head = smin(head, length(ph-vec3(0.,0.,0.)) - .5, 1.8);
@@ -166,7 +160,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
     }
 
     // tail
-    float tail = capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmp.z,.2,5.), vec3(0.,2.,4.9), .2);
+    float tail = capsule(p-vec3(0.,-.1,cos(p.y-.7)*.5),vec3(cos(iTime*animationSpeed.z)*animationAmpZ,.2,5.), vec3(0.,2.,4.9), .2);
     tail -= (cos(p.z*8.+p.y*4.5+p.x*4.)+cos(p.z*4.+p.y*6.5+p.x*3.))*.02;
     tail = smin(body, tail, .1);
     
