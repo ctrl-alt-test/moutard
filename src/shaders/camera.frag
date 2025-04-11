@@ -178,7 +178,7 @@ void selectShot() {
 
     } else if (get_shot(time, 10.)) {
         sceneID = SCENE_BLOOD;
-        globalFade *= smoothstep(1., 4., time)
+        globalFade *= smoothstep(1., 5., time)
             	* smoothstep(9., 7., time);
 
         // looking at ground
@@ -210,18 +210,18 @@ void selectShot() {
     } else if (get_shot(time, 10.)) {
         sceneID = SCENE_MOUTARD;
         // sheep driving + wheelie
-        vec3 shift = mix(vec3(0), vec3(-3.5, 0, -3.5), smoothstep(6, 8, time));
+        vec3 shift = mix(vec3(0), vec3(-3.5, 0, -3.5), smoothstep(7, 9, time));
 
         camTa = vec3(0., 1., 0) + shift;
         camPos = vec3(6. - 0.1*time, 0.4, -1.-0.4*time) + shift;
-        wheelie = smoothstep(3., 3.3, time)*(1+sin(time*2.)*.2);
+        wheelie = smoothstep(4., 4.4, time)*(1+sin(time*2.)*.2);
         headRot = vec2(0., 0.6);
         camProjectionRatio = 2.;
         camTa.xy += valueNoise2(500.*time)*.01;
 
-        globalFade *= smoothstep(10., 7., time);
+        globalFade *= smoothstep(10., 8., time);
 
-    } else if (get_shot(time, 20.)) {
+    } else {
         sceneID = SCENE_MOUTARD;
         camTa = vec3(0., 1., .7);
         camPos = vec3(4. - 0.1*time, 1., -3.-0.5*time);

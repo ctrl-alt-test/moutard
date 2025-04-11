@@ -526,7 +526,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
   if(t>=5e2)
-    return mix(mix(vec3(.4,.5,.6),vec3(.7),pow(smoothstep(.15,1.,rd.y),.4)),fogColor,mix(.15,1.,pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y)*.5)+1.),2.)));
+    return mix(fogColor,mix(vec3(.5,.5,.7),vec3(.2,.2,.6),pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y))+1.),.2)),pow(smoothstep(0.,1.,rd.y),.4));
   if(material--==0.)
     sunDir=vec3(.01),spe*=pow(spe,vec3(15))*fre*2.,sss*=0.;
   else if(material--==0.)
@@ -754,7 +754,7 @@ void selectShot()
   else if(get_shot(time,2.))
     motoFaceImpactShot(time+8.);
   else if(get_shot(time,10.))
-    sceneID=2,globalFade*=smoothstep(1.,4.,time)*smoothstep(9.,7.,time),camPos=vec3(2.5,1.5,-6.+time*.5),camTa=vec3(1,0,-9.+time*.5);
+    sceneID=2,globalFade*=smoothstep(1.,5.,time)*smoothstep(9.,7.,time),camPos=vec3(2.5,1.5,-6.+time*.5),camTa=vec3(1,0,-9.+time*.5);
   else if(get_shot(time,5.))
     {
       sceneID=3;
@@ -778,17 +778,17 @@ void selectShot()
   else if(get_shot(time,10.))
     {
       sceneID=3;
-      vec3 shift=mix(vec3(0),vec3(-3.5,0,-3.5),smoothstep(6,8,time));
+      vec3 shift=mix(vec3(0),vec3(-3.5,0,-3.5),smoothstep(7,9,time));
       camTa=vec3(0,1,0)+shift;
       camPos=vec3(6.-.1*time,.4,-1.-.4*time)+shift;
-      wheelie=smoothstep(3.,3.3,time)*(1+sin(time*2.)*.2);
+      wheelie=smoothstep(4.,4.4,time)*(1+sin(time*2.)*.2);
       headRot=vec2(0,.6);
       camProjectionRatio=2.;
       camTa.xy+=valueNoise2(5e2*time)*.01;
-      globalFade*=smoothstep(10.,7.,time);
+      globalFade*=smoothstep(10.,8.,time);
     }
-  else if(get_shot(time,20.))
-    sceneID=3,camTa=vec3(0,1,.7),camPos=vec3(4.-.1*time,1,-3.-.5*time),headRot=vec2(0,.3),camProjectionRatio=3.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(15.,9.,time),globalFade=float(time<15.);
+  else
+     sceneID=3,camTa=vec3(0,1,.7),camPos=vec3(4.-.1*time,1,-3.-.5*time),headRot=vec2(0,.3),camProjectionRatio=3.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(15.,9.,time),globalFade=float(time<15.);
   if(sceneID==3)
     headRot.y+=abs(sin(iTime*4.)*.1),animationSpeed=vec3(0);
   time=iTime-time;

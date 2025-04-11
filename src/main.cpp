@@ -12,6 +12,9 @@
 	#define BREAK_COMPATIBILITY 0
 	#define SOUND_ON
 #endif
+
+#define DEMO_LENGTH_IN_S (60+47)
+
 #include <windows.h>
 #include <mmsystem.h>
 #include <mmreg.h>
@@ -270,7 +273,7 @@ int __cdecl main(int argc, char* argv[])
 #endif
 
 #ifdef SOUND_ON
-	} while(mmtime.u.sample < SU_LENGTH_IN_SAMPLES && !ESC);
+	} while(mmtime.u.sample < DEMO_LENGTH_IN_S * SU_SAMPLE_RATE && !ESC);
 #else
 	} while (!ESC);
 #endif
