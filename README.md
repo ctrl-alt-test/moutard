@@ -7,8 +7,8 @@
                 An 8kB PC intro
 
 Created by:
-- Laurent Le Brun (LLB)
-- Pierre Martin (Cyborg Jeff)
+- Laurent Le Brun (LLB) - code, design
+- Pierre Martin (Cyborg Jeff) - music
 
 Reusing assets made by:
 - Anatole Duprat (Anat), in particular the sheep.
@@ -22,11 +22,15 @@ Tools used:
 - Shader Minifier - https://github.com/laurentlb/Shader_Minifier
 
 Special thanks to:
-- Zavie & rubix for the reviews.
-- Iñigo Quilez, for the invaluable trove of ressources.
+- Zavie & rubix for the feedback.
 
-Hello to Alcatraz, Approximate, Cocoon, Conspiracy, Loonies, Mercury, Nuance,
-Razor 1911, Team210.
+Hello to Alcatraz, Approximate, Cocoon, Conspiracy, LNX, Logicoma, Loonies,
+Mercury, Nuance, Popsy Team, Razor 1911, RGBA, Team210.
 
-Source code:
-- https://github.com/ctrl-alt-test/moutard
+Our links:
+- Source code: https://github.com/ctrl-alt-test/moutard
+- Website: https://www.ctrl-alt-test.fr/
+
+
+--
+  LLB, April 2025.
