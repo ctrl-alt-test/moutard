@@ -99,10 +99,9 @@ void main()
 
     // Bloom around headlight
     if (sceneID == SCENE_MOTO || sceneID == SCENE_MOUTARD) {
-        radiance += 0.3*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.1)
+        radiance += 0.3*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.),
+                    vec3(1.0, -0.15, 0.0), 10000., 0.)
             * 5.*vec3(1., 0.9, .8);
-        radiance += bloom(ro, rd, breakLightOffsetFromMotoRoot, vec3(-1.0, -0.5, 0.0), 20000., 0.1)
-            * 1.5 * vec3(1., 0., 0.);
     }
 
     radiance = pow(pow(radiance, vec3(1./2.2)), vec3(1.0,1.05,1.1));

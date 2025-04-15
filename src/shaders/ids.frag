@@ -1,6 +1,6 @@
 const int NO_ID = -1;
 
-const int MOTO_ID = 0;
+const int MOTO_ID = 2;
 const int MOTO_MOTOR_ID = MOTO_ID;
 const int MOTO_BREAK_LIGHT_ID = MOTO_ID;
 const int MOTO_HEAD_LIGHT_ID = MOTO_ID;
@@ -9,7 +9,7 @@ const int MOTO_DRIVER_HELMET_ID = MOTO_ID;
 const int MOTO_WHEEL_ID = 1;
 const int MOTO_DRIVER_ID = MOTO_WHEEL_ID;
 
-const int MOTO_EXHAUST_ID = 2;
+const int MOTO_EXHAUST_ID = MOTO_ID;
 
 const int TREE_ID = 3;
 

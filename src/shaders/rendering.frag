@@ -26,7 +26,7 @@ float shadow(vec3 ro, vec3 rd)
         res = min(res, 10.*h / t);
         t += h;
         
-        if(res < 0.0001 || t > 50.) break;
+        if(res < 0.0001 || t > 40.) break;
         
     }
     return clamp( res, 0.0, 1.0 );
@@ -35,7 +35,8 @@ float shadow(vec3 ro, vec3 rd)
 vec3 sky(vec3 V, vec3 fogColor)
 {
     float cloud = fBm(V.xz/(0.05 + V.y));
-    cloud = pow(smoothstep(0., 1., cloud+1.), 0.2);
+    cloud = pow(smoothstep(0.5, 0.51, cloud+1.), 0.2);
+    cloud = mix(1., cloud, 0.2);
 
     return 
         mix(
@@ -84,8 +85,9 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
     float material = dmat.y;
     
-    float shad = shadow(p, sunDir);
-    shad = mix(0.4, 1., shad);
+    float shad =
+        (material == SKIN_ID || material == TEARS_ID) ?
+        1.0 : shadow(p, sunDir);
     float fre = 1.0+dot(rd,n);
     
     vec3 diff = vec3(1.,.8,.7) * max(dot(n,sunDir), 0.) * pow(vec3(shad), vec3(1.,1.2,1.5));
@@ -112,8 +114,8 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         spe *= 0.02;
         sss *= 0.;
     } else if (material-- == 0.) { // MOTO_EXHAUST_ID
-        albedo = vec3(.1);
-        spe *= pow(spe, vec3(8.))*fre*1.5;
+        albedo *= 0.;
+        spe *= pow(spe, vec3(80.))*fre*1.5*10.;
         sss *= 0.;
     } else if (material-- == 0.) { // TREE_ID
         albedo = vec3(.2, .3, .2);
@@ -126,13 +128,11 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
             float tireTrails = sin((laneUV.x+0.2) * 7.85) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
             float highFreqNoise = fBm(laneUV * vec2(50., 2));
-            tireTrails = mix(tireTrails, highFreqNoise, 0.2);
-            //tireTrails = highFreqNoise;
-            float roughness = mix(0.8, 0.4, tireTrails);
+            tireTrails = mix(tireTrails, highFreqNoise, 0.2) * .3;
             vec3 color = vec3(mix(vec3(0.2,0.2,0.3), vec3(0.3,0.4,0.5), tireTrails));
 
             sss *= 0.;
-            albedo = color;// vec3(0.4) * tireTrails;
+            albedo = color;
             spe *= mix(0., 0.1, tireTrails);
         } else { // grass
             sss *= 0.3;
@@ -255,13 +255,13 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         albedo = vec3(1., .8, .65);
         amb *= vec3(1.0, 0.85, 0.85);
         sss = pow(sss, vec3(0.8, 1.8, 3.0) + 2.) * 2.;
-        spe = pow(spe, vec3(8.0)) * fre * fre * 10.;
+        spe = pow(spe, vec3(32.0)) * fre * fre * 40.;
     } else {
         albedo = vec3(1., 0., 1.); // debug
     }
 
     // fog
-    vec3 radiance = albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe*shad + emi;
+    vec3 radiance = albedo * (amb*1. + diff*.5 + bnc*2. + sss*2. ) + envm + spe + emi;
     float fogAmount = 1.0 - exp(-t*0.005);
     vec3 col = mix(radiance, fogColor, fogAmount);
 
