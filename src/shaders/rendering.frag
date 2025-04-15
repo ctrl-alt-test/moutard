@@ -34,13 +34,13 @@ float shadow(vec3 ro, vec3 rd)
 
 vec3 sky(vec3 V, vec3 fogColor)
 {
-    float cloud = fBm(0.015*iTime+V.xz/(0.05 + V.y));
+    float cloud = fBm(V.xz/(0.05 + V.y));
     cloud = pow(smoothstep(0., 1., cloud+1.), 0.2);
 
     return 
         mix(
             fogColor,
-            mix(vec3(0.5, 0.5, 0.7), vec3(0.2, 0.2, 0.6), cloud),
+            mix(vec3(0.7, 0.7, 0.7), vec3(0.2, 0.2, 0.6), cloud),
             pow(smoothstep(0., 1., V.y), 0.4));
 }
 
@@ -78,7 +78,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
     // Shade
     // ----------------------------------------------------------------
     vec3 sunDir = normalize(vec3(3.5,3.,-1.));
-    vec3 fogColor = mix(vec3(0.5,0.6,0.7), vec3(0.4,0.6,0.8), min(1., rd.y*4.));
+    vec3 fogColor = vec3(0.3,0.5,0.6);
     vec3 skyColor = sky(rd, fogColor);
 
     float ao = fastAO(p, n, .15, 1.) * fastAO(p, n, 1., .1)*.5;
@@ -116,27 +116,27 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         spe *= pow(spe, vec3(8.))*fre*1.5;
         sss *= 0.;
     } else if (material-- == 0.) { // TREE_ID
-        albedo = vec3(.1,.25,0.2);
+        albedo = vec3(.2, .3, .2);
         sss *= 0.2;
         spe *= 0.;
     } else if(material-- == 0.) { // GROUND_ID
         const float laneWidth = 3.5;
-        if (abs(p.x) < laneWidth) {
+        if (abs(p.x) < laneWidth) { // road
             vec2 laneUV = p.xz / laneWidth;
             float tireTrails = sin((laneUV.x+0.2) * 7.85) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
-            float highFreqNoise = fBm(laneUV * vec2(50., 3));
+            float highFreqNoise = fBm(laneUV * vec2(50., 2));
             tireTrails = mix(tireTrails, highFreqNoise, 0.2);
             //tireTrails = highFreqNoise;
             float roughness = mix(0.8, 0.4, tireTrails);
-            vec3 color = vec3(mix(vec3(0.2), vec3(0.3), tireTrails));
+            vec3 color = vec3(mix(vec3(0.2,0.2,0.3), vec3(0.3,0.4,0.5), tireTrails));
 
             sss *= 0.;
             albedo = color;// vec3(0.4) * tireTrails;
             spe *= mix(0., 0.1, tireTrails);
         } else { // grass
             sss *= 0.3;
-            albedo = vec3(0.1, 0.15, 0.1);
+            albedo = vec3(.2, .3, .2);
             spe *= 0.;
         }
     } else if (material-- == 0.) { // WOOL_ID
@@ -210,7 +210,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         sss *= 0.;
         spe = pow(spe, vec3(15.))*fre*10.;
     } else if(material-- == 0.) { // METAL_ID - for the road signs
-        albedo = vec3(.85,.95,1.);
+        albedo = vec3(.6);
         sss *= 0.;
         spe = pow(spe, vec3(8.))*fre*2.;
     }  else if(material-- == 0.) { // BLOOD_ID

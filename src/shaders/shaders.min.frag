@@ -1,7 +1,6 @@
 #version 150
 
 uniform float iTime;
-uniform sampler2D tex;
 int sceneID=0;
 float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.;
 vec2 headRot=vec2(0,-.4);
@@ -519,14 +518,14 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   float t=trace(ro,rd);
   vec3 p=ro+rd*t;
   vec2 dmat=sceneSDF(p),eps=vec2(1e-4,0);
-  vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy).x,dmat.x-sceneSDF(p-eps.yxy).x,dmat.x-sceneSDF(p-eps.yyx).x)),sunDir=normalize(vec3(3.5,3,-1)),fogColor=mix(vec3(.5,.6,.7),vec3(.4,.6,.8),min(1.,rd.y*4.));
+  vec3 n=normalize(vec3(dmat.x-sceneSDF(p-eps.xyy).x,dmat.x-sceneSDF(p-eps.yxy).x,dmat.x-sceneSDF(p-eps.yyx).x)),sunDir=normalize(vec3(3.5,3,-1)),fogColor=vec3(.3,.5,.6);
   float ao=fastAO(p,n,.15,1.)*fastAO(p,n,1.,.1)*.5,material=dmat.y,shad=shadow(p,sunDir);
   shad=mix(.4,1.,shad);
   float fre=1.+dot(rd,n);
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
   if(t>=5e2)
-    return mix(fogColor,mix(vec3(.5,.5,.7),vec3(.2,.2,.6),pow(smoothstep(0.,1.,fBm(.015*iTime+rd.xz/(.05+rd.y))+1.),.2)),pow(smoothstep(0.,1.,rd.y),.4));
+    return mix(fogColor,mix(vec3(.7),vec3(.2,.2,.6),pow(smoothstep(0.,1.,fBm(rd.xz/(.05+rd.y))+1.),.2)),pow(smoothstep(0.,1.,rd.y),.4));
   if(material--==0.)
     sunDir=vec3(.01),spe*=pow(spe,vec3(15))*fre*2.,sss*=0.;
   else if(material--==0.)
@@ -534,20 +533,20 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   else if(material--==0.)
     sunDir=vec3(.1),spe*=pow(spe,vec3(8))*fre*1.5,sss*=0.;
   else if(material--==0.)
-    sunDir=vec3(.1,.25,.2),sss*=.2,spe*=0.;
+    sunDir=vec3(.2,.3,.2),sss*=.2,spe*=0.;
   else if(material--==0.)
     if(abs(p.x)<3.5)
       {
         vec2 laneUV=p.xz/3.5;
         float tireTrails=sin((laneUV.x+.2)*7.85)*.5+.5;
-        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,3)),.2);
-        vec3 color=vec3(mix(vec3(.2),vec3(.3),tireTrails));
+        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,2)),.2);
+        vec3 color=vec3(mix(vec3(.2,.2,.3),vec3(.3,.4,.5),tireTrails));
         sss*=0.;
         sunDir=color;
         spe*=mix(0.,.1,tireTrails);
       }
     else
-       sss*=.3,sunDir=vec3(.1,.15,.1),spe*=0.;
+       sss*=.3,sunDir=vec3(.2,.3,.2),spe*=0.;
   else if(material--==0.)
     sunDir=vec3(.4),sss*=fre*.5+.5,emi=vec3(.35),spe=pow(spe,vec3(4))*fre*.25;
   else if(material--==0.)
@@ -578,7 +577,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   else if(material--==0.)
     sunDir=vec3(.025),sss*=0.,spe=pow(spe,vec3(15))*fre*10.;
   else if(material--==0.)
-    sunDir=vec3(.85,.95,1),sss*=0.,spe=pow(spe,vec3(8))*fre*2.;
+    sunDir=vec3(.6),sss*=0.,spe=pow(spe,vec3(8))*fre*2.;
   else if(material--==0.)
     sunDir=vec3(1,.01,.01)*.3,diff*=vec3(3),amb*=vec3(2)*fre*fre,sss*=0.,spe=vec3(1,.3,.3)*pow(spe,vec3(500))*5.;
   else if(material--==0.)

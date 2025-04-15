@@ -3,11 +3,6 @@
 // Constants:
 const int MAX_RAY_MARCH_STEPS = 250;
 const float MAX_RAY_MARCH_DIST = 500.;
-const int MAX_SHADOW_STEPS = 30;
-const float MAX_SHADOW_DIST = 5.0;
-const float NORMAL_DP = 2.*1e-3;
-const float BOUNCE_OFFSET = 1e-3;
-const int SPLINE_SIZE = 13;
 const float INF = 1e6;
 #include "shared.h"
 
@@ -15,7 +10,6 @@ const float lampHeight = 7.;
 
 // Uniforms:
 uniform float iTime;
-uniform sampler2D tex;
 
 const int SCENE_SHEEP = 0;
 const int SCENE_MOTO = 1;

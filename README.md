@@ -21,8 +21,7 @@ Tools used:
 - OpenMPT - https://openmpt.org/
 - Shader Minifier - https://github.com/laurentlb/Shader_Minifier
 
-Special thanks to:
-- Zavie & rubix for the feedback.
+Special thanks to Zavie & rubix for the feedback.
 
 Hello to Alcatraz, Approximate, Cocoon, Conspiracy, LNX, Logicoma, Loonies,
 Mercury, Nuance, Popsy Team, Razor 1911, RGBA, Team210.
