@@ -160,25 +160,29 @@ void selectShot() {
 
     } else if (get_shot(time, 1.4)) {
         motoFaceImpactShot(time+3.);
+        lightFalloff /= 2.;
 
     } else if (get_shot(time, 1.6)) {
         sheepScaredShot(time+3.4);
 
     } else if (get_shot(time, 1.)) {
         motoFaceImpactShot(time+5.);
+        lightFalloff /= 4.;
 
     } else if (get_shot(time, 1.6)) {
         sheepScaredShot(time+5.);
-        camProjectionRatio = 5.5;
+        camProjectionRatio++;
+        //camProjectionRatio = 5.5;
         blink = 1.6 - time;
 
     } else if (get_shot(time, 2.)) {
         motoFaceImpactShot(time+8.);
+        lightFalloff /= 20.;
         // boom!
 
     } else if (get_shot(time, 10.)) {
         sceneID = SCENE_BLOOD;
-        globalFade *= smoothstep(1., 5., time)
+        globalFade *= smoothstep(2., 5., time)
             	* smoothstep(9., 7., time);
 
         // looking at ground
@@ -246,6 +250,6 @@ void selectShot() {
         t = 0.;
     }
 
-    motoPos = vec3(0, 0.3 + 0.42 * wheelie, 300. - 50.*t);
+    motoPos = vec3(0, 0.3 + 0.43 * wheelie, 300. - 50.*t);
     motoPos.xz += 0.5*sin(iTime);
 }

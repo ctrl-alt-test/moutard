@@ -2,7 +2,7 @@
 
 uniform float iTime;
 int sceneID=0;
-float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.,sheepPos=1e6;
+float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.,sheepPos=1e6,lightFalloff=1e4;
 vec2 headRot=vec2(0,-.4);
 vec3 eyeDir=vec3(0,-.2,1),animationSpeed=vec3(1.5),camPos,camTa,panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 out vec4 fragColor;
@@ -724,17 +724,17 @@ void selectShot()
   else if(get_shot(time,1.4))
     sheepScaredShot(time+1.5),blink=time*2.,headRot+=vec2(sin(time*40.)*.15,-.1+time*.5);
   else if(get_shot(time,1.4))
-    motoFaceImpactShot(time+3.);
+    motoFaceImpactShot(time+3.),lightFalloff/=2.;
   else if(get_shot(time,1.6))
     sheepScaredShot(time+3.4);
   else if(get_shot(time,1.))
-    motoFaceImpactShot(time+5.);
+    motoFaceImpactShot(time+5.),lightFalloff/=4.;
   else if(get_shot(time,1.6))
-    sheepScaredShot(time+5.),camProjectionRatio=5.5,blink=1.6-time;
+    sheepScaredShot(time+5.),camProjectionRatio++,blink=1.6-time;
   else if(get_shot(time,2.))
-    motoFaceImpactShot(time+8.);
+    motoFaceImpactShot(time+8.),lightFalloff/=20.;
   else if(get_shot(time,10.))
-    sceneID=2,globalFade*=smoothstep(1.,5.,time)*smoothstep(9.,7.,time),camPos=vec3(2.5,1.5,-6.+time*.5),camTa=vec3(1,0,-9.+time*.5);
+    sceneID=2,globalFade*=smoothstep(2.,5.,time)*smoothstep(9.,7.,time),camPos=vec3(2.5,1.5,-6.+time*.5),camTa=vec3(1,0,-9.+time*.5);
   else if(get_shot(time,5.))
     {
       sceneID=3;
@@ -775,7 +775,7 @@ void selectShot()
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
     time=0.;
-  motoPos=vec3(0,.3+.42*wheelie,3e2-50.*time);
+  motoPos=vec3(0,.3+.43*wheelie,3e2-50.*time);
   motoPos.xz+=.5*sin(iTime);
 }
 float rect(vec2 p,vec2 size)
@@ -811,7 +811,7 @@ float bloom(vec3 ro,vec3 rd)
   ro=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,-.05,0),true)-ro;
   vec3 cameraToLightDir=normalize(ro);
   float aligned=max(0.,dot(cameraToLightDir,-motoToWorld(normalize(vec3(1,-.15,0)),false)));
-  return aligned/(1.+1e4*(1.-dot(rd,cameraToLightDir)))/mix(1.,length(ro),0.);
+  return aligned/(1.+lightFalloff*(1.-dot(rd,cameraToLightDir)))/mix(1.,length(ro),0.);
 }
 void main()
 {

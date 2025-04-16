@@ -26,6 +26,7 @@ float squintEyes = 0.;
 float sheepTears = -1.;
 float headDist = 0.; // distance to head (for eyes AO)
 float sheepPos = INF;
+float lightFalloff = 10000.;
 
 vec2 headRot = vec2(0., -0.4);
 
@@ -53,14 +54,14 @@ out vec4 fragColor;
 #include "logo.frag"
 
 
-float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float falloff, float distFalloff)
+float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float distFalloff)
 {
     vec3 ol = motoToWorld(lightPosition, true) - ro;
     vec3 cameraToLightDir = normalize(ol);
     float dist = mix(1., length(ol), distFalloff);
     float aligned = max(0., dot(cameraToLightDir, -motoToWorld(normalize(lightDirection), false)));
     float d = 1.-dot(rd, cameraToLightDir);
-    return aligned / (1.+falloff*d) / dist;
+    return aligned / (1.+lightFalloff*d) / dist;
 }
 
 void main()
@@ -99,7 +100,7 @@ void main()
     // Bloom around headlight
     if (sceneID == SCENE_MOTO || sceneID == SCENE_MOUTARD) {
         radiance += 0.3*bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.),
-                    vec3(1.0, -0.15, 0.0), 10000., 0.)
+                    vec3(1.0, -0.15, 0.0), 0.)
             * 5.*vec3(1., 0.9, .8);
     }
 
