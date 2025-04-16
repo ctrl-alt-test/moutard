@@ -106,16 +106,12 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
     }
 
     if (material-- == 0.) { // MOTO_ID
-        albedo = vec3(.01);
-        spe *= pow(spe, vec3(15.))*fre*2.;
+        albedo *= 0.;
+        spe *= pow(spe, vec3(80.))*fre*15.;
         sss *= 0.;
     } else if (material-- == 0.) { // MOTO_WHEEL_ID
         albedo = vec3(.01);
         spe *= 0.02;
-        sss *= 0.;
-    } else if (material-- == 0.) { // MOTO_EXHAUST_ID
-        albedo *= 0.;
-        spe *= pow(spe, vec3(80.))*fre*1.5*10.;
         sss *= 0.;
     } else if (material-- == 0.) { // TREE_ID
         albedo = vec3(.2, .3, .2);
@@ -256,8 +252,6 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         amb *= vec3(1.0, 0.85, 0.85);
         sss = pow(sss, vec3(0.8, 1.8, 3.0) + 2.) * 2.;
         spe = pow(spe, vec3(32.0)) * fre * fre * 40.;
-    } else {
-        albedo = vec3(1., 0., 1.); // debug
     }
 
     // fog
