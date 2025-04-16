@@ -24,7 +24,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{59C1D4F3-AE93-4A0A-B4FE-60841CA865E5}</ProjectGuid>
-    <ProjectName>Leviathan 2.0</ProjectName>
+    <ProjectName>Ctrl-Alt-Test 8k</ProjectName>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -84,7 +84,7 @@
     <IntDir>bin\debug\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <ExecutablePath>$(SolutionDir);$(ExecutablePath)</ExecutablePath>
-    <TargetName>leviathan-debug</TargetName>
+    <TargetName>cat-debug</TargetName>
     <GenerateManifest>false</GenerateManifest>
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
   </PropertyGroup>
@@ -93,7 +93,7 @@
     <IntDir>bin\debug\</IntDir>
     <LinkIncremental>false</LinkIncremental>
     <ExecutablePath>$(SolutionDir);$(ExecutablePath)</ExecutablePath>
-    <TargetName>leviathan-debug</TargetName>
+    <TargetName>cat-debug</TargetName>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -104,7 +104,7 @@
     <GenerateManifest>
     </GenerateManifest>
     <ExecutablePath>$(SolutionDir);$(ExecutablePath)</ExecutablePath>
-    <TargetName>leviathan-release</TargetName>
+    <TargetName>cat-release</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Heavy Release|Win32'">
@@ -115,7 +115,7 @@
     <GenerateManifest>
     </GenerateManifest>
     <ExecutablePath>$(SolutionDir);$(ExecutablePath)</ExecutablePath>
-    <TargetName>leviathan-release</TargetName>
+    <TargetName>cat-release</TargetName>
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
@@ -127,7 +127,7 @@
     <GenerateManifest>
     </GenerateManifest>
     <ExecutablePath>$(SolutionDir);$(ExecutablePath)</ExecutablePath>
-    <TargetName>leviathan-snapshot</TargetName>
+    <TargetName>cat-snapshot</TargetName>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -136,7 +136,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Debug/Leviathan.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Debug/cat.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -171,7 +171,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>winmm.lib;src/music/music.obj;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>out/leviathan-debug.exe</OutputFile>
+      <OutputFile>out/cat-debug.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>bin\debug\$(TargetName).pdb</ProgramDatabaseFile>
@@ -185,7 +185,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(OutDir)Leviathan.bsc</OutputFile>
+      <OutputFile>$(OutDir)cat.bsc</OutputFile>
     </Bscmake>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -201,7 +201,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Debug/Leviathan.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Debug/cat.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -239,7 +239,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>winmm.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>out/leviathan-debug.exe</OutputFile>
+      <OutputFile>out/cat-debug.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>bin\debug\$(TargetName).pdb</ProgramDatabaseFile>
@@ -260,14 +260,14 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>$(OutDir)Leviathan.bsc</OutputFile>
+      <OutputFile>$(OutDir)cat.bsc</OutputFile>
     </Bscmake>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <PreBuildEvent>
       <Message>Minify user-supplied shader files.</Message>
-      <Command>preprocess_shaders.bat --minify</Command>
+      <Command>preprocess_shaders.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -276,7 +276,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Release/Leviathan.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Release/cat.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -292,7 +292,7 @@
       <StructMemberAlignment>1Byte</StructMemberAlignment>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <PrecompiledHeaderOutputFile>bin\Release\Leviathan.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>bin\Release\cat.pch</PrecompiledHeaderOutputFile>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <AssemblerListingLocation>bin\release\</AssemblerListingLocation>
       <ObjectFileName>bin\release\</ObjectFileName>
@@ -323,7 +323,7 @@
     <Link>
       <AdditionalOptions>/CRINKLER  /RANGE:opengl32 /HASHTRIES:300 /COMPMODE:SLOW /ORDERTRIES:3000 /REPORT:out.html /PROGRESSGUI /HASHSIZE:1000 /UNSAFEIMPORT /UNALIGNCODE /SATURATE /NOINITIALIZERS /TRANSFORM:CALLS /TRUNCATEFLOATS:32 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>opengl32.lib;src/music/music.obj;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>out\leviathan-release.exe</OutputFile>
+      <OutputFile>out\cat-release.exe</OutputFile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -350,7 +350,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\bin/Release/Leviathan.bsc</OutputFile>
+      <OutputFile>.\bin/Release/cat.bsc</OutputFile>
     </Bscmake>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -366,7 +366,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Release/Leviathan.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Release/cat.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -384,7 +384,7 @@
       <StructMemberAlignment>1Byte</StructMemberAlignment>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <PrecompiledHeaderOutputFile>bin\Release\Leviathan.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>bin\Release\cat.pch</PrecompiledHeaderOutputFile>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <AssemblerListingLocation>bin\release\</AssemblerListingLocation>
       <ObjectFileName>bin\release\</ObjectFileName>
@@ -414,7 +414,7 @@
     <Link>
       <AdditionalOptions>/CRINKLER  /RANGE:opengl32 /HASHTRIES:1000 /COMPMODE:VERYSLOW /ORDERTRIES:30000 /REPORT:out.html /PROGRESSGUI /HASHSIZE:1000 /UNSAFEIMPORT /UNALIGNCODE /SATURATE /NOINITIALIZERS /TRANSFORM:CALLS %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>opengl32.lib;winmm.lib;src/music/music.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>out\leviathan-release.exe</OutputFile>
+      <OutputFile>out\cat-release.exe</OutputFile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -443,7 +443,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\bin/Release/Leviathan.bsc</OutputFile>
+      <OutputFile>.\bin/Release/cat.bsc</OutputFile>
     </Bscmake>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -459,7 +459,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\bin/Release/Leviathan.tlb</TypeLibraryName>
+      <TypeLibraryName>.\bin/Release/cat.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -476,7 +476,7 @@
       <StructMemberAlignment>1Byte</StructMemberAlignment>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <PrecompiledHeaderOutputFile>bin\Release\Leviathan.pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderOutputFile>bin\Release\cat.pch</PrecompiledHeaderOutputFile>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <AssemblerListingLocation>bin\release\</AssemblerListingLocation>
       <ObjectFileName>bin\release\</ObjectFileName>
@@ -511,7 +511,7 @@
     <Link>
       <AdditionalOptions>/CRINKLER  /RANGE:opengl32 /HASHTRIES:100 /COMPMODE:INSTANT /ORDERTRIES:2000 /PROGRESSGUI /HASHSIZE:100 /UNSAFEIMPORT /UNALIGNCODE /SATURATE /NOINITIALIZERS /TRANSFORM:CALLS %(AdditionalOptions)</AdditionalOptions>
       <AdditionalDependencies>opengl32.lib;winmm.lib;src/music/music.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>out\leviathan-snapshot.exe</OutputFile>
+      <OutputFile>out\cat-snapshot.exe</OutputFile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
@@ -542,7 +542,7 @@
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <OutputFile>.\bin/Release/Leviathan.bsc</OutputFile>
+      <OutputFile>.\bin/Release/cat.bsc</OutputFile>
     </Bscmake>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
