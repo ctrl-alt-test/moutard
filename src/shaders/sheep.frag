@@ -55,8 +55,10 @@ vec2 sheep(vec3 p, bool shiftPos) {
         return vec2(body * SCALE, WOOL_ID);
     }
 
-    float n = pow(noise((p-bodyMove+vec3(0,0,0.*10.)+vec3(.05,0.0,0.5))*2.)*.5+.5, .75)*2.-1.;
-    // n += (pow(noise(p-bodyMove+vec3(0,0,-iTime*10.)*2.)*.5+.5, .75)*2.-1.)*.2;
+    float n = pow(noise((p-bodyMove+vec3(0,0,0.*10.)+vec3(0,0,0.5))*2.)*.5+.5, .75)*2.-1.;
+    if (sceneID == SCENE_MOUTARD) {
+      n += noise(p-bodyMove+vec3(0,0,-iTime*10.)*2.)*.2;
+    }
     body = body + .05 - n*.2;
 
     // Legs
