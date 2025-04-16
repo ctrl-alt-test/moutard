@@ -26,6 +26,7 @@ void sheepScaredShot(float t_in_shot) {
     camTa = vec3(1., 0.8, 7.);
     sheepPos = 7.;
     camProjectionRatio = 1.5 + t_in_shot*.4;
+    pupilSize = 0.2;
 }
 
 bool get_shot(inout float time, float duration) {
@@ -215,7 +216,7 @@ void selectShot() {
         sceneID = SCENE_MOUTARD;
         // sheep driving + wheelie
         vec3 shift = mix(vec3(0), vec3(-3.5, 0, -3.5), smoothstep(7, 9, time));
-        wheelie = smoothstep(4., 4.4, time)*(1+sin(time*2.)*.2);
+        wheelie = smoothstep(4.2, 4.6, time)*(1+sin(time*2.)*.2);
 
         camTa = vec3(0., 1. - wheelie*.2, 0) + shift;
         camPos = vec3(5. - 0.1*time, 0.4-0.3*wheelie, -1.-0.4*time) + shift;

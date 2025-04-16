@@ -27,6 +27,7 @@ float sheepTears = -1.;
 float headDist = 0.; // distance to head (for eyes AO)
 float sheepPos = INF;
 float lightFalloff = 10000.;
+float pupilSize = 0.1;
 
 vec2 headRot = vec2(0., -0.4);
 

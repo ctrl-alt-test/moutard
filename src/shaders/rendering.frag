@@ -162,7 +162,6 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         ne.xy -= offset * smoothstep(0.01,.0, dot(ne,rd));
         
         const float i_irisSize = .3;
-        const float pupilSize = .1;
         
         // polar coordinate
         float er = length(ne.xy);

@@ -2,7 +2,7 @@
 
 uniform float iTime;
 int sceneID=0;
-float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.,sheepPos=1e6,lightFalloff=1e4;
+float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.,sheepPos=1e6,lightFalloff=1e4,pupilSize=.1;
 vec2 headRot=vec2(0,-.4);
 vec3 eyeDir=vec3(0,-.2,1),animationSpeed=vec3(1.5),camPos,camTa,panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 out vec4 fragColor;
@@ -545,7 +545,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       dir.xy-=offset*smoothstep(.01,0.,dot(dir,rd));
       float er=length(dir.xy),theta=atan(dir.x,dir.y);
       b=mix(vec3(.5,.3,.1),vec3(0,.8,1),smoothstep(.16,.3,er)*.3+cos(theta*15.)*.04);
-      float pupil=smoothstep(.1,.12,er);
+      float pupil=smoothstep(pupilSize,pupilSize+.02,er);
       sunDir=mix(b*.3,mix(b*((smoothstep(-.9,1.,noise(vec3(er*10.,theta*30.+cos(er*50.+noise(vec3(theta))*50.),0)))+smoothstep(-.9,1.,noise(vec3(er*10.,theta*40.+cos(er*30.+noise(vec3(theta))*50.)*2.,0))))*.5+.5)*smoothstep(.3,.29,er)*(vec3(1,.8,.7)*pow(max(0.,dot(normalize(vec3(3,1,-1)),dir)),8.)*3e2+.5)*pupil+pow(spe,vec3(800))*3,vec3(.8),smoothstep(.29,.3,er)),smoothstep(0.,.05,abs(er-.3)+.01));
       n=mix(normalize(n+(eyeDir+n)*4.),n,smoothstep(.3,.32,er));
       t=reflect(rd,n);
@@ -622,6 +622,7 @@ void sheepScaredShot(float t_in_shot)
   camTa=vec3(1,.8,7);
   sheepPos=7.;
   camProjectionRatio=1.5+t_in_shot*.4;
+  pupilSize=.2;
 }
 bool get_shot(inout float time,float duration)
 {
@@ -759,7 +760,7 @@ void selectShot()
     {
       sceneID=3;
       vec3 shift=mix(vec3(0),vec3(-3.5,0,-3.5),smoothstep(7,9,time));
-      wheelie=smoothstep(4.,4.4,time)*(1+sin(time*2.)*.2);
+      wheelie=smoothstep(4.2,4.6,time)*(1+sin(time*2.)*.2);
       camTa=vec3(0,1.-wheelie*.2,0)+shift;
       camPos=vec3(5.-.1*time,.4-.3*wheelie,-1.-.4*time)+shift;
       headRot=vec2(0,.6);
