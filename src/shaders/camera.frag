@@ -24,7 +24,7 @@ void sheepScaredShot(float t_in_shot) {
     headRot = vec2(0., -0.1) + noise*.1;
     camPos = vec3(1., 0.9, 6. - t_in_shot*.2);
     camTa = vec3(1., 0.8, 7.);
-    sheepPos = vec3(1., 1., 7.);
+    sheepPos = 7.;
     camProjectionRatio = 1.5 + t_in_shot*.4;
 }
 
@@ -49,7 +49,7 @@ void selectShot() {
         float vshift = smoothstep(6., 0., time);
         camPos = vec3(1., 0.9 + vshift*.5, 6. - motion);
         camTa = vec3(1., 0.8 + vshift*1., 7. - motion);
-        sheepPos = vec3(1., 1., 7. - motion);
+        sheepPos = 7. - motion;
         camProjectionRatio = 1.5;
 
         float headShift =
@@ -66,7 +66,7 @@ void selectShot() {
         // sheep walking
         float motion = time*.1;
         camPos = vec3(2.5, 0.5, 3. - motion);
-        sheepPos = vec3(1., 1., 5. - motion);
+        sheepPos = 5. - motion;
         camTa = vec3(0., 1., 4.8 - motion);
         camProjectionRatio = 1.5;
         headRot = vec2(0., 0.2);
@@ -87,7 +87,7 @@ void selectShot() {
         float shift = smoothstep(3.5, 3.8, time)*.5;
         float motion = time*.1;
         camPos = vec3(2.5, 1., 6.);
-        sheepPos = vec3(1., 1., 5. - motion);
+        sheepPos = 5. - motion;
         panelWarningPos = vec3(4., 0., 2.5);
         camTa = mix(vec3(1,1,5), vec3(1., 1.5, 1), shift*2.);
         headRot = vec2(0., 0.5);
@@ -109,7 +109,7 @@ void selectShot() {
 
         camPos = vec3(1., 0.6, 6. - shift);
         camTa = vec3(1., 0.8, 7.);
-        sheepPos = vec3(1., 1., 7. - shift);
+        sheepPos = 7. - shift;
 
     } else if (get_shot(time, 2.)) {
         sceneID = SCENE_MOTO;
@@ -131,7 +131,7 @@ void selectShot() {
             1.);
         camPos = vec3(1., 0.9, 6. - shift - motion);
         camTa = vec3(1., 0.8, 7. - motion);
-        sheepPos = vec3(1., 1., 7. - motion);
+        sheepPos = 7. - motion;
         camProjectionRatio = 1.5 + shift*2.;
         squintEyes = smoothstep(3.3, 3.5, time);
 
@@ -236,8 +236,6 @@ void selectShot() {
         headRot.y += abs(sin(iTime*4.)*.1);
         animationSpeed = vec3(0.);
     }
-
-    sheepPos.y = 0.46;
 
     float shotStartTime = iTime - time;
 

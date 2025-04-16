@@ -2,9 +2,9 @@
 
 uniform float iTime;
 int sceneID=0;
-float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.;
+float camProjectionRatio=1.,wheelie=0.,globalFade=1.,shouldDrawLogo=0.,blink=0.,squintEyes=0.,sheepTears=-1.,headDist=0.,sheepPos=1e6;
 vec2 headRot=vec2(0,-.4);
-vec3 eyeDir=vec3(0,-.2,1),animationSpeed=vec3(1.5),camPos,camTa,sheepPos=vec3(1e6),panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
+vec3 eyeDir=vec3(0,-.2,1),animationSpeed=vec3(1.5),camPos,camTa,panelWarningPos=vec3(6,0,0),motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-.8,.75,0);
 out vec4 fragColor;
 float hash11(float x)
 {
@@ -393,7 +393,7 @@ vec2 sheep(vec3 p,bool shiftPos)
           p.yz*=Rotation(wheelie*.4),p.yz-=vec2(.35,.2)*wheelie;
       }
     else
-       p-=sheepPos;
+       p-=vec3(1,.46,sheepPos);
   p/=.15;
   float tb=iTime*animationSpeed.x*3.14;
   vec3 bodyMove=vec3(cos(tb),cos(tb*2.)*.1,0)*.025;
@@ -472,15 +472,11 @@ vec2 sheep(vec3 p,bool shiftPos)
 }
 vec2 sceneSDF(vec3 p)
 {
-  vec2 d=motoShape(p);
-  d=MinDist(MinDist(MinDist(MinDist(MinDist(d,driverShape(p)),terrainShape(p)),treesShape(p)),blood(p)),panelWarning(p));
-  return MinDist(d,sheep(p,true));
+  return MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(motoShape(p),driverShape(p)),terrainShape(p)),treesShape(p)),blood(p)),panelWarning(p)),sheep(p,true));
 }
 float fastAO(vec3 pos,vec3 nor,float maxDist,float falloff)
 {
-  float occ1=.5*maxDist-sceneSDF(pos+nor*maxDist*.5).x;
-  maxDist=.95*(maxDist-sceneSDF(pos+nor*maxDist).x);
-  return clamp(1.-falloff*1.5*(occ1+maxDist),0.,1.);
+  return clamp(1.-falloff*1.5*(.5*maxDist-sceneSDF(pos+nor*maxDist*.5).x+.95*(maxDist-sceneSDF(pos+nor*maxDist).x)),0.,1.);
 }
 float shadow(vec3 ro,vec3 rd)
 {
@@ -635,7 +631,7 @@ void sheepScaredShot(float t_in_shot)
   headRot=vec2(0,-.1)+noise*.1;
   camPos=vec3(1,.9,6.-t_in_shot*.2);
   camTa=vec3(1,.8,7);
-  sheepPos=vec3(1,1,7);
+  sheepPos=7.;
   camProjectionRatio=1.5+t_in_shot*.4;
 }
 bool get_shot(inout float time,float duration)
@@ -655,7 +651,7 @@ void selectShot()
       float motion=time*.1,vshift=smoothstep(6.,0.,time);
       camPos=vec3(1,.9+vshift*.5,6.-motion);
       camTa=vec3(1,.8+vshift,7.-motion);
-      sheepPos=vec3(1,1,7.-motion);
+      sheepPos=7.-motion;
       camProjectionRatio=1.5;
       motion=smoothstep(6.,6.5,time)*smoothstep(9.,8.5,time);
       headRot=vec2(0,.4-motion*.5);
@@ -667,7 +663,7 @@ void selectShot()
     {
       float motion=time*.1;
       camPos=vec3(2.5,.5,3.-motion);
-      sheepPos=vec3(1,1,5.-motion);
+      sheepPos=5.-motion;
       camTa=vec3(0,1,4.8-motion);
       camProjectionRatio=1.5;
       headRot=vec2(0,.2);
@@ -685,7 +681,7 @@ void selectShot()
     {
       float shift=smoothstep(3.5,3.8,time)*.5,motion=time*.1;
       camPos=vec3(2.5,1,6);
-      sheepPos=vec3(1,1,5.-motion);
+      sheepPos=5.-motion;
       panelWarningPos=vec3(4,0,2.5);
       camTa=mix(vec3(1,1,5),vec3(1,1.5,1),shift*2.);
       headRot=vec2(0,.5);
@@ -706,7 +702,7 @@ void selectShot()
       eyeDir=vec3(sin(time*2.)*.2,.3,1);
       camPos=vec3(1,.6,6.-shift);
       camTa=vec3(1,.8,7);
-      sheepPos=vec3(1,1,7.-shift);
+      sheepPos=7.-shift;
     }
   else if(get_shot(time,2.))
     sceneID=1,camPos=vec3(4.-time*.2,.8,0),camTa=vec3(-10,0,0),camProjectionRatio=1.5+time*.2;
@@ -717,7 +713,7 @@ void selectShot()
       eyeDir=vec3(.18-smoothstep(4.3,4.5,time)*.18-smoothstep(3.,1.,time)*.4,.1-headShift*.2,1);
       camPos=vec3(1,.9,6.-shift-motion);
       camTa=vec3(1,.8,7.-motion);
-      sheepPos=vec3(1,1,7.-motion);
+      sheepPos=7.-motion;
       camProjectionRatio=1.5+shift*2.;
       squintEyes=smoothstep(3.3,3.5,time);
     }
@@ -786,7 +782,6 @@ void selectShot()
      sceneID=3,camTa=vec3(0,1,.7),camPos=vec3(4.-.1*time,1,-3.-.5*time),headRot=vec2(0,.3),camProjectionRatio=3.,shouldDrawLogo=smoothstep(0.,1.,time)*smoothstep(15.,9.,time),globalFade=float(time<15.);
   if(sceneID==3)
     headRot.y+=abs(sin(iTime*4.)*.1),animationSpeed=vec3(0);
-  sheepPos.y=.46;
   time=iTime-time;
   time=mod(time,14.)+iTime-time;
   if(sceneID==0||sceneID==2)
@@ -835,7 +830,7 @@ void main()
   iResolution=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   selectShot();
   vec3 cameraTarget=camTa,cameraUp=vec3(0,1,0),cameraPosition=camPos;
-  if(sceneID==3||sceneID==1)
+  if(sceneID==1||sceneID==3)
     cameraPosition=motoToWorldForCamera(camPos),cameraTarget=motoToWorldForCamera(camTa);
   cameraTarget=normalize(cameraTarget-cameraPosition);
   if(abs(dot(cameraTarget,cameraUp))>.99)

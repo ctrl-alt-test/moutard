@@ -38,7 +38,7 @@ vec2 sheep(vec3 p, bool shiftPos) {
           p.yz -= vec2(0.35, 0.2) * wheelie;
         }
       } else {
-        p -= sheepPos;
+        p -= vec3(1, .46, sheepPos);
       }
     }
     p /= SCALE;

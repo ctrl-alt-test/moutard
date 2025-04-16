@@ -25,6 +25,7 @@ float blink = 0.;
 float squintEyes = 0.;
 float sheepTears = -1.;
 float headDist = 0.; // distance to head (for eyes AO)
+float sheepPos = INF;
 
 vec2 headRot = vec2(0., -0.4);
 
@@ -32,7 +33,6 @@ vec3 eyeDir = vec3(0.,-0.2,1.);
 vec3 animationSpeed = vec3(1.5);
 vec3 camPos;
 vec3 camTa;
-vec3 sheepPos = vec3(INF);
 vec3 panelWarningPos = vec3(6., 0., 0.);
 vec3 motoPos;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
@@ -75,7 +75,7 @@ void main()
     vec3 cameraTarget = camTa;
     vec3 cameraUp = vec3(0., 1., 0.);
     vec3 cameraPosition = camPos;
-    if (sceneID == SCENE_MOUTARD || sceneID == SCENE_MOTO) {
+    if (sceneID == SCENE_MOTO || sceneID == SCENE_MOUTARD) {
         cameraPosition = motoToWorldForCamera(camPos);
         cameraTarget = motoToWorldForCamera(camTa);
     }
@@ -90,7 +90,6 @@ void main()
     vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
     cameraUp = normalize(cross(cameraRight, cameraForward));
 
-    // meh. FIXME
     uv *= mix(1., length(uv), 0.1);
     vec3 rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
     // 

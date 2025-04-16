@@ -1,19 +1,18 @@
 vec2 sceneSDF(vec3 p)
 {
-    vec2 d = motoShape(p);
-    d = MinDist(d, driverShape(p));
-    d = MinDist(d, terrainShape(p));
-    d = MinDist(d, treesShape(p));
-    d = MinDist(d, blood(p));
-    d = MinDist(d, panelWarning(p));
-    d = MinDist(d, sheep(p, true));
-    return d;
+    return MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(
+        motoShape(p), driverShape(p)),
+        terrainShape(p)),
+        treesShape(p)),
+        blood(p)),
+        panelWarning(p)),
+        sheep(p, true));
 }
 
-float fastAO(in vec3 pos, in vec3 nor, float maxDist, float falloff) {
-    float occ1 = .5*maxDist - sceneSDF(pos + nor*maxDist *.5).x;
-    float occ2 = .95*(maxDist - sceneSDF(pos + nor*maxDist).x);
-    return clamp(1. - falloff*1.5*(occ1 + occ2), 0., 1.);
+float fastAO(vec3 pos, vec3 nor, float maxDist, float falloff) {
+    float i_occ1 = .5*maxDist - sceneSDF(pos + nor*maxDist *.5).x;
+    float i_occ2 = .95*(maxDist - sceneSDF(pos + nor*maxDist).x);
+    return clamp(1. - falloff*1.5*(i_occ1 + i_occ2), 0., 1.);
 }
 
 float shadow(vec3 ro, vec3 rd)
@@ -221,8 +220,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
         spe = pow(spe, vec3(8.))*fre*20.;
 
         if (n.z > .5) {
-            vec3 pp = p;
-            pp -= vec3(-0.3,warningHeight - 0.25,0.);
+            vec3 pp = p - vec3(-0.3,warningHeight - 0.25,0.);
 
             float symbol;
             if (sceneID==SCENE_MOTO) {
