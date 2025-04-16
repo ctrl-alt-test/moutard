@@ -1,7 +1,8 @@
 vec2 sceneSDF(vec3 p)
 {
     return MinDist(MinDist(MinDist(MinDist(MinDist(MinDist(
-        motoShape(p), driverShape(p)),
+        motoShape(p),
+        driverShape(p)),
         terrainShape(p)),
         treesShape(p)),
         blood(p)),
@@ -33,7 +34,7 @@ float shadow(vec3 ro, vec3 rd)
 
 vec3 sky(vec3 V, vec3 fogColor)
 {
-    float cloud = fBm(V.xz/(0.05 + V.y));
+    float cloud = noise(V/(0.05 + V.y));
     cloud = pow(smoothstep(0.5, 0.51, cloud+1.), 0.2);
     cloud = mix(1., cloud, 0.2);
 
@@ -122,7 +123,7 @@ vec3 rayMarchScene(vec3 ro, vec3 rd)
             vec2 laneUV = p.xz / laneWidth;
             float tireTrails = sin((laneUV.x+0.2) * 7.85) * 0.5 + 0.5;
             tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
-            float highFreqNoise = fBm(laneUV * vec2(50., 2));
+            float highFreqNoise = noise(vec3(laneUV * vec2(50., 2),0));
             tireTrails = mix(tireTrails, highFreqNoise, 0.2) * .3;
             vec3 color = vec3(mix(vec3(0.2,0.2,0.3), vec3(0.3,0.4,0.5), tireTrails));
 

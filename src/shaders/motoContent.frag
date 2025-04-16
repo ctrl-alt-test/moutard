@@ -38,7 +38,7 @@ vec2 driverShape(vec3 p)
         return vec2(INF, MOTO_DRIVER_ID);
     }
     
-    float wind = fBm((p.xy + iTime) * 12.);
+    float wind = noise((p + iTime) * 12.);
     p = worldToMoto(p, true);
     // Place roughly on the seat
     p -= vec3(-0.35, 0.78, 0.0);

@@ -23,13 +23,6 @@ vec2 hash12(float x)
   x=hash11(x);
   return vec2(x,hash11(x));
 }
-float valueNoise(vec2 p)
-{
-  vec2 p00=floor(p);
-  p-=p00;
-  p=p*p*(3.-2.*p);
-  return mix(mix(hash21(p00),hash21(p00+vec2(1,0)),p.x),mix(hash21(p00+vec2(0,1)),hash21(p00+vec2(1)),p.x),p.y);
-}
 float noise(vec3 x)
 {
   vec3 i=floor(x);
@@ -43,10 +36,6 @@ vec2 valueNoise2(float p)
   p-=p0;
   p=p*p*(3.-2.*p);
   return mix(hash12(p0),hash12(p0+1.),p);
-}
-float fBm(vec2 p)
-{
-  return valueNoise(p)*2.-1.;
 }
 float smin(float d1,float d2,float k)
 {
@@ -152,11 +141,11 @@ vec2 blood(vec3 p)
 }
 vec2 terrainShape(vec3 p)
 {
-  float isRoad=1.-smoothstep(3.5,5.,abs(p.x)),height=mix(valueNoise(p.xz*5.)*.1+.5*fBm(p.xz*2./5.),0.,isRoad*isRoad);
+  float isRoad=1.-smoothstep(3.5,5.,abs(p.x)),height=mix(noise(p*5.)*.1+.5*noise(vec3(p.xz,0)*.4),0.,isRoad*isRoad);
   if(isRoad>0.)
     {
       float x=clamp(abs(p.x/3.5),0.,1.);
-      height+=.2*(1.-x*x*x)+pow(valueNoise(mod(p.xz*50,100)),.01)*.1;
+      height+=.2*(1.-x*x*x)+pow(noise(mod(p*50,100))*.5+.5,.01)*.1;
     }
   return vec2(p.y-height,3);
 }
@@ -170,7 +159,7 @@ float tree(vec3 localP,vec2 id)
   localP.xz+=(vec2(h1,h2)-.5)*1.5;
   d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeHeight,treeWidth)));
   id+=vec2(2.*atan(localP.z,localP.x),localP.y);
-  return d+.2*fBm(2.*id)+.5;
+  return d+.2*noise(2.*id.xyy)+.5;
 }
 vec2 treesShape(vec3 p)
 {
@@ -202,7 +191,7 @@ vec2 driverShape(vec3 p)
 {
   if(sceneID>=2)
     return vec2(1e6,1);
-  float wind=fBm((p.xy+iTime)*12.);
+  float wind=noise((p+iTime)*12.);
   p=worldToMoto(p)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2)
@@ -521,7 +510,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
   vec3 diff=vec3(1,.8,.7)*max(dot(n,sunDir),0.)*pow(vec3(shad),vec3(1,1.2,1.5)),bnc=vec3(1,.8,.7)*.1*max(dot(n,-sunDir),0.)*ao,sss=vec3(.5)*mix(fastAO(p,rd,.3,.75),fastAO(p,sunDir,.3,.75),.5),spe=vec3(1)*max(dot(reflect(rd,n),sunDir),0.),envm=vec3(0),amb=vec3(.4,.45,.5)*ao,emi=vec3(0);
   sunDir=vec3(0);
   if(t>=5e2)
-    return mix(fogColor,mix(vec3(.7),vec3(.2,.2,.6),mix(1.,pow(smoothstep(.5,.51,fBm(rd.xz/(.05+rd.y))+1.),.2),.2)),pow(smoothstep(0.,1.,rd.y),.4));
+    return mix(fogColor,mix(vec3(.7),vec3(.2,.2,.6),mix(1.,pow(smoothstep(.5,.51,noise(rd/(.05+rd.y))+1.),.2),.2)),pow(smoothstep(0.,1.,rd.y),.4));
   if(material--==0.)
     sunDir*=0.,spe*=pow(spe,vec3(80))*fre*15.,sss*=0.;
   else if(material--==0.)
@@ -533,7 +522,7 @@ vec3 rayMarchScene(vec3 ro,vec3 rd)
       {
         vec2 laneUV=p.xz/3.5;
         float tireTrails=sin((laneUV.x+.2)*7.85)*.5+.5;
-        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),fBm(laneUV*vec2(50,2)),.2)*.3;
+        tireTrails=mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),noise(vec3(laneUV*vec2(50,2),0)),.2)*.3;
         vec3 color=vec3(mix(vec3(.2,.2,.3),vec3(.3,.4,.5),tireTrails));
         sss*=0.;
         sunDir=color;

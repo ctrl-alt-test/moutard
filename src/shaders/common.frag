@@ -8,26 +8,6 @@ float hash31(vec3 xyz) { return hash21(vec2(hash21(xyz.xy), xyz.z)); }
 vec2 hash22(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
 vec2 hash12(float x) { float h = hash11(x); return vec2(h, hash11(h)); }
 
-float valueNoise(vec2 p)
-{
-    vec2 p00 = floor(p);
-    vec2 p10 = p00 + vec2(1.0, 0.0);
-    vec2 p01 = p00 + vec2(0.0, 1.0);
-    vec2 p11 = p00 + vec2(1.0, 1.0);
-
-    float v00 = hash21(p00);
-    float v10 = hash21(p10);
-    float v01 = hash21(p01);
-    float v11 = hash21(p11);
-
-    vec2 fp = p - p00;
-    fp = fp*fp * (3.0 - 2.0 * fp);
-
-    return mix(
-        mix(v00, v10, fp.x),
-        mix(v01, v11, fp.x),
-    fp.y);
-}
 
 float noise(vec3 x) {
 
@@ -57,11 +37,6 @@ vec2 valueNoise2(float p)
     fp = fp*fp * (3.0 - 2.0 * fp);
 
     return mix(v0, v1, fp);
-}
-
-float fBm(vec2 p)
-{
-    return valueNoise(p)*2.-1.;
 }
 
 // -------------------------------------------------------
