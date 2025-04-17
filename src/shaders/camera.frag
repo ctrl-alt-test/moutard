@@ -149,6 +149,7 @@ void selectShot() {
 
     } else if (get_shot(time, 1.6)) {
         sheepScaredShot(time);
+        pupilSize = .1+smoothstep(0., 1., time)*.1;
 
     } else if (get_shot(time, 1.4)) {
         motoFaceImpactShot(time);
@@ -161,14 +162,14 @@ void selectShot() {
 
     } else if (get_shot(time, 1.4)) {
         motoFaceImpactShot(time+3.);
-        lightFalloff /= 2.;
+        lightFalloff /= 3.;
 
     } else if (get_shot(time, 1.6)) {
         sheepScaredShot(time+3.4);
 
     } else if (get_shot(time, 1.)) {
         motoFaceImpactShot(time+5.);
-        lightFalloff /= 4.;
+        lightFalloff /= 9.;
 
     } else if (get_shot(time, 1.6)) {
         sheepScaredShot(time+5.);
@@ -178,7 +179,7 @@ void selectShot() {
 
     } else if (get_shot(time, 2.)) {
         motoFaceImpactShot(time+8.);
-        lightFalloff /= 20.;
+        lightFalloff /= 30.;
         // boom!
 
     } else if (get_shot(time, 10.)) {

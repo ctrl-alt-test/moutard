@@ -389,7 +389,9 @@ vec2 sheep(vec3 p,bool shiftPos)
   tb=length(p*vec3(1,1,.825)-vec3(0,1.5,2.55)-bodyMove)-2.;
   if(tb>=3.)
     return vec2(tb*.15,4);
-  float n=pow(noise((p-bodyMove+vec3(0)+vec3(.05,0,.5))*2.)*.5+.5,.75)*2.-1.;
+  float n=pow(noise((p-bodyMove+vec3(0)+vec3(0,0,.5))*2.)*.5+.5,.75)*2.-1.;
+  if(sceneID==3)
+    n+=noise(p-bodyMove+vec3(0,0,-iTime*10.)*2.)*.2;
   tb=tb+.05-n*.2;
   n=mod(iTime*animationSpeed.x,2.);
   float a=smoothstep(0.,.5,n),b=smoothstep(.5,1.,n),c=smoothstep(1.,1.5,n),d=smoothstep(1.5,2.,n);
@@ -719,21 +721,21 @@ void selectShot()
       camProjectionRatio=2.;
     }
   else if(get_shot(time,1.6))
-    sheepScaredShot(time);
+    sheepScaredShot(time),pupilSize=.1+smoothstep(0.,1.,time)*.1;
   else if(get_shot(time,1.4))
     motoFaceImpactShot(time);
   else if(get_shot(time,1.4))
     sheepScaredShot(time+1.5),blink=time*2.,headRot+=vec2(sin(time*40.)*.15,-.1+time*.5);
   else if(get_shot(time,1.4))
-    motoFaceImpactShot(time+3.),lightFalloff/=2.;
+    motoFaceImpactShot(time+3.),lightFalloff/=3.;
   else if(get_shot(time,1.6))
     sheepScaredShot(time+3.4);
   else if(get_shot(time,1.))
-    motoFaceImpactShot(time+5.),lightFalloff/=4.;
+    motoFaceImpactShot(time+5.),lightFalloff/=9.;
   else if(get_shot(time,1.6))
     sheepScaredShot(time+5.),camProjectionRatio++,blink=1.6-time;
   else if(get_shot(time,2.))
-    motoFaceImpactShot(time+8.),lightFalloff/=20.;
+    motoFaceImpactShot(time+8.),lightFalloff/=30.;
   else if(get_shot(time,10.))
     sceneID=2,globalFade*=smoothstep(2.,5.,time)*smoothstep(9.,7.,time),camPos=vec3(2.5,1.5,-6.+time*.5),camTa=vec3(1,0,-9.+time*.5);
   else if(get_shot(time,5.))
