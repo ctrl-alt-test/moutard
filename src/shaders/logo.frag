@@ -1,27 +1,25 @@
-float rect(vec2 p, vec2 size, float r) {
-  float f1 = pow(max(abs(p.x) + r - size.x, 0.), 4.);
-  float f2 = pow(max(abs(p.y) + r - size.y, 0.), 4.);
-  return smoothstep(0., 0.000000008, f1 + f2 - pow(r, 4.));
+float rect(vec2 p, float size, float r) {
+  p = pow(max(abs(p) + r - size, 0.), vec2(4));
+  return smoothstep(0., 0.00000001, p.x + p.y - pow(r, 4.));
 }
 
 float spacing = 0.15;
 
 float base(vec2 p, float t) {
   float col = 1.;
-  vec2 size = vec2(mix(0., 0.06, t));
+  float size = .06* t;
   
-  for (float i = 0.; i < 4.; i++) {
-    for (float j = 0.; j < 3.; j++) {
-      col *= (i == 3. && j == 1.) ? 1. : rect(p - vec2(i, j) * spacing, size, 0.01);
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 3; j++) {
+      col *= i == 3 && j == 1  ? 1. : rect(p - vec2(i, j) * spacing, size, .01);
     }
   }
-  
   return col;
 }
 
 float holes(vec2 p, float t) {
   float col = 1.;
-  vec2 size = vec2(mix(0., 0.0255, t));
+  float size = t * 0.0255;
   float r = 0.01;
   
   float h = 0.25;  // horizontal shift

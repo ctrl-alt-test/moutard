@@ -781,25 +781,26 @@ void selectShot()
   motoPos=vec3(0,.3+.43*wheelie,3e2-50.*time);
   motoPos.xz+=.5*sin(iTime);
 }
-float rect(vec2 p,vec2 size)
+float rect(vec2 p,float size)
 {
-  return smoothstep(0.,8e-9,pow(max(abs(p.x)+.01-size.x,0.),4.)+pow(max(abs(p.y)+.01-size.y,0.),4.)-pow(.01,4.));
+  p=pow(max(abs(p)+.01-size,0.),vec2(4));
+  return smoothstep(0.,1e-8,p.x+p.y-pow(.01,4.));
 }
 float base(vec2 p,float t)
 {
   float col=1.;
-  vec2 size=vec2(mix(0.,.06,t));
-  for(float i=0.;i<4.;i++)
-    for(float j=0.;j<3.;j++)
-      col*=i==3.&&j==1.?
+  t*=.06;
+  for(int i=0;i<4;i++)
+    for(int j=0;j<3;j++)
+      col*=i==3&&j==1?
         1.:
-        rect(p-vec2(i,j)*.15,size);
+        rect(p-vec2(i,j)*.15,t);
   return col;
 }
 float holes(vec2 p,float t)
 {
-  vec2 size=vec2(mix(0.,.0255,t));
-  return rect(p-vec2(.25,2)*.15,size)*rect(p-vec2(.75,1.75)*.15,size)*rect(p-vec2(1.25,1.75)*.15,size)*rect(p-vec2(2.25,1.75)*.15,size)*rect(p-vec2(3.25,2.25)*.15,size)*rect(p-vec2(0,.75)*.15,size)*rect(p-vec2(1.25)*.15,size)*rect(p-vec2(1.75,.75)*.15,size)*rect(p-vec2(2.25,.75)*.15,size)*rect(p-vec2(-.25)*.15,size)*rect(p-vec2(.25,-.25)*.15,size)*rect(p-vec2(1.25,.19)*.15,size)*rect(p-vec2(1.25,-.19)*.15,size)*rect(p-vec2(1.75,-.19)*.15,size)*rect(p-vec2(2.25,.19)*.15,size)*rect(p-vec2(2.75,-.25)*.15,size)*rect(p-vec2(3.25,-.25)*.15,size);
+  t*=.0255;
+  return rect(p-vec2(.25,2)*.15,t)*rect(p-vec2(.75,1.75)*.15,t)*rect(p-vec2(1.25,1.75)*.15,t)*rect(p-vec2(2.25,1.75)*.15,t)*rect(p-vec2(3.25,2.25)*.15,t)*rect(p-vec2(0,.75)*.15,t)*rect(p-vec2(1.25)*.15,t)*rect(p-vec2(1.75,.75)*.15,t)*rect(p-vec2(2.25,.75)*.15,t)*rect(p-vec2(-.25)*.15,t)*rect(p-vec2(.25,-.25)*.15,t)*rect(p-vec2(1.25,.19)*.15,t)*rect(p-vec2(1.25,-.19)*.15,t)*rect(p-vec2(1.75,-.19)*.15,t)*rect(p-vec2(2.25,.19)*.15,t)*rect(p-vec2(2.75,-.25)*.15,t)*rect(p-vec2(3.25,-.25)*.15,t);
 }
 vec3 drawLogo(vec2 uv)
 {
